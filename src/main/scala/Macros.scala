@@ -1,5 +1,8 @@
 package io.univalence.autobuild
 
+import java.nio.file.{Paths, Files}
+
+import net.ironforged.scaladiff.{Operation, OperationType, Diff}
 import struct.{TypeName, FieldsNonRecur}
 import shapeless.CaseClassMacros
 
@@ -17,14 +20,6 @@ object CaseClassApplicativeBuilder {
 
   case class Generated(declaration: String, impl: String) {
     def all: String = declaration + " = " + impl
-  }
-
-  def builderFunSourceCode[A](implicit tmr: FieldsNonRecur[A], tv: TypeName[A]) = {
-    val fieldnames1: List[(String, String)] = tmr.fieldnames
-
-    val name: String = tv.name
-
-    generateDef(fieldnames1, name).all
   }
 
 
@@ -51,33 +46,70 @@ object CaseClassApplicativeBuilder {
   }
 
 
-  def generateDef(fieldnames1: List[(String, String)], name: String): Generated = {
-    val signature: String = "def build[App[_]](" + fieldnames1.map({ case (n, t) => s"$n : App[$t]" }).mkString(",\n") + ")(implicit app:scalaz.Applicative[App],pathA:datalab.pj.core.PathAwareness[App]):App[" + name + "]"
-    val injectPrefix: (String) => String = f => "pathA.injectPrefix(\"" + f + "\")(" + f + ")"
 
-    val impl: String = if (fieldnames1.size < 12) {
-      "import scalaz.syntax.apply._ \n" + fieldnames1.map(_._1).map(injectPrefix).mkString("(", " |@| ", ")") + s"($name.apply)"
-    } else {
-      val prefix = "import scalaz.syntax.apply._\n"
-      val index: List[(List[(String, Int)], Int)] = fieldnames1.map(_._1).sliding(5, 5).toList.map(_.zipWithIndex).zipWithIndex
-      val inApply: List[String] = for ((l, p1) <- index; (n, p2) <- l) yield {
-        n + " = t._" + (p1 + 1) + "._" + (p2 + 1)
+  def generateDef3(fieldNames1:List[(String,String)], name:String, a:String): Generated = {
+    val signature:String = "def build(" + fieldNames1.map({case (n,t) => s"$n : $a[$t]"}).mkString(",\n") + s"):$a[" + name + "]"
+
+    val map: List[(String, Int)] = fieldNames1.map(_._1).zipWithIndex.map(t => (t._1,t._2 + 1))
+
+    val vals: String = map.map({case (n,i) => s"val _$i = $n.addPathPart(" + "\"" + n + "\")"}).mkString("\n")
+
+    /*   Result(nominal = (_1.nominal, _2.nominal) match {
+      case (Some(a), Some(b)) => Some(FixeRequeteInfo(a, b))
+      case _ => None
+    }, annotations = _1.annotations ::: _2.annotations) */
+
+    val nominal: String = "(" + map.map(_._2).map("_" + _ + ".nominal").mkString(", ") + ") match {\n case (" + map.map(_._2).map("Some(s"+ _ +")").mkString(", ") + ") => Some(" + name + "(" + map.map({case (n,i) => n + " = s" + i}).mkString(", ") + ")) \n case _ => None }"
+
+    val annotations:String = map.map(_._2).map("_" + _ + ".annotations").mkString(" ::: ")
+
+    val result: String = s"Result(nominal = $nominal, annotations = $annotations )"
+
+    Generated(signature, "{ \n\n " +  vals + "\n\n" + result + " \n}")
+
+  }
+
+
+
+  def generateDef(fieldnames1: List[(String, String)], name: String, containerName:String): Generated = {
+    val signature: String = "def build(" + fieldnames1.map({ case (n, t) => s"$n : $containerName[$t]" }).mkString(",\n") + s"):$containerName[" + name + "]"
+
+
+    val zip = "def zip[A,B](x:A)(y:B):(A,B)=(x,y)"
+    val zipC = s"def zipC[A,B](x:$containerName[A])(y:$containerName[B]): $containerName[(A,B)] = y.app(x.map(zip))"
+
+
+    val impl: String = fieldnames1 match {
+
+      case (x :: xs) => {
+
+        val prefix = xs.foldLeft(x._1)((acc, next) => {
+          s"zipC(${next._1})($acc)"
+        })
+
+        def access(n: String, i: Int): String = n + " = t" + ("._2" * i) + "._1"
+
+        val fimpl = name + "(" + (x._1 + " = t" + ("._2" * xs.length)) + "," + xs.reverse.map(_._1).zipWithIndex.map(t => access(t._1, t._2)).mkString(", ") + ")"
+
+
+        prefix + s".map(t => $fimpl )"
+
       }
-      prefix + "app.tuple" + index.size + "(" +
-        index.map(tuple => {
-          val names: List[String] = tuple._1.map(_._1)
-          "app.tuple" + names.size + "(" + names.map(injectPrefix).mkString(",") + ")"
-        }).mkString(",\n") + ").map(t => " + name + ".apply(" + inApply.mkString(",\n") + "))"
+
+      case Nil => ???
+
 
     }
 
-    Generated("//GENERATED AUTOMATICALY, DO NOT EDIT\n" + signature, "{\n" + impl + "}")
+    Generated(signature, List(zip, zipC, impl).mkString("{","\n","}"))
+
+
   }
 }
 
 
 @compileTimeOnly("enable macro paradise to expand macro annotations")
-class autoApplicativeBuilder extends StaticAnnotation {
+class autoBuildApp extends StaticAnnotation {
   def macroTransform(annottees: Any*): Any = macro ApplicativeKeyConstruct.autoApplicativeImpl
 }
 
@@ -95,7 +127,7 @@ object CleanTypeName {
 }
 
 
-class ApplicativeKeyConstruct[C <: Context](val c: C) extends CaseClassMacros {
+class ApplicativeKeyConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacros {
 
 
   def autoBuildResultImpl(annottees: c.Expr[Any]*): c.Expr[Any] = {
@@ -122,6 +154,8 @@ class ApplicativeKeyConstruct[C <: Context](val c: C) extends CaseClassMacros {
 
     }
 
+
+
     annottee match {
 
       case q"..$defMods def $name[..$tparams](...$paramss): $rTpe = $implBlock" => {
@@ -141,11 +175,43 @@ class ApplicativeKeyConstruct[C <: Context](val c: C) extends CaseClassMacros {
             })
 
 
-            val generateDef = CaseClassApplicativeBuilder.generateDef2(of.map(t => t._1.encoded ->  CleanTypeName.clean(t._2.toString)), CleanTypeName.clean(typeToBuild.toString))
+            val generateDef = CaseClassApplicativeBuilder.generateDef2(of.map(t => t._1.encoded ->
+              CleanTypeName.clean(t._2.toString)), CleanTypeName.clean(typeToBuild.toString))
 
 
             if (of.toMap != argSpec.toMap) {
-              c.abort(annottee.pos, "signature not matching to build " + typeToBuild.toString + ", use : \n " + generateDef.all )
+
+
+
+
+
+              val file = c.enclosingPosition.source.file
+
+
+              val source: String = scala.io.Source.fromFile(file.file).mkString
+              val start: Int = c.enclosingPosition.start - 1
+              val create: Diff = Diff.create("@autoBuildResult\n" + annottee.toString(),
+                source.drop(start))
+
+
+
+
+              val last: String = create.diffs.reverse.takeWhile(_.op == OperationType.Insert).map(_.text).mkString.reverse
+
+              val toDrop: String = source.drop(start).reverse.drop(last.length).reverse
+
+              val nbToClose = Math.max(toDrop.count(_ == '{') - toDrop.count(_ == '}') -2,0)
+
+              val lastStartIndex =  last.indexOf('\n', (0 until nbToClose).foldLeft(-1)((i,_) => last.indexOf('}',i + 1)))
+
+              val content: String = source.take(start) +"\n@autoBuildResult \n" +  generateDef.all+  last.take(lastStartIndex) + last.drop(lastStartIndex-1)
+
+
+              Files.write(file.file.toPath, content.getBytes)
+
+
+
+              c.abort(annottee.pos, "signature not matching to build " + typeToBuild.toString + ", source code updated")
             }
 
 
@@ -160,7 +226,7 @@ class ApplicativeKeyConstruct[C <: Context](val c: C) extends CaseClassMacros {
   }
 
 
-  def autoApplicativeImpl(annottees: c.Expr[Any]*): c.Expr[Any] = {
+  def autoBuildapp(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
 
     val inputs = annottees.map(_.tree).toList
@@ -184,6 +250,106 @@ class ApplicativeKeyConstruct[C <: Context](val c: C) extends CaseClassMacros {
 
     }
 
+
+
+    annottee match {
+
+      case q"..$defMods def $name[..$tparams](...$paramss): $rTpe = $implBlock" => {
+
+        rTpe match {
+          case tq"$a[$t]" => {
+            val typeToBuild = stringToType(t.toString)
+
+            val of: List[(TermName, Type)] = fieldsOf(typeToBuild)
+
+            val argSpec: List[(TermName, Type)] = paramss.headOption.getOrElse(Nil).map({ case ValDef(_, vname, vtpt, _) => {
+              val inType = vtpt match {
+                case tq"$b[$paramInType]" => paramInType
+              }
+              vname -> stringToType(inType.toString)
+            }
+            })
+
+
+            val generateDef = CaseClassApplicativeBuilder.generateDef(of.map(t => t._1.encoded ->
+              CleanTypeName.clean(t._2.toString)), CleanTypeName.clean(typeToBuild.toString), a.toString)
+
+
+            if (of.toMap != argSpec.toMap) {
+
+
+
+
+
+              val file = c.enclosingPosition.source.file
+
+
+              val source: String = scala.io.Source.fromFile(file.file).mkString
+              val start: Int = c.enclosingPosition.start - 1
+              val create: Diff = Diff.create("@autoBuildApp\n" + annottee.toString(),
+                source.drop(start))
+
+
+
+
+              val last: String = create.diffs.reverse.takeWhile(_.op == OperationType.Insert).map(_.text).mkString.reverse
+
+              val toDrop: String = source.drop(start).reverse.drop(last.length).reverse
+
+              val nbToClose = Math.max(toDrop.count(_ == '{') - toDrop.count(_ == '}'),0)
+
+              val lastStartIndex =  last.indexOf('\n', (0 until nbToClose).foldLeft(-1)((i,_) => last.indexOf('}',i + 1)))
+
+              val content: String = source.take(start) +"\n@autoBuildApp \n" +  generateDef.all+  last.take(lastStartIndex) + last.drop(lastStartIndex-1)
+
+
+              Files.write(file.file.toPath, content.getBytes)
+
+
+
+              c.abort(annottee.pos, "signature not matching to build " + typeToBuild.toString + ", source code updated")
+            }
+
+
+            val result = c.parse(generateDef.all)
+
+            //c.Expr[Any](result)
+            annottees.head
+
+          }
+        }
+      }
+    }
+  }
+
+  /*def autoApplicativeImpl(annottees: c.Expr[Any]*): c.Expr[Any] = {
+    import c.universe._
+
+
+
+    val inputs = annottees.map(_.tree).toList
+    val annottee: DefDef = inputs match {
+      case (param: DefDef) :: Nil => param
+    }
+
+    def extractA(t: Tree): Name = {
+      val AppliedTypeTree(Ident(nn), args) = t
+      nn
+    }
+
+    //to try for position : https://github.com/kevinwright/macroflection/blob/master/kernel/src/main/scala/net/thecoda/macroflection/Validation.scala#L75
+
+
+    def stringToType(s: String): Type = {
+      val dummyNme: String = c.fresh()
+      val parse = c.parse(s"{ type $dummyNme = " + s + " }")
+      val q"{ type $dummyNme2 = $tpt }" = c.typeCheck(parse)
+      tpt.tpe
+
+    }
+
+
+
     annottee match {
 
       case q"..$defMods def $name[..$tparams](...$paramss): $rTpe = $implBlock" => {
@@ -203,7 +369,7 @@ class ApplicativeKeyConstruct[C <: Context](val c: C) extends CaseClassMacros {
             })
 
 
-            val generateDef = CaseClassApplicativeBuilder.generateDef(of.map(t => t._1.encoded -> t._2.toString), typeToBuild.toString)
+            val generateDef = CaseClassApplicativeBuilder.generateDef(of.map(t => t._1.encoded -> t._2.toString), typeToBuild.toString, a.toString)
 
 
             if (of.toMap != argSpec.toMap) {
@@ -219,12 +385,12 @@ class ApplicativeKeyConstruct[C <: Context](val c: C) extends CaseClassMacros {
         }
       }
     }
-  }
+  }*/
 }
 
 
 object ApplicativeKeyConstruct {
-  def autoApplicativeImpl(c: Context)(annottees: c.Expr[Any]*): c.Expr[Any] = new ApplicativeKeyConstruct[c.type](c).autoApplicativeImpl(annottees: _*)
+  def autoApplicativeImpl(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = new ApplicativeKeyConstruct[c.type](c).autoBuildapp(annottees: _*)
 
-  def autoBuildResultImpl(c:Context)(annottees: c.Expr[Any]*): c.Expr[Any] = new ApplicativeKeyConstruct[c.type](c).autoBuildResultImpl(annottees: _*)
+  def autoBuildResultImpl(c:whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = new ApplicativeKeyConstruct[c.type](c).autoBuildResultImpl(annottees: _*)
 }
