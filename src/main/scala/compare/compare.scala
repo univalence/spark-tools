@@ -1,4 +1,3 @@
-import shapeless.T
 
 def compareStrings(a: String, b: String): Int = {
   val strATrimUpper = a.trim.toUpperCase
@@ -6,13 +5,25 @@ def compareStrings(a: String, b: String): Int = {
 
   // identical strings
   if (a == b) 1
+
   // one empty string
-  // issue with operator ! and ||
-  if (a != b) 0
+  if (a.isEmpty || b.isEmpty) 0
+
   // both one char
   if (a.length == 1 && b.length == 1) 0
+
   // one string is one char
-  0
+  /*if (a.length == 1) return b.indexOf(a) > -1 ? 1 / b.length : 0;
+  if (b.length == 1) return a.indexOf(b) > -1 ? 1 / a.length : 0;*/
+
+  val pairs1 = wordLetterPairs(strATrimUpper)
+  val pairs2 = wordLetterPairs(strBTrimUpper)
+
+  val union = pairs1.length + pairs2.length
+
+  val inter = (pairs1 intersect pairs2).length
+
+  inter * 2 / union
 }
 
 def letterPairsLoop(listChar: List[Char],startIndex: Int, endIndex: Int): String = {
@@ -29,9 +40,3 @@ def wordLetterPairs(str: String): Array[String] = {
   val listChar = str.trim.toList
   letterPairsLoop(listChar,0,1).split(",")
 }
-
-//def wordLetterPairs
-
-/*def flatten(arr: Array[T]): Unit = {
-
-}*/
