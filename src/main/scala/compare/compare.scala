@@ -25,8 +25,13 @@ def letterPairs(str: String): Array[String] = {
   letterPairsLoop(listChar,0,1).split(",")
 }
 
+def wordLetterPairs(str: String): Array[String] = {
+  val listChar = str.trim.toList
+  letterPairsLoop(listChar,0,1).split(",")
+}
+
 //def wordLetterPairs
 
-def flatten(arr: Array[T]): Unit = {
+/*def flatten(arr: Array[T]): Unit = {
 
-}
+}*/
