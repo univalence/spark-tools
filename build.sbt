@@ -3,35 +3,42 @@ scalacOptions ++= Seq("-Yrangepos", "-unchecked", "-deprecation")
 
 version := "0.2-SNAPSHOT"
 
-name := "autobuild"
+name := "centrifuge"
 
 organization := "io.univalence"
 
 scalaVersion := "2.11.7"
 
-resolvers += "sonatype-oss" at "http://oss.sonatype.org/content/repositories/snapshots"
+val sparkV = "2.1.1"
 
-resolvers += "OSS" at "http://oss.sonatype.org/content/repositories/releases"
 
-resolvers += "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+resolvers ++= Seq(
+  "sonatype-oss" at "http://oss.sonatype.org/content/repositories/snapshots",
+  "OSS" at "http://oss.sonatype.org/content/repositories/releases",
+  "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/",
+  "Conjars" at "http://conjars.org/repo",
+  "Clojars" at "http://clojars.org/repo",
+  "m2-repo-github" at "https://github.com/ahoy-jon/m2-repo/raw/master"
+)
 
-resolvers += "Conjars" at "http://conjars.org/repo"
 
-resolvers += "Clojars" at "http://clojars.org/repo"
+libraryDependencies ++= Seq(
+  "com.chuusai" %% "shapeless" % "2.2.5",
+  "org.scalaz" %% "scalaz-core" % "7.1.4",
+  "org.spire-math" % "spire_2.11" % "0.13.0",
+  "org.typelevel" %% "shapeless-spire" % "0.6.1",
+  "org.typelevel" %% "shapeless-scalaz" % "0.4",
+  "io.univalence" %% "excelsius" % "0.1-SNAPSHOT",
+  "org.apache.spark" %% "spark-core" % sparkV,
+  "org.apache.spark" %% "spark-sql" % sparkV,
+  "org.scalatest" %% "scalatest" % "3.0.3" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.13.5" % "test"
+)
 
-libraryDependencies += "com.chuusai" % "shapeless_2.11" % "2.2.5"
-
-libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.1.4"
-
-libraryDependencies += "org.typelevel" %% "shapeless-scalaz" % "0.4"
-
-libraryDependencies += "io.univalence" %% "excelsius" % "0.1-SNAPSHOT"
 
 //2.1.0-SNAPSHOT
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion.full)
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
-publishTo := Some(Resolver.file("file",  new File( "/Users/jon/Project/m2-repo")) )
-
-resolvers in ThisBuild  ++= Seq("m2-repo-github" at "https://github.com/ahoy-jon/m2-repo/raw/master")
+publishTo := Some(Resolver.file("file",  new File( "/Users/jon/Project/m2-repo")))

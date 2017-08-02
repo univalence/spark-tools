@@ -1,42 +1,37 @@
+package io.univalence.utils
 
-def compareStrings(a: String, b: String): Int = {
-  val strATrimUpper = a.trim.toUpperCase
-  val strBTrimUpper = b.trim.toUpperCase
 
-  // identical strings
-  if (a == b) 1
+object StringUtils {
+  def compareStrings(a: String, b: String): Double = {
 
-  // one empty string
-  if (a.isEmpty || b.isEmpty) 0
+    // identical strings
+    if (a == b) return 1
 
-  // both one char
-  if (a.length == 1 && b.length == 1) 0
+    val pairs1: Seq[String] = wordLetterPairs(a)
+    val pairs2: Seq[String] = wordLetterPairs(b)
 
-  // one string is one char
-  /*if (a.length == 1) return b.indexOf(a) > -1 ? 1 / b.length : 0;
-  if (b.length == 1) return a.indexOf(b) > -1 ? 1 / a.length : 0;*/
+    val union = pairs1.length + pairs2.length
 
-  val pairs1 = wordLetterPairs(strATrimUpper)
-  val pairs2 = wordLetterPairs(strBTrimUpper)
+    def frequencies[T](s1:Seq[T]):Map[T,Int] = s1.groupBy(identity).mapValues(_.size)
 
-  val union = pairs1.length + pairs2.length
+    def joinMap[K,V](m1:Map[K,V],m2:Map[K,V]):Map[K,(Option[V],Option[V])] = {
+      //todo : optimize
+      (m1.keySet ++ m2.keySet).toSeq.map(k => k -> (m1.get(k),m2.get(k))).toMap
+    }
 
-  val inter = (pairs1 intersect pairs2).length
+    val inter = joinMap(frequencies(pairs1),frequencies(pairs2)).values.map({
+      case (Some(l),Some(r)) => Math.min(l,r)
+      case _ => 0
+    }).sum
 
-  inter * 2 / union
-}
+    inter.toDouble * 2 / union
+  }
 
-def letterPairsLoop(listChar: List[Char],startIndex: Int, endIndex: Int): String = {
-  if (endIndex >= listChar.length - 1) s"${listChar(startIndex)}${listChar(endIndex)}"
-  else s"${listChar(startIndex)}${listChar(endIndex)}" + "," + letterPairsLoop(listChar, startIndex + 1, endIndex + 1)
-}
+  def letterPairs(str: String): Seq[String] = {
+    str.sliding(2,1).toSeq
+  }
 
-def letterPairs(str: String): Array[String] = {
-  val listChar = str.toList
-  letterPairsLoop(listChar,0,1).split(",")
-}
-
-def wordLetterPairs(str: String): Array[String] = {
-  val listChar = str.trim.toList
-  letterPairsLoop(listChar,0,1).split(",")
+  def wordLetterPairs(str: String): Seq[String] = {
+    str.split("\\s").flatMap(letterPairs)
+  }
 }
