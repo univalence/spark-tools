@@ -15,18 +15,15 @@ def compareStrings(a: String, b: String): Int = {
   0
 }
 
-def letterPairs(listChar: List[Char],startIndex: Int, endIndex: Int): String = {
+def letterPairsLoop(listChar: List[Char],startIndex: Int, endIndex: Int): String = {
   if (endIndex >= listChar.length - 1) s"${listChar(startIndex)}${listChar(endIndex)}"
-  else s"${listChar(startIndex)}${listChar(endIndex)}" + "," + letterPairs(listChar, startIndex + 1, endIndex + 1)
+  else s"${listChar(startIndex)}${listChar(endIndex)}" + "," + letterPairsLoop(listChar, startIndex + 1, endIndex + 1)
 }
 
-val lc = "abcdef".toList
-
-//letterPairs(l,0,1)
-
-def yolo(listChar: List[Char]): String = letterPairs(listChar,0,1)
-
-val a = yolo(lc).split(",")
+def letterPairs(str: String): Array[String] = {
+  val listChar = str.toList
+  letterPairsLoop(listChar,0,1).split(",")
+}
 
 //def wordLetterPairs
 
