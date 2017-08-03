@@ -9,6 +9,9 @@ case class Person(name: String, age: Int)
 
 case class PersonWithAnnotations(name: String, age: Int, annotations: Seq[AnnotationSql])
 
+case class BetterPerson(name:String,age:Option[Int])
+
+
 object AnnotationTest {
   def to_age(i: Int): Result[Int] = {
     {} match {
@@ -35,10 +38,89 @@ class AnnotationTest extends FunSuite {
 
   import ss.implicits._
 
-  val onePersonDf = ss.sparkContext.makeRDD(Seq(Person("Joe", 14))).toDF()
+  val joe = Person("Joe", 14)
+  val timmy = Person("Timmy",8)
+  val invalid = Person("",-1)
+
+
+  val onePersonDf = ss.sparkContext.makeRDD(Seq(joe)).toDF()
+
+
+
+
+  test("quickstart") {
+
+    val joe = Person("Joe", 14)
+    val timmy = Person("Timmy",8)
+    val invalid = Person("",-1)
+
+    import io.univalence.centrifuge.implicits._
+    //keep only implicits
+    import org.apache.spark.sql.univalence._
+    import ss.implicits._
+
+    //val ss:SparkSession = ...
+    val ds = ss.sparkContext.makeRDD(Seq(joe,timmy,invalid)).toDS()
+    ds.createOrReplaceTempView("personRaw")
+
+
+    //register a transformation with data quality
+    ss.registerTransformation[Int,Int]("checkAge", {
+      case i if i < 0 => Result.fromError("INVALID_AGE")
+      case i if i < 13 => Result.fromWarning(i, "UNDER_13")
+      case i if i > 140 => Result.fromError("OVER_140")
+      case i => Result.pure(i)
+    })
+
+    ss.sql("select name, checkAge(age) as age, age as ageRaw from personRaw").show(false)
+
+    /*
++-----+----+------+
+|name |age |ageRaw|
++-----+----+------+
+|Joe  |14  |14    |
+|Timmy|8   |8     |
+|     |null|-1    |
++-----+----+------+
+     */
+
+
+/*
+    ss.sql("select name, checkAge(age) as age from personRaw").as[Person].collect().foreach(println)
+    Caused by: java.lang.NullPointerException: Null value appeared in non-nullable field:
+      - field (class: "scala.Int", name: "age")
+    - root class: "io.univalence.centrifuge.sql.Person"
+*/
+    //case class BetterPerson(name:String,age:Option[Int])
+
+    ss.sql("select name, checkAge(age) as age from personRaw").as[BetterPerson].collect().foreach(println)
+/*
+BetterPerson(Joe,Some(14))
+BetterPerson(Timmy,Some(8))
+BetterPerson(,None)
+ */
+
+    ss.sql("select name, checkAge(age) as age from personRaw").includeAnnotations.show(false)
+
+    /*
++-----+----+--------------------------------------------+
+|name |age |annotations                                 |
++-----+----+--------------------------------------------+
+|Joe  |14  |[]                                          |
+|Timmy|8   |[[UNDER_13,age,WrappedArray(age),false,1]]  |
+|     |null|[[INVALID_AGE,age,WrappedArray(age),true,1]]|
++-----+----+--------------------------------------------+
+     */
+
+
+    
+
+
+
+  }
+
 
   import org.apache.spark.sql.univalence._
-
 
   test("explore") {
 
@@ -52,6 +134,8 @@ class AnnotationTest extends FunSuite {
     })
 
   }
+
+
 
   test("basic") {
     val p = onePersonDf.includeAnnotations.as[PersonWithAnnotations].collect().head
