@@ -1,6 +1,6 @@
 package org.apache.spark.sql
 
-import io.univalence.centrifuge.Result
+import io.univalence.centrifuge.{Annotation, Result}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedStar
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.aggregate.CollectList
@@ -16,7 +16,22 @@ import scala.reflect.runtime.universe.TypeTag
 
 package object univalence {
 
-  case class AnnotationSql(msg: String, isError: Boolean, count: Long, onField: String, fromFields: Seq[String])
+  type AnnotationSql = Annotation
+
+  object AnnotationSql {
+
+    def apply(msg: String,
+              isError: Boolean,
+              count: Long,
+              onField: String,
+              fromFields: Vector[String]): Annotation = Annotation(message = msg,
+      isError = isError,
+      count = count,
+      onField = Some(onField),
+      fromFields = fromFields
+    )
+
+  }
 
   case class DeltaPart(colName:String,
                        sumOnlyLeft:Option[Long],
@@ -63,9 +78,9 @@ package object univalence {
           case m: Map[String, Any] => m.toSeq.flatMap(x => cleanInerRow(x._2, onField, fromFields))
           case row: GenericRowWithSchema => Seq(AnnotationSql(
             msg = row.getAs[String](0),
-            isError = row.getAs[Boolean](1),
-            count = row.getAs[Long](2),
-            onField = onField, fromFields = fromFields))
+            isError = row.getAs[Boolean](3),
+            count = row.getAs[Long](4),
+            onField = onField, fromFields = fromFields.toVector))
 
           case wa: mutable.WrappedArray[Any] => wa.flatMap(x => cleanInerRow(x, onField, fromFields))
           case _ => println(aa.getClass + " : " + aa); Nil
@@ -85,7 +100,7 @@ package object univalence {
     if(s.isEmpty) {
       s
     } else s.head match {
-      case _: AnnotationSql => s.asInstanceOf[Seq[AnnotationSql]].groupBy(x => (x.fromFields,x.isError,x.msg,x.onField)).values.map(x => {
+      case _: AnnotationSql => s.asInstanceOf[Seq[AnnotationSql]].groupBy(x => (x.fromFields,x.isError,x.message,x.onField)).values.map(x => {
         x.head.copy(count = x.map(_.count).sum)
       }).toSeq.asInstanceOf[Seq[T]]
       case _: GenericRowWithSchema => s.asInstanceOf[Seq[GenericRowWithSchema]].groupBy(x => x.toSeq.updated(x.fieldIndex("count"),0)).values.map(x => {
@@ -210,14 +225,38 @@ case x => println(x) ; Nil
       Delta(deltaPart("count1"),dataFrame.columns.tail.map(deltaPart))
     }
 
+    /*
+     ArrayType(StructType(StructField(message,StringType,false),
+     StructField(isError,BooleanType,false),
+      StructField(count,LongType,false),
+      StructField(onField,StringType,true),
+       StructField(fromFields,ArrayType(StringType,false),false)),false) to
+
+       ArrayType(StructType(StructField(message,StringType,true),
+       StructField(onField,StringType,true),
+       StructField(fromFields,ArrayType(StringType,true),true),
+       StructField(isError,BooleanType,true),
+        StructField(count,LongType,true)),true);
+     */
+
+
+    /*
+
+actual parameters "java.lang.String, scala.Option, scala.collection.Seq, boolean, long"; c
+andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Option, scala.collection.immutable.Vector, boolean, long)"
+
+     */
+
+    //TODO : test to check schema ...
     private val annotationsDt =
       ArrayType(
         StructType(Seq(
-          StructField(name = "msg", dataType = StringType, nullable = false),
+          StructField(name = "message", dataType = StringType, nullable = false),
+          StructField(name = "onField", dataType = StringType, nullable = true),
+          StructField(name = "fromFields", dataType = ArrayType(StringType, containsNull = false), nullable = false),
           StructField(name = "isError", dataType = BooleanType, nullable = false),
-          StructField(name = "count", dataType = LongType, nullable = false),
-          StructField(name = "onField", dataType = StringType, nullable = false),
-          StructField(name = "fromFields", dataType = ArrayType(StringType, false), nullable = false))), false)
+          StructField(name = "count", dataType = LongType, nullable = false)
+        )), containsNull = false)
 
     private val emptyAnnotation = Literal(ArrayData.toArrayData(Nil),annotationsDt)
 

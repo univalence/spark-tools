@@ -47,7 +47,7 @@ class AnnotationTest extends FunSuite {
 
     println(select.queryExecution.toString())
     select.queryExecution.logical.expressions.foreach(x => {
-      println(x);
+      println(x)
       println(x.prettyName)
     })
 
@@ -62,6 +62,7 @@ class AnnotationTest extends FunSuite {
   }
 
 
+
   test("with one annotation") {
     ss.registerTransformation("to_age", AnnotationTest.to_age)
     ss.sparkContext.makeRDD(Seq(Person("Joe", 12))).toDS().createTempView("person")
@@ -74,13 +75,13 @@ class AnnotationTest extends FunSuite {
 
     assert(p.isDefined)
     assert(p.get._1 == 12)
-    assert(p.get._2 == Seq(
+    assert(p.get._2.toList == List(
       AnnotationSql(
         msg = "UNDER_13",
         isError = false,
         count = 1,
         onField = "age",
-        fromFields = Seq("age"))))
+        fromFields = Vector("age"))))
   }
 
   test("with more annotations (same field)") {
@@ -94,7 +95,7 @@ class AnnotationTest extends FunSuite {
 
     assert(p.isDefined)
     assert(p.get._1 == 12)
-    assert(p.get._2.toSet == Set(AnnotationSql("UNDER_13", false, 4, "age", Seq("age"))))
+    assert(p.get._2.toSet == Set(AnnotationSql("UNDER_13", isError = false, count = 4, onField = "age", fromFields = Vector("age"))))
   }
 
   test("multicol") {
@@ -114,13 +115,13 @@ class AnnotationTest extends FunSuite {
         isError = true,
         count = 1,
         onField = "person_age",
-        fromFields = Seq("age")),
+        fromFields = Vector("age")),
       AnnotationSql(
         msg = "EMPTY_STRING",
         isError = true,
         count = 1,
         onField = "person_name",
-        fromFields = Seq("name")))
+        fromFields = Vector("name")))
     )
   }
 
