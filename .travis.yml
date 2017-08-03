@@ -1,0 +1,11 @@
+language: scala
+scala:
+- 2.11
+script: sbt clean test
+jdk:
+- oraclejdk8
+- openjdk8
+notifications:
+  email:
+    recipients:
+    - philippe@univalence.io

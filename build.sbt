@@ -41,4 +41,13 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
-publishTo := Some(Resolver.file("file",  new File( "/Users/jon/Project/m2-repo")))
+//publishTo := Some(Resolver.file("file",  new File( "/Users/jon/Project/m2-repo")))
+// Add sonatype repository settings
+publishTo := Some(
+  if (isSnapshot.value)
+    Opts.resolver.sonatypeSnapshots
+  else
+    Opts.resolver.sonatypeStaging
+)
+
+useGpg := true
