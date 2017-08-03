@@ -49,5 +49,3 @@ publishTo := Some(
   else
     Opts.resolver.sonatypeStaging
 )
-
-useGpg := true
