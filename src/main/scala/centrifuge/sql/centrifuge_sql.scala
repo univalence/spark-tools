@@ -1,6 +1,6 @@
 package org.apache.spark.sql
 
-import io.univalence.centrifuge.{Annotation, Result}
+import io.univalence.centrifuge.{Annotation, AnnotationSql, Result}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedStar
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.aggregate.CollectList
@@ -14,24 +14,9 @@ import scala.collection.mutable
 import scala.reflect.runtime.universe.TypeTag
 
 
-package object univalence {
+package object centrifuge_sql {
 
-  type AnnotationSql = Annotation
 
-  object AnnotationSql {
-
-    def apply(msg: String,
-              onField: String,
-              fromFields: Vector[String],
-              isError: Boolean,
-              count: Long): Annotation = Annotation(message = msg,
-      isError = isError,
-      count = count,
-      onField = Some(onField),
-      fromFields = fromFields
-    )
-
-  }
 
   case class DeltaPart(colName: String,
                        sumOnlyLeft: Option[Long],
@@ -52,7 +37,7 @@ package object univalence {
   case class Delta(counts: DeltaPart, cols: Seq[DeltaPart])
 
 
-  implicit class QATools(val sparkSession: SparkSession) {
+  class QATools(val sparkSession: SparkSession) {
 
     def registerTransformation[A: TypeTag, B: TypeTag](name: String, f: A => Result[B]): UserDefinedFunction = {
 
@@ -118,7 +103,7 @@ package object univalence {
 
   case class QAUdfInPlan(tocol: String, udf: ScalaUDF, fromFields: Seq[String])
 
-  implicit class QADF(val dataFrame: DataFrame) {
+  class QADF(val dataFrame: DataFrame) {
 
     private def findColChildDeep(exp: Expression): Seq[String] = {
       exp match {

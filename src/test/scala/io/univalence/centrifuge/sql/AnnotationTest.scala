@@ -1,13 +1,12 @@
 package io.univalence.centrifuge.sql
 
-import io.univalence.centrifuge.Result
+import io.univalence.centrifuge.{Annotation, AnnotationSql, Result}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.univalence.AnnotationSql
 import org.scalatest.FunSuite
 
 case class Person(name: String, age: Int)
 
-case class PersonWithAnnotations(name: String, age: Int, annotations: Seq[AnnotationSql])
+case class PersonWithAnnotations(name: String, age: Int, annotations: Seq[Annotation])
 
 case class BetterPerson(name:String,age:Option[Int])
 
@@ -55,8 +54,6 @@ class AnnotationTest extends FunSuite {
     val invalid = Person("",-1)
 
     import io.univalence.centrifuge.implicits._
-    //keep only implicits
-    import org.apache.spark.sql.univalence._
     import ss.implicits._
 
     //val ss:SparkSession = ...
@@ -113,14 +110,13 @@ BetterPerson(,None)
      */
 
 
-    
-
-
 
   }
 
 
-  import org.apache.spark.sql.univalence._
+
+  import io.univalence.centrifuge.implicits._
+
 
   test("explore") {
 
@@ -151,20 +147,20 @@ BetterPerson(,None)
     ss.registerTransformation("to_age", AnnotationTest.to_age)
     ss.sparkContext.makeRDD(Seq(Person("Joe", 12))).toDS().createTempView("person")
 
-    val p: Option[(Int, Seq[AnnotationSql])] = ss.sql("select to_age(age) as age from person")
+    val p: Option[(Int, Seq[Annotation])] = ss.sql("select to_age(age) as age from person")
       .includeAnnotations
-      .as[(Int, Seq[AnnotationSql])]
+      .as[(Int, Seq[Annotation])]
       .collect()
       .headOption
 
     assert(p.isDefined)
     assert(p.get._1 == 12)
     assert(p.get._2.toList == List(
-      AnnotationSql(
-        msg = "UNDER_13",
+      Annotation(
+        message = "UNDER_13",
         isError = false,
         count = 1,
-        onField = "age",
+        onField = Some("age"),
         fromFields = Vector("age"))))
   }
 

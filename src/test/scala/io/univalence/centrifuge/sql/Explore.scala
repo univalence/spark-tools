@@ -31,7 +31,7 @@ object Explore {
   def main(args: Array[String]): Unit = {
 
 
-    import org.apache.spark.sql.univalence._
+    import io.univalence.centrifuge.implicits._
 
     val ss = SparkSession.builder().appName("test").master("local[*]").getOrCreate()
 
@@ -69,9 +69,7 @@ object Explore {
     //BLOG IDEA, AUTOMATICALY FLATTEN STRUCTURE IN SPARK
     ss.sql("select col.msg, col.isError, col.count, age,name from  (select explode(annotations) as col, age, name from toto) t").show(false)
 
-
     ss.sql("select non_empty_string(name) as person_name from person").includeAnnotations.show(false)
-
   }
 
 }
