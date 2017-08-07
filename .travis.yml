@@ -12,11 +12,9 @@ notifications:
 dd:
   secure: sfe3QVt7hfSxWwqusoLuaT9yQX8ZCC1vAqpB6qhQ2j+u1hc/5e49COJDWBFtnQxylKxQIULBiIk3fk8z/OT3lxSr0dLKVRp+YAdQNxVHmuV36dycVQbe0+8OZ0foz41+OWIe0ad+05v12dgahbgZQ+Sd/f41zp8+NPkv8quC6ABgeCqIgVmzEuiwGIfyx1y0f47vplJDfT4mgQ2jNbB9P8wyGBg4DM3KIF+H2S4lutkpxsMXZ7OsVjRBB0s+dkxLRodS6GZikGwh48JDoW+CZPrQQNlBBjbzN19J3vCx805GUYaqsQrzdCGnURhHTPHId90r/PEKb+xwuj9T+YOC1nbjWk6NEy3TlYWds8KoJkGr8TA552dOHz6LxKuGsabzgVP/TZws7ATPFvo+s/u1ld4/YznEpj1USKr/8kF2RYJsTFujLOTuuc4Nw7fV7+D9kUtpUTuZZqEcA1d44WFJ/bfrPf2frPA1AJkS8TwDXLhScICJ1TSaYiMhmIIBBbJD5S2kKMXBmcufF/MH5I3uAMi0MVBoYQfG1nTuDhJMfkmFda/qx3jMCf6rgpMaBuwHN7VB4Zm+AEEVJGDGO6yMeNqmglPdnXbMW5t3WoUZgX7UJH704BV9gLeFV+TfuE7TzYDRI4hiHi6CLrWB3WL3ZgfKorlR/yFZETdMtEbeP4I=
 
-env:
-  global:
-    - CODECOV_TOKEN=:ca1455c2-f6b0-439a-98f7-b1888499f7ce
+script:
+  - sbt clean coverage test coverageReport
 
-language: java
 after_success:
   - bash <(curl -s https://codecov.io/bash)
   - "[[ $TRAVIS_BRANCH == \"master\" ]] && { sbt publishSigned; };"
