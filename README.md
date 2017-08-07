@@ -102,7 +102,7 @@ Let's take a look at what an Annotation is:
 * **onField** is the name of the field the message is from
 * **fromFields** is
 * **isError** is **true** if the data is not within acceptable values else it's **false**
-* **count** is 
+* **count** is the number of time the value has appeared for the same field
 
 ### TODO / Roadmap
 Integrate a reworked version of Excelsius in order to have a better DataFrame.show()
