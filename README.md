@@ -19,17 +19,19 @@ centrifuge will be published to Maven Central soon, so when it is done you will 
     
 ###### Using Annotations
 We import relevant libraries and define 3 case classes
-    
-    package io.univalence.centrifuge.sql
-    
-    import io.univalence.centrifuge.{Annotation, AnnotationSql, Result}
-    import org.apache.spark.sql.SparkSession
-    import io.univalence.centrifuge.implicits._
-    import ss.implicits._
-    
-    case class Person(name: String, age: Int)
-    case class PersonWithAnnotations(name: String, age: Int, annotations: Seq[Annotation])
-    case class BetterPerson(name:String,age:Option[Int])
+
+```scala
+package io.univalence.centrifuge.sql
+
+import io.univalence.centrifuge.{Annotation, AnnotationSql, Result}
+import org.apache.spark.sql.SparkSession
+import io.univalence.centrifuge.implicits._
+import ss.implicits._
+
+case class Person(name: String, age: Int)
+case class PersonWithAnnotations(name: String, age: Int, annotations: Seq[Annotation])
+case class BetterPerson(name:String,age:Option[Int])
+```
 
 Here we create 3 instances of Person
 
