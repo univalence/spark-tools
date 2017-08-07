@@ -1,4 +1,4 @@
-package datalab.pj.autobuild
+package io.univalence.autobuild
 
 import shapeless.CaseClassMacros
 
@@ -49,7 +49,7 @@ object CaseClassApplicativeBuilder {
       Result(Some($name(${map.map({ case (n, i, _) ⇒ s"$n = _$i.nominal.get" }).mkString(",\n")})),allAnnotations)
     } else {
        val missingFields = allResults.zip(List(${map.map({ case (n, _, t) ⇒ "(\"" + n + "\",\"" + t + "\")" }).mkString(",")})).filter(!_._1.nominal.isDefined).map(_._2)
-       import datalab.pj.model.Annotation
+       import io.univalence.model.Annotation
        val missingFieldsAnnotations = missingFields.map(f => Annotation.missingField(f._1,f._2))
        Result(None,missingFieldsAnnotations ++ allAnnotations)
     }
