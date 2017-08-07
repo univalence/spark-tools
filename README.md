@@ -12,11 +12,11 @@ See this [video](https://www.youtube.com/watch?v=t24sUF2zWLY) for in-depth cover
 centrifuge will be published to Maven Central soon, so when it is done you will be able to get centrifuge with adding this to your `build.sbt`:
     
 ```scala    
-    val sparkV = "2.1.1"
+val sparkV = "2.1.1"
     
-    libraryDependencies ++= Seq(
-      "io.univalence" %% "centrifuge" % "0.1"
-    )
+libraryDependencies ++= Seq(
+  "io.univalence" %% "centrifuge" % "0.1"
+)
 ```   
  
 ##### Using Annotations
@@ -37,27 +37,35 @@ case class BetterPerson(name:String,age:Option[Int])
 
 Here we create 3 instances of Person
 
-    val joe = Person("Joe", 14)
-    val timmy = Person("Timmy",8)
-    val invalid = Person("",-1)    
+```scala
+val joe = Person("Joe", 14)
+val timmy = Person("Timmy",8)
+val invalid = Person("",-1)    
+```
 
 Making a Dataset from the 3 Person we just created
 
-    val ds = ss.sparkContext.makeRDD(Seq(joe,timmy,invalid)).toDS()
-    ds.createOrReplaceTempView("personRaw")
-    
+```scala
+val ds = ss.sparkContext.makeRDD(Seq(joe,timmy,invalid)).toDS()
+ds.createOrReplaceTempView("personRaw")
+```
+
 bla
-    
-    ss.registerTransformation[Int,Int]("checkAge", {
-      case i if i < 0 => Result.fromError("INVALID_AGE")
-      case i if i < 13 => Result.fromWarning(i, "UNDER_13")
-      case i if i > 140 => Result.fromError("OVER_140")
-      case i => Result.pure(i)
-    })
+
+```scala    
+ss.registerTransformation[Int,Int]("checkAge", {
+  case i if i < 0 => Result.fromError("INVALID_AGE")
+  case i if i < 13 => Result.fromWarning(i, "UNDER_13")
+  case i if i > 140 => Result.fromError("OVER_140")
+  case i => Result.pure(i)
+})
+``` 
   
 Basic select
-    
-    ss.sql("select name, checkAge(age) as age, age as ageRaw from personRaw").show(false)
+
+```scala    
+ss.sql("select name, checkAge(age) as age, age as ageRaw from personRaw").show(false)
+```
 
 Result
 
@@ -71,8 +79,10 @@ Result
 
 This time using BetterPerson (a Person with Option)
 
-    ss.sql("select name, checkAge(age) as age from personRaw").as[BetterPerson].collect().foreach(println)
-    
+```scala
+ss.sql("select name, checkAge(age) as age from personRaw").as[BetterPerson].collect().foreach(println)
+```
+
 As expected
     
     BetterPerson(Joe,Some(14))
@@ -81,7 +91,9 @@ As expected
     
 Now we include Annotations
 
-    ss.sql("select name, checkAge(age) as age from personRaw").includeAnnotations.show(false)
+```scala
+ss.sql("select name, checkAge(age) as age from personRaw").includeAnnotations.show(false)
+```
     
 Result
 
@@ -97,11 +109,14 @@ We now have annotations for each Person in the DataSet.
 
 Let's take a look at what an Annotation is:
 
-    Annotation(message: String,
-               onField: Option[String] = None,
-               fromFields: Vector[String] = Vector.empty,
-               isError: Boolean,
-               count: Long)
+```scala
+Annotation(message: String,
+           onField: Option[String] = None,
+           fromFields: Vector[String] = Vector.empty,
+           isError: Boolean,
+           count: Long)
+```
+
 * **message** contains a relevant information
 * **onField** is the name of the field the message is from
 * **fromFields** is
