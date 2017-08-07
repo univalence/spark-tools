@@ -11,13 +11,15 @@ See this [video](https://www.youtube.com/watch?v=t24sUF2zWLY) for in-depth cover
 ### Quick start
 centrifuge will be published to Maven Central soon, so when it is done you will be able to get centrifuge with adding this to your `build.sbt`:
     
+```scala    
     val sparkV = "2.1.1"
     
     libraryDependencies ++= Seq(
       "io.univalence" %% "centrifuge" % "0.1"
     )
-    
-###### Using Annotations
+```   
+ 
+##### Using Annotations
 We import relevant libraries and define 3 case classes
 
 ```scala
