@@ -18,6 +18,6 @@ import org.scalatest.FunSuite
 
 class ModelTest extends FunSuite{
   test("Monad Laws") {
-    MonadTests[Option].monad[Int, Int, Int].all.check
+    MonadTests[Option].monad[Int, Int, Int].all.check()
   }
 }
