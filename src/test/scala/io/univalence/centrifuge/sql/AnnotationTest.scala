@@ -114,7 +114,7 @@ BetterPerson(,None)
 +|     |    |message     |onField |fromFields |isError |count|
 ++-----+----+------------+--------+-----------+--------+-----+
 +|Joe  |14  |                  ---                           |
-+|Timmy|8   |UNDEER_13   |age     |age        |false   |1    |
++|Timmy|8   |UNDER_13   |age     |age        |false   |1    |
 +|     |null|INVALID_AGE |age     |age        |true    |1    |
 +|  ------  |EMPTY_STRING|name    |name1      |true    |1    |
 +|  ------  |     ---------       |name2      |    ----      |
