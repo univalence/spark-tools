@@ -1,29 +1,18 @@
 package io.univalence.centrifuge
 
-import io.univalence.centrifuge._
-import io.univalence.centrifuge.implicits._
-import org.scalatest.FunSuite
-
-import org.scalatest.{FunSuite, Matchers}
-import org.typelevel.discipline.scalatest.Discipline
-
-import io.univalence._
 import cats.instances.all._
-import cats.laws.discipline.CartesianTests.Isomorphisms
 import cats.laws.discipline.MonadTests
-import cats.laws.discipline.arbitrary._
-import io.univalence.centrifuge.Result
-import org.scalacheck.Arbitrary
+import io.univalence._
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.FunSuite
-
 
 
 class ModelTest extends FunSuite {
   val testAnnotation = Annotation("msg", Some("oF"), Vector("fF"), false, 1)
   val testResult = Result(Some("test"), Vector(testAnnotation))
-  val testResultEmptyAnnotation = Result(Some("test"),Vector() )
-  val testResultEmptyValue = Result(None,Vector(testAnnotation))
-  val testResultBothEmpty = Result(None,Vector())
+  val testResultEmptyAnnotation = Result(Some("test"), Vector())
+  val testResultEmptyValue = Result(None, Vector(testAnnotation))
+  val testResultBothEmpty = Result(None, Vector())
 
   test("isPure") {
     assert(testResult.isPure == false)
@@ -33,16 +22,21 @@ class ModelTest extends FunSuite {
 
   }
 
+  import CatsContrib._
+
+  implicit val arbitraryAnn: Arbitrary[Annotation] = Arbitrary(Gen.resultOf(Annotation.apply _))
+
+  implicit def arbitraryResult[T](implicit oA: Arbitrary[Option[T]],
+                                  aAnn: Arbitrary[Vector[Annotation]]): Arbitrary[Result[T]] = {
+    Arbitrary(Gen.resultOf[Option[T], Vector[Annotation], Result[T]](Result.apply))
+  }
+
 
   test("Monad laws") {
+    MonadTests[Result].stackUnsafeMonad[Int, Int, Int].all.check()
+  }
 
-    import CatsContrib._
-
-    implicit def abritrary[T](implicit arbitrary: Arbitrary[T]):Arbitrary[Result[T]] = {
-      Arbitrary(arbitrary.arbitrary.map(Result.pure))
-    }
-
+  ignore("Should be stacksafe") {
     MonadTests[Result].monad[Int, Int, Int].all.check()
-
   }
 }
