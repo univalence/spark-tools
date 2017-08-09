@@ -6,11 +6,13 @@ import io.univalence._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.FunSuite
 
+import scala.util.{Failure, Success}
+
 
 class ModelTest extends FunSuite {
   val testAnnotation = Annotation("msg", Some("oF"), Vector("fF"), false, 1)
-  val testResult = Result(Some("test"), Vector(testAnnotation))
-  val testResultEmptyAnnotation = Result(Some("test"), Vector())
+  val testResult = Result(Some("msg"), Vector(testAnnotation))
+  val testResultEmptyAnnotation = Result(Some("msg"), Vector())
   val testResultEmptyValue = Result(None, Vector(testAnnotation))
   val testResultBothEmpty = Result(None, Vector())
 
@@ -19,7 +21,6 @@ class ModelTest extends FunSuite {
     assert(testResultEmptyValue.isPure == false)
     assert(testResultBothEmpty.isPure == false)
     assert(testResultEmptyAnnotation.isPure == true)
-
   }
 
   import CatsContrib._
@@ -40,7 +41,9 @@ class ModelTest extends FunSuite {
     MonadTests[Result].monad[Int, Int, Int].all.check()
   }
 
-  test("mapAnnotations"){}
+  test("mapAnnotations"){
+    //assert(testResult.mapAnnotations() == Result(Some("msg"), Vector(Annotation("msg", Some("oF"), Vector("fF"), false, 1))))
+  }
 
   test("addPathPart"){}
 
@@ -52,22 +55,47 @@ class ModelTest extends FunSuite {
   }
 
   test("map"){
+    assert(testResult.map(_.toUpperCase) == Result(Some("MSG"), Vector(testAnnotation)))
   }
+
 
   test("map2"){}
 
-  test("flatMap"){}
 
   test("filter"){
+    assert(testResult.filter(_.startsWith("m")) == testResult)
+    //assert(testResult.filter(_.startsWith("a")) == testResult)
   }
 
   test("get"){
+    assert(testResult.get == "msg")
 
+    assert(testResultEmptyAnnotation.get == "msg")
+
+    val throwEmptyValue = intercept[Exception]{
+      testResultEmptyValue.get
+    }
+
+    assert(throwEmptyValue.getMessage == "empty result : Annotation(msg,Some(oF),Vector(fF),false,1)")
+
+    val throwBothEmpty = intercept[Exception]{
+      testResultBothEmpty.get
+    }
+    assert(throwBothEmpty.getMessage == "empty result : ")
   }
 
-  test("toTry"){}
+  //TODO
+  test("toTry"){
+    assert(testResult.toTry == Success("msg"))
+    /*val throwEmptyValue = intercept[Throwable]{
+      testResultEmptyValue.toTry
+    }
+    assert(testResultEmptyValue.toTry == Failure(throwEmptyValue))*/
+  }
 
-  test("toEither"){}
+  test("toEither"){
+
+  }
 
   test("fromTry"){}
 
