@@ -6,6 +6,16 @@ import scala.util.{Failure, Success, Try}
 case class Result[+T](value: Option[T],
                       annotations: Vector[Annotation]) {
 
+
+
+  def addPathPart(s: String): Result[T] = mapAnnotations(x => x.copy(onField = x.onField.map(s + _).orElse(Some(s))))
+
+  def mapAnnotations(f:Annotation => Annotation):Result[T] = Result(value,annotations.map(f))
+
+  def prependAnnotations(xs: Vector[AnnotationSql]): Result[T] = Result(value, xs ++ annotations)
+
+  def isEmpty: Boolean = value.isEmpty
+
   def isPure: Boolean = value.isDefined && annotations.isEmpty
 
   def hasAnnotations: Boolean = annotations.nonEmpty
