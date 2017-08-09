@@ -1,0 +1,13 @@
+package io.univalence
+
+import io.univalence.centrifuge.{Result, _}
+import org.scalacheck.Prop._
+import org.scalacheck.Properties
+
+object StringSpecification extends Properties("String") {
+
+  property("isPure") = forAll { (a: String) =>
+    Result(Some(a), Vector(Annotation("msg", Some("oF"), Vector("fF"), false, 1))).isPure == false
+  }
+
+}
