@@ -39,4 +39,37 @@ class ModelTest extends FunSuite {
   ignore("Should be stacksafe") {
     MonadTests[Result].monad[Int, Int, Int].all.check()
   }
+
+  test("mapAnnotations"){}
+
+  test("addPathPart"){}
+
+  test("hasAnnotations"){
+    assert(testResult.hasAnnotations == true)
+    assert(testResultEmptyValue.hasAnnotations == true)
+    assert(testResultEmptyAnnotation.hasAnnotations == false)
+    assert(testResultBothEmpty.hasAnnotations == false)
+  }
+
+  test("map"){
+  }
+
+  test("map2"){}
+
+  test("flatMap"){}
+
+  test("filter"){
+  }
+
+  test("get"){
+
+  }
+
+  test("toTry"){}
+
+  test("toEither"){}
+
+  test("fromTry"){}
+
+  test("fromEither"){}
 }
