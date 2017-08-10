@@ -45,7 +45,9 @@ class ModelTest extends FunSuite {
     //assert(testResult.mapAnnotations() == Result(Some("msg"), Vector(Annotation("msg", Some("oF"), Vector("fF"), false, 1))))
   }
 
-  test("addPathPart"){}
+  test("addPathPart"){
+
+  }
 
   test("hasAnnotations"){
     assert(testResult.hasAnnotations == true)
@@ -56,10 +58,13 @@ class ModelTest extends FunSuite {
 
   test("map"){
     assert(testResult.map(_.toUpperCase) == Result(Some("MSG"), Vector(testAnnotation)))
+    assert(testResult.map(_.toString) == testResult)
   }
 
 
-  test("map2"){}
+  test("map2"){
+
+  }
 
 
   test("filter"){
@@ -97,7 +102,16 @@ class ModelTest extends FunSuite {
 
   }
 
-  test("fromTry"){}
+  //TODO
+  test("fromTry"){
+    assert(Result.fromTry(testResultEmptyAnnotation.toTry)(_.toString) == testResultEmptyAnnotation)
+    assert(Result.fromTry(testResult.toTry)(_.toString) == testResultEmptyAnnotation)
+    //assert(Result.fromTry(testResultBothEmpty.toTry)(_.toString) == testResultEmptyAnnotation)
+    //assert(Result.fromTry(testResultEmptyValue.toTry)(_.toString) == testResultEmptyAnnotation)
 
-  test("fromEither"){}
+  }
+
+  test("fromEither"){
+
+  }
 }

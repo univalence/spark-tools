@@ -19,5 +19,13 @@ object ModelScalaCheck extends Properties("String") {
     Result(Some(a), Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1))).filter(_.contains(a)) == Result(
       Some(a), Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1)))
   }
-
+  property("map") = forAll { (a: String) =>
+    Result(Some(a), Vector(Annotation("msg", Some("oF"), Vector("fF"), false, 1))).map(_.toString) == Result(Some(a),
+      Vector(Annotation("msg", Some("oF"), Vector("fF"), false, 1)))
+    Result(Some(a), Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1))).map(_.toString) == Result(Some(a),
+      Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1)))
+    Result(Some("msg"), Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1))).map(_.toString) == Result(Some("msg"),
+      Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1)))
+  }
+  
 }
