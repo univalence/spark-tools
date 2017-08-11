@@ -27,5 +27,5 @@ object ModelScalaCheck extends Properties("String") {
     Result(Some("msg"), Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1))).map(_.toString) == Result(Some("msg"),
       Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1)))
   }
-  
+
 }

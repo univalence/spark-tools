@@ -41,10 +41,12 @@ class ModelTest extends FunSuite {
     MonadTests[Result].monad[Int, Int, Int].all.check()
   }
 
+  //TODO
   test("mapAnnotations"){
     //assert(testResult.mapAnnotations() == Result(Some("msg"), Vector(Annotation("msg", Some("oF"), Vector("fF"), false, 1))))
   }
 
+  //TODO
   test("addPathPart"){
 
   }
@@ -61,7 +63,7 @@ class ModelTest extends FunSuite {
     assert(testResult.map(_.toString) == testResult)
   }
 
-
+  //TODO
   test("map2"){
 
   }
@@ -99,7 +101,10 @@ class ModelTest extends FunSuite {
   }
 
   test("toEither"){
-
+    assert(testResult.toEither == Right("msg"))
+    assert(testResultEmptyValue.toEither == Left(Vector(testAnnotation)))
+    assert(testResultEmptyAnnotation.toEither == Right("msg"))
+    assert(testResultBothEmpty.toEither == Left(Vector()))
   }
 
   //TODO
@@ -112,6 +117,10 @@ class ModelTest extends FunSuite {
   }
 
   test("fromEither"){
-
+    assert(Result.fromEither(testResult.toEither)(_.toString) == testResultEmptyAnnotation)
+    assert(Result.fromEither(testResultEmptyAnnotation.toEither)(_.toString) == testResultEmptyAnnotation)
+    assert(Result.fromEither(testResultBothEmpty.toEither)(_.toString) == Result(None,Vector(Annotation("Vector()",
+      None, Vector(), true, 1))))
+    //assert(Result.fromEither(testResultEmptyValue.toEither)(_.toString) == Result(None,Vector(Annotation(Vector(Annotation(msg,Some(oF),Vector(fF),false,1)),None,Vector(),true,1))))
   }
 }
