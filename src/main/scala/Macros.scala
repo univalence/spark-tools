@@ -2,7 +2,7 @@ package io.univalence.autobuild
 
 import shapeless.CaseClassMacros
 
-import scala.annotation.{ compileTimeOnly, StaticAnnotation }
+import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.language.existentials
 import scala.language.experimental.macros
 import scala.reflect.macros._
@@ -12,6 +12,7 @@ trait TypeName[T] {
 }
 
 object TypeName {
+
   import scala.reflect.runtime.universe.TypeTag
 
   implicit def fromTypeTag[T](implicit typeTag: TypeTag[T]): TypeName[T] = new TypeName[T] {
@@ -45,12 +46,12 @@ object CaseClassApplicativeBuilder {
     $vals
     val allResults:Vector[Result[Any]] = Vector(${map.map({ case (_, i, _) ⇒ "_" + i }).mkString(",")})
     val allAnnotations = allResults.flatMap(_.annotations)
-    if(allResults.forall(_.nominal.isDefined)) {
-      Result(Some($name(${map.map({ case (n, i, _) ⇒ s"$n = _$i.nominal.get" }).mkString(",\n")})),allAnnotations)
+    if(allResults.forall(_.value.isDefined)) {
+      Result(Some($name(${map.map({ case (n, i, _) ⇒ s"$n = _$i.value.get" }).mkString(",\n")})),allAnnotations)
     } else {
-       val missingFields = allResults.zip(List(${map.map({ case (n, _, t) ⇒ "(\"" + n + "\",\"" + t + "\")" }).mkString(",")})).filter(!_._1.nominal.isDefined).map(_._2)
-       import io.univalence.model.Annotation
-       val missingFieldsAnnotations = missingFields.map(f => Annotation.missingField(f._1,f._2))
+       val missingFields = allResults.zip(List(${map.map({ case (n, _, t) ⇒ "(\"" + n + "\",\"" + t + "\")" }).mkString(",")})).filter(!_._1.value.isDefined).map(_._2)
+       import io.univalence.centrifuge.Annotation
+       val missingFieldsAnnotations = missingFields.map(f => Annotation.missingField(f._1))
        Result(None,missingFieldsAnnotations ++ allAnnotations)
     }
     }"""

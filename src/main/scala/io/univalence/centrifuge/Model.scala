@@ -78,7 +78,7 @@ case class Annotation(message: String,
                       onField: Option[String] = None,
                       fromFields: Vector[String] = Vector.empty,
                       isError: Boolean,
-                      count: Long) {
+                      count: Long = 1L) {
 
   def this(message:String, onField:Option[String],fromFields:Seq[String],isError:Boolean, count:Long) = {
     this(message,onField,fromFields.toVector,isError,count)
@@ -91,4 +91,9 @@ object Annotation {
     Annotation(message = s,
       isError = error,
       count = 1L)
+
+
+  def missingField(fieldName: String): Annotation = {
+    Annotation(message = "MISSING_VALUE", onField = Some(fieldName), isError = true)
+  }
 }
