@@ -67,11 +67,11 @@ object Result {
 
   def fromError(error: String): Result[Nothing] =
     Result(value = None,
-      annotations = Vector(Annotation.fromString(s = error, error = true)))
+      annotations = Vector(Annotation.fromString(msg = error, error = true)))
 
   def fromWarning[T](t: T, warning: String): Result[T] =
     Result(value = Some(t),
-      annotations = Vector(Annotation.fromString(s = warning, error = false)))
+      annotations = Vector(Annotation.fromString(msg = warning, error = false)))
 }
 
 case class Annotation(message: String,
@@ -86,9 +86,9 @@ case class Annotation(message: String,
 }
 
 object Annotation {
-  def fromString(s: String,
+  def fromString(msg: String,
                  error: Boolean): Annotation =
-    Annotation(message = s,
+    Annotation(message = msg,
       isError = error,
       count = 1L)
 

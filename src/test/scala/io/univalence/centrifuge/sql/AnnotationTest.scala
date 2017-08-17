@@ -2,7 +2,7 @@ package io.univalence.centrifuge.sql
 
 import io.univalence.centrifuge.{Annotation, AnnotationSql, Result}
 import org.apache.spark.sql.SparkSession
-import org.scalatest.FunSuite
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 case class Person(name: String, age: Int)
 
@@ -31,9 +31,13 @@ object AnnotationTest {
 
 }
 
-class AnnotationTest extends FunSuite {
+class AnnotationTest extends FunSuite with BeforeAndAfterAll {
 
-  val ss: SparkSession = SparkSession.builder().appName("test").master("local[*]").getOrCreate()
+  val ss: SparkSession = SparkSession.builder()
+    .config("spark.default.parallelism",2 )
+    .config("spark.sql.shuffle.partitions",2)
+    .config("spark.ui.enabled",false)
+    .appName("test").master("local[*]").getOrCreate()
 
   import ss.implicits._
 
@@ -43,7 +47,6 @@ class AnnotationTest extends FunSuite {
 
 
   val onePersonDf = ss.sparkContext.makeRDD(Seq(joe)).toDF()
-
 
 
 
@@ -326,5 +329,8 @@ BetterPerson(,None)
 
 
   }
+
+
+
 
 }
