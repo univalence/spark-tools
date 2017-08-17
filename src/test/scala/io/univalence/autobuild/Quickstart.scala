@@ -41,19 +41,23 @@ class Quickstart extends FunSuite {
     assert(Hello.build(pureStrResult, pureBoolResult).isPure)
 
     //
-    val errorBuid = Hello.build(errorStrResult, errorBoolResult)
+    val errorBuild = Hello.build(errorStrResult, errorBoolResult)
 
-    assert(errorBuid.annotations.size == 4)
-    assert(errorBuid.isEmpty)
-
+    assert(errorBuild.annotations.size == 4)
+    assert(errorBuild.isEmpty)
+    assert(!errorBuild.isPure)
+    assert(errorBuild.value == None)
 
     val warnBuild = Hello.build(regularStrResult, regularBoolResult)
 
+    assert(warnBuild.annotations.size == 2)
+    assert(!warnBuild.isEmpty)
+    assert(!warnBuild.isPure)
+    assert(warnBuild.value == Some(Hello("regularStrResult", true)))
 
-
-    assert(warnBuild == Result(Some(Hello("regularStrResult", true)),
+    /*assert(warnBuild == Result(Some(Hello("regularStrResult", true)),
       Vector(Annotation("regularAnnotation", Some("nameregularAnnotation"), Vector("regularAnnotation"), false, 1),
-        Annotation("regularAnnotation", Some("greetregularAnnotation"), Vector("regularAnnotation"), false, 1))))
+        Annotation("regularAnnotation", Some("greetregularAnnotation"), Vector("regularAnnotation"), false, 1))))*/
 
     //print(Hello.build(errorStrResult, pureBoolResult))
   }
