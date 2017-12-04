@@ -25,8 +25,8 @@ object CompareValue {
   def levenshtein(s1: String, s2: String): Int = {
     import scala.math._
     def minimum(i1: Int, i2: Int, i3: Int) = min(min(i1, i2), i3)
-    val dist = Array.tabulate(s2.length + 1, s1.length + 1) { (j, i) => if (j == 0) i else if (i == 0) j else 0 }
-    for (j <- 1 to s2.length; i <- 1 to s1.length)
+    val dist = Array.tabulate(s2.length + 1, s1.length + 1) { (j, i) ⇒ if (j == 0) i else if (i == 0) j else 0 }
+    for (j ← 1 to s2.length; i ← 1 to s1.length)
       dist(j)(i) = if (s2(j - 1) == s1(i - 1)) dist(j - 1)(i - 1)
       else minimum(dist(j - 1)(i) + 1, dist(j)(i - 1) + 1, dist(j - 1)(i - 1) + 1)
     dist(s2.length)(s1.length)
@@ -52,37 +52,38 @@ object IntroScala {
 
   val s = 1
 
-  val f: Int => Int = x => x * x
+  val f: Int ⇒ Int = x ⇒ x * x
 
-  val g: Int => Int = { case 1 => 2; case x => x * x }
+  val g: Int ⇒ Int = { case 1 ⇒ 2; case x ⇒ x * x }
 
-  def withInput[A, B](f: A => B): A => (B, A) = x => (f(x), x)
+  def withInput[A, B](f: A ⇒ B): A ⇒ (B, A) = x ⇒ (f(x), x)
 
   withInput(f)(3)
 
-  def compare[A, B, C](f: A => B)(rs: (B, A))(implicit compareValue: CompareValue.Aux[B, C]): (B, A, C) = {
+  def compare[A, B, C](f: A ⇒ B)(rs: (B, A))(implicit compareValue: CompareValue.Aux[B, C]): (B, A, C) = {
     val r = f(rs._2)
     (r, rs._2, compareValue.compare(r, rs._1))
   }
 
-  def compareList[A, B, C](f: A => B)(rss: Seq[(B, A)])(
+  def compareList[A, B, C](f: A ⇒ B)(rss: Seq[(B, A)])(
     implicit
     compareValue: CompareValue.Aux[B, C],
-    monoid: Monoid[C]): (Seq[(B, A)], C) = {
+    monoid:       Monoid[C]
+  ): (Seq[(B, A)], C) = {
 
-    val r: Seq[(B, A, C)] = rss.map(rs => compare(f)(rs))
+    val r: Seq[(B, A, C)] = rss.map(rs ⇒ compare(f)(rs))
 
-    (r.map(t => t._1 -> t._2), r.map(_._3).fold(monoid.zero)(monoid.op))
+    (r.map(t ⇒ t._1 -> t._2), r.map(_._3).fold(monoid.zero)(monoid.op))
   }
 
   sealed trait MyList[+T] {
-    def map[B](f: T => B): MyList[B]
+    def map[B](f: T ⇒ B): MyList[B]
 
-    def filter(pred: T => Boolean): MyList[T]
+    def filter(pred: T ⇒ Boolean): MyList[T]
 
-    def flatMap[B](f: T => MyList[B]): MyList[B]
+    def flatMap[B](f: T ⇒ MyList[B]): MyList[B]
 
-    def fold[C](zero: () => C)(f: (T, C) => C): C
+    def fold[C](zero: () ⇒ C)(f: (T, C) ⇒ C): C
 
     def union[B >: T](myList: MyList[B]): MyList[B]
   }
@@ -93,28 +94,28 @@ object IntroScala {
   }
 
   case object MyNil extends MyList[Nothing] {
-    override def map[B](f: (Nothing) => B): MyList[B] = this
-    override def filter(pred: (Nothing) => Boolean): MyList[Nothing] = this
+    override def map[B](f: (Nothing) ⇒ B): MyList[B] = this
+    override def filter(pred: (Nothing) ⇒ Boolean): MyList[Nothing] = this
 
-    override def fold[C](zero: () => C)(f: (Nothing, C) => C): C = zero()
+    override def fold[C](zero: () ⇒ C)(f: (Nothing, C) ⇒ C): C = zero()
 
-    override def flatMap[B](f: (Nothing) => MyList[B]): MyList[B] = this
+    override def flatMap[B](f: (Nothing) ⇒ MyList[B]): MyList[B] = this
 
     override def union[B >: Nothing](myList: MyList[B]): MyList[B] = myList
   }
 
   case class MyCons[+T](head: T, tail: MyList[T]) extends MyList[T] {
-    override def map[B](f: (T) => B): MyList[B] = MyCons(f(head), tail.map(f))
+    override def map[B](f: (T) ⇒ B): MyList[B] = MyCons(f(head), tail.map(f))
 
-    override def filter(pred: (T) => Boolean): MyList[T] = {
+    override def filter(pred: (T) ⇒ Boolean): MyList[T] = {
       if (pred(head)) {
         MyCons(head, tail.filter(pred))
       } else tail.filter(pred)
     }
 
-    override def fold[C](zero: () => C)(f: (T, C) => C): C = f(head, tail.fold(zero)(f))
+    override def fold[C](zero: () ⇒ C)(f: (T, C) ⇒ C): C = f(head, tail.fold(zero)(f))
 
-    override def flatMap[B](f: (T) => MyList[B]): MyList[B] = f(head).union(tail.flatMap(f))
+    override def flatMap[B](f: (T) ⇒ MyList[B]): MyList[B] = f(head).union(tail.flatMap(f))
 
     override def union[B >: T](myList: MyList[B]): MyList[B] = MyCons(head, tail.union(myList))
   }

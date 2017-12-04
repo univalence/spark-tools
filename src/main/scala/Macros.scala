@@ -32,7 +32,8 @@ object CaseClassApplicativeBuilder {
 
   def generateDef(fieldNames: List[(String, String)], name: String): Generated = {
     val signature: String = "def build(" + fieldNames.map(
-      { case (n, t) ⇒ s"$n : Result[$t]" }).mkString(",\n") + "):Result[" + name + "]"
+      { case (n, t) ⇒ s"$n : Result[$t]" }
+    ).mkString(",\n") + "):Result[" + name + "]"
 
     val map: List[(String, Int, String)] = fieldNames.zipWithIndex.map(t ⇒ (t._1._1, t._2 + 1, t._1._2))
     val vals: String = map.map({ case (n, i, _) ⇒ s"""val _$i = $n.addPathPart("$n")""" }).mkString("\n")
@@ -53,7 +54,8 @@ object CaseClassApplicativeBuilder {
        val missingFieldsAnnotations = missingFields.map(f => Annotation.missingField(f._1))
        Result(None,missingFieldsAnnotations ++ allAnnotations)
     }
-    }""")
+    }"""
+    )
 
   }
 

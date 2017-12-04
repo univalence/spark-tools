@@ -8,18 +8,18 @@ object Explore {
 
   def to_age(i: Int): Result[Int] = {
     {} match {
-      case _ if i < 0 => Result.fromError("BELOW_ZERO")
-      case _ if i <= 13 => Result.fromWarning(i, "UNDER_13")
-      case _ if i >= 130 => Result.fromError("OVER_130")
-      case _ => Result.pure(i)
+      case _ if i < 0    ⇒ Result.fromError("BELOW_ZERO")
+      case _ if i <= 13  ⇒ Result.fromWarning(i, "UNDER_13")
+      case _ if i >= 130 ⇒ Result.fromError("OVER_130")
+      case _             ⇒ Result.pure(i)
     }
   }
 
   def non_empty_string(str: String): Result[String] = {
     str match {
       //case None => Result.fromError("NULL_VALUE")
-      case "" => Result.fromError("EMPTY_STRING")
-      case _ => Result.pure(str)
+      case "" ⇒ Result.fromError("EMPTY_STRING")
+      case _  ⇒ Result.pure(str)
     }
   }
 

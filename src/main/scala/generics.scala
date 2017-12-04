@@ -39,8 +39,9 @@ trait LowPriorityFieldsNonRecur {
 
   implicit def hcon[K <: Symbol, H, T <: HList](implicit
     key: Witness.Aux[K],
-    tv: TypeName[H],
-    tailEncode: Lazy[FieldsNonRecur[T]]): FieldsNonRecur[FieldType[K, H] :: T] = {
+                                                tv:         TypeName[H],
+                                                tailEncode: Lazy[FieldsNonRecur[T]]
+  ): FieldsNonRecur[FieldType[K, H] :: T] = {
     new FieldsNonRecur[FieldType[K, H] :: T] { override def fieldnames: List[(String, String)] = (key.value.name, tv.name) :: tailEncode.value.fieldnames }
   }
 }

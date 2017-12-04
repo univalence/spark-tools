@@ -14,7 +14,7 @@ object Builder {
 
   object transFormField extends Poly1 {
     implicit def kv[K, V, A[_]](implicit app: Applicative[A]): Case.Aux[FieldType[K, A[V]], A[FieldType[K, V]]] =
-      at(a => app.map(a.asInstanceOf[A[V]])(field[K](_)))
+      at(a ⇒ app.map(a.asInstanceOf[A[V]])(field[K](_)))
   }
 
   def build0[In <: HList, Out <: HList](in: In)(implicit map: Mapper.Aux[transFormField.type, In, Out]): Out = map.apply(in)
@@ -25,10 +25,11 @@ object Builder {
 
   def build[In <: HList, In1 <: HList, Out1, A[_], In2, Out2](in: In)(implicit
     map: Mapper.Aux[transFormField.type, In, In1],
-    sequencer: Sequencer.Aux[In1, Out1],
-    un: Unpack1[Out1, A, In2],
-    f: Functor[A],
-    gen: LabelledGeneric.Aux[Out2, In2]): A[Out2] = build2(build1(build0(in)).asInstanceOf[A[In2]])
+                                                                      sequencer: Sequencer.Aux[In1, Out1],
+                                                                      un:        Unpack1[Out1, A, In2],
+                                                                      f:         Functor[A],
+                                                                      gen:       LabelledGeneric.Aux[Out2, In2]
+  ): A[Out2] = build2(build1(build0(in)).asInstanceOf[A[In2]])
 
 }
 

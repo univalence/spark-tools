@@ -13,18 +13,18 @@ case class BetterPerson(name: String, age: Option[Int])
 object AnnotationTest {
   def to_age(i: Int): Result[Int] = {
     {} match {
-      case _ if i < 0 => Result.fromError("BELOW_ZERO")
-      case _ if i <= 13 => Result.fromWarning(i, "UNDER_13")
-      case _ if i >= 130 => Result.fromError("OVER_130")
-      case _ => Result.pure(i)
+      case _ if i < 0    ⇒ Result.fromError("BELOW_ZERO")
+      case _ if i <= 13  ⇒ Result.fromWarning(i, "UNDER_13")
+      case _ if i >= 130 ⇒ Result.fromError("OVER_130")
+      case _             ⇒ Result.pure(i)
     }
   }
 
   def non_empty_string(str: String): Result[String] = {
     str match {
       //case None => Result.fromError("NULL_VALUE")
-      case "" => Result.fromError("EMPTY_STRING")
-      case _ => Result.pure(str)
+      case "" ⇒ Result.fromError("EMPTY_STRING")
+      case _  ⇒ Result.pure(str)
     }
   }
 
@@ -61,10 +61,10 @@ class AnnotationTest extends FunSuite with BeforeAndAfterAll {
 
     //register a transformation with data quality
     ss.registerTransformation[Int, Int]("checkAge", {
-      case i if i < 0 => Result.fromError("INVALID_AGE")
-      case i if i < 13 => Result.fromWarning(i, "UNDER_13")
-      case i if i > 140 => Result.fromError("OVER_140")
-      case i => Result.pure(i)
+      case i if i < 0   ⇒ Result.fromError("INVALID_AGE")
+      case i if i < 13  ⇒ Result.fromWarning(i, "UNDER_13")
+      case i if i > 140 ⇒ Result.fromError("OVER_140")
+      case i            ⇒ Result.pure(i)
     })
 
     ss.sql("select name, checkAge(age) as age, age as ageRaw from personRaw").show(false)
@@ -127,7 +127,7 @@ BetterPerson(,None)
     val select = onePersonDf.select("*")
 
     println(select.queryExecution.toString())
-    select.queryExecution.logical.expressions.foreach(x => {
+    select.queryExecution.logical.expressions.foreach(x ⇒ {
       println(x)
       println(x.prettyName)
     })
@@ -160,7 +160,9 @@ BetterPerson(,None)
         isError = false,
         count = 1,
         onField = Some("age"),
-        fromFields = Vector("age"))))
+        fromFields = Vector("age")
+      )
+    ))
   }
 
   test("with more annotations (same field)") {
@@ -194,13 +196,16 @@ BetterPerson(,None)
         isError = true,
         count = 1,
         onField = "person_age",
-        fromFields = Vector("age")),
+        fromFields = Vector("age")
+      ),
       AnnotationSql(
         msg = "EMPTY_STRING",
         isError = true,
         count = 1,
         onField = "person_name",
-        fromFields = Vector("name"))))
+        fromFields = Vector("name")
+      )
+    ))
   }
 
   test("") {
@@ -276,7 +281,8 @@ BetterPerson(,None)
     ss.sparkContext.makeRDD(Seq(
       Person("Joe", 12),
       Person("Robert", -1),
-      Person("Jane", 21))).toDS().createOrReplaceTempView("person")
+      Person("Jane", 21)
+    )).toDS().createOrReplaceTempView("person")
 
     ss.sql("select name as person_name, to_age(age) as person_age, age as age_raw from person").includeAnnotations.show(false)
 

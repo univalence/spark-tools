@@ -12,10 +12,10 @@ import scala.util.{ Success, Try }
 
 object IntroScala2 {
 
-  def juxt[A, B, C](f: A => B, g: A => C): A => (B, C) = a => (f(a), g(a))
+  def juxt[A, B, C](f: A ⇒ B, g: A ⇒ C): A ⇒ (B, C) = a ⇒ (f(a), g(a))
 
   implicit class PipeOps[A](a: A) {
-    def |>[B](f: A => B): B = f(a)
+    def |>[B](f: A ⇒ B): B = f(a)
   }
 
   implicit class PairList[K, V](lkv: List[(K, V)]) {
@@ -25,24 +25,24 @@ object IntroScala2 {
     }
 
     def join[VV](ll: List[(K, VV)]): List[(K, (V, VV))] = {
-      val l = lkv.map({ case (k, v) => (k, Left(v)) }) ++
-        ll.map({ case (k, v) => (k, Right(v)) })
-      l.groupBy(_._1).mapValues(x => {
+      val l = lkv.map({ case (k, v) ⇒ (k, Left(v)) }) ++
+        ll.map({ case (k, v) ⇒ (k, Right(v)) })
+      l.groupBy(_._1).mapValues(x ⇒ {
 
         val all = x.map(_._2)
-        val left: List[V] = all.collect({ case Left(v) => v })
-        val right: List[VV] = all.collect({ case Right(v) => v })
+        val left: List[V] = all.collect({ case Left(v) ⇒ v })
+        val right: List[VV] = all.collect({ case Right(v) ⇒ v })
 
         (left, right) match {
-          case (Nil, rxs) => ???
-          case (lxs, Nil) => ???
-          case _ => for {
-            l <- left
-            r <- right
+          case (Nil, rxs) ⇒ ???
+          case (lxs, Nil) ⇒ ???
+          case _ ⇒ for {
+            l ← left
+            r ← right
           } yield (l, r)
         }
 
-      }).toList.flatMap(x => x._2.map(x._1 -> _))
+      }).toList.flatMap(x ⇒ x._2.map(x._1 -> _))
     }
   }
 
@@ -84,9 +84,9 @@ object IntroSpark {
 
     val rdd2: RDD[Try[Line1]] = rdd1.map(Line1.fromString)
 
-    val rdd3: RDD[Line1] = rdd2.collect({ case Success(l1) => l1 })
+    val rdd3: RDD[Line1] = rdd2.collect({ case Success(l1) ⇒ l1 })
 
-    val rdd4: RDD[String] = rdd3.flatMap(x => x.vals)
+    val rdd4: RDD[String] = rdd3.flatMap(x ⇒ x.vals)
 
     rdd3.toDS().coalesce(1).write.parquet("target/test-spark-line1")
 
@@ -96,14 +96,15 @@ object IntroSpark {
 }
 
 case class Clickstream(
-  action: String,
-  campaign: String,
-  cost: Long,
-  domain: String,
-  ip: String,
-  session: String,
+  action:    String,
+  campaign:  String,
+  cost:      Long,
+  domain:    String,
+  ip:        String,
+  session:   String,
   timestamp: Long,
-  user: String)
+  user:      String
+)
 
 object IntroSpark2 {
 
@@ -167,12 +168,12 @@ root
 
     ss.sql("select myToDate(timestamp) as ts from clickstream")
 
-    type EndoDf = DataFrame => DataFrame
+    type EndoDf = DataFrame ⇒ DataFrame
 
     val endoTsToDate: EndoDf = {
-      df =>
+      df ⇒
         {
-          if (df.schema.fields.collect({ case StructField("timestamp", LongType, _, _) => true }).nonEmpty) {
+          if (df.schema.fields.collect({ case StructField("timestamp", LongType, _, _) ⇒ true }).nonEmpty) {
             df.withColumn("timestamp", expr("myToDate(timestamp)"))
           } else {
             df
@@ -180,7 +181,7 @@ root
         }
     }
 
-    val just1: EndoDf = df => df.withColumn("just1", new Column(Literal(1)))
+    val just1: EndoDf = df ⇒ df.withColumn("just1", new Column(Literal(1)))
 
     Seq(endoTsToDate, just1).reduce(_.andThen(_))
 

@@ -10,20 +10,23 @@ import scala.reflect.ClassTag
 
 case class DeltaPart[T: AdditiveMonoid](
   count: Long,
-  part: T)
+  part:  T
+)
 
 case class DeltaCommon[T: AdditiveMonoid](
-  count: Long,
+  count:     Long,
   countZero: Long,
-  diff: T,
-  error: T,
-  left: T,
-  right: T)
+  diff:      T,
+  error:     T,
+  left:      T,
+  right:     T
+)
 
 case class Delta[L: AdditiveMonoid, R: AdditiveMonoid, C: AdditiveMonoid](
-  left: DeltaPart[L],
-  right: DeltaPart[R],
-  common: DeltaCommon[C])
+  left:   DeltaPart[L],
+  right:  DeltaPart[R],
+  common: DeltaCommon[C]
+)
 
 object KpiAlgebra {
 
@@ -37,15 +40,15 @@ object KpiAlgebra {
   def monoid[LM: AdditiveMonoid, RM: AdditiveMonoid, LRC: AdditiveMonoid]: Monoid[Delta[LM, RM, LRC]] =
     Monoid.additive[Delta[LM, RM, LRC]]
 
-  def compare[K: ClassTag, L: ClassTag, R: ClassTag, LM: AdditiveMonoid: ClassTag, RM: AdditiveMonoid: ClassTag, LRC: AdditiveAbGroup: MultiplicativeSemigroup: ClassTag](left: RDD[(K, L)], right: RDD[(K, R)])(flm: L => LM, frm: R => RM, flc: L => LRC, frc: R => LRC): Delta[LM, RM, LRC] = {
+  def compare[K: ClassTag, L: ClassTag, R: ClassTag, LM: AdditiveMonoid: ClassTag, RM: AdditiveMonoid: ClassTag, LRC: AdditiveAbGroup: MultiplicativeSemigroup: ClassTag](left: RDD[(K, L)], right: RDD[(K, R)])(flm: L ⇒ LM, frm: R ⇒ RM, flc: L ⇒ LRC, frc: R ⇒ LRC): Delta[LM, RM, LRC] = {
 
     val map: RDD[Delta[LM, RM, LRC]] = left.fullOuterJoin(right).map({
-      case (_, (Some(l), None)) => monoid[LM, RM, LRC].id.copy(left = DeltaPart(count = 1, part = flm(l)))
-      case (_, (None, Some(r))) => monoid[LM, RM, LRC].id.copy(right = DeltaPart(count = 1, part = frm(r)))
-      case (_, (Some(l), Some(r))) => monoid[LM, RM, LRC].id.copy(common = computeCommon(flc(l), frc(r)))
+      case (_, (Some(l), None))    ⇒ monoid[LM, RM, LRC].id.copy(left = DeltaPart(count = 1, part = flm(l)))
+      case (_, (None, Some(r)))    ⇒ monoid[LM, RM, LRC].id.copy(right = DeltaPart(count = 1, part = frm(r)))
+      case (_, (Some(l), Some(r))) ⇒ monoid[LM, RM, LRC].id.copy(common = computeCommon(flc(l), frc(r)))
     })
 
-    map.reduce((x, y) => monoid[LM, RM, LRC].op(x, y))
+    map.reduce((x, y) ⇒ monoid[LM, RM, LRC].op(x, y))
   }
 }
 
@@ -61,11 +64,14 @@ object KpiAlgebraTest {
     println(
       KpiAlgebra.compare(
         left = parallelize,
-        right = parallelize)(
+        right = parallelize
+      )(
         flm = identity,
         frm = identity,
         flc = identity,
-        frc = identity))
+        frc = identity
+      )
+    )
 
     // Delta(DeltaPart(0,0),DeltaPart(0,0),DeltaCommon(4,4,0,0,6,6))
 

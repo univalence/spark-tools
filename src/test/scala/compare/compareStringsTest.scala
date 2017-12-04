@@ -12,11 +12,11 @@ object StringSpecification extends Properties("String") {
     a.forall(isAsciiLetter) ==> (StringUtils.letterPairs(a).toSeq.sliding(2,2).map(_.head).mkString == a.dropRight(1))
   }*/
 
-  property("compareStrings") = forAll { (a: String) =>
+  property("compareStrings") = forAll { (a: String) ⇒
     StringUtils.compareStrings(a, a) == 1
   }
 
-  property("compareStrings2") = forAll { (a: String, b: String) =>
+  property("compareStrings2") = forAll { (a: String, b: String) ⇒
     (a != b) ==> (StringUtils.compareStrings(a, b) < 1 && utils.StringUtils.compareStrings(a, b) >= 0)
   }
 
