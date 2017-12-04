@@ -1,35 +1,35 @@
 
 
 /**
-  * Dependencies :"org.typelevel" %% "shapeless-spire" % "0.4"
-  *
-  */
+ * Dependencies :"org.typelevel" %% "shapeless-spire" % "0.4"
+ *
+ */
 
 /**
-  * +-+-+-+-+-+-+-+
-  * |D|e|l|t|a|Q|A|
-  * +-+-+-+-+-+-+-+
-  *
-  * This job a compare two modeleH datasets by projecting them in a KPI 'vector space' (Rng).
-  *
-  *
-  * The job first transform each visitor in a KPI Vector (lighter on shuffle) then join the result:
-  *
-  *       if the visitorId is only in the left dataset, then the KPI vector is added in
-  *         DeltaDataset.left
-  *
-  *       if the visitorID is only in the right data, then the KPI vector is added in
-  *         DeltaDataset.right
-  *
-  *       if the visitor is in both left and right, KPIs from both sides are compared,
-  *       the difference (diff) and derived metrics (#zero, diff²) are added in
-  *         DeltaDataset.both
-  *
-  *
-  * KPI operations (Rng aka PseudoRing, ie 0, +, -, *) are based on spire and autoderived
-  * by shapeless.contrib.spire.
-  *
-  */
+ * +-+-+-+-+-+-+-+
+ * |D|e|l|t|a|Q|A|
+ * +-+-+-+-+-+-+-+
+ *
+ * This job a compare two modeleH datasets by projecting them in a KPI 'vector space' (Rng).
+ *
+ *
+ * The job first transform each visitor in a KPI Vector (lighter on shuffle) then join the result:
+ *
+ *       if the visitorId is only in the left dataset, then the KPI vector is added in
+ *         DeltaDataset.left
+ *
+ *       if the visitorID is only in the right data, then the KPI vector is added in
+ *         DeltaDataset.right
+ *
+ *       if the visitor is in both left and right, KPIs from both sides are compared,
+ *       the difference (diff) and derived metrics (#zero, diff²) are added in
+ *         DeltaDataset.both
+ *
+ *
+ * KPI operations (Rng aka PseudoRing, ie 0, +, -, *) are based on spire and autoderived
+ * by shapeless.contrib.spire.
+ *
+ */
 
 package datalab.pj.validate {
 
@@ -44,24 +44,20 @@ package datalab.pj.validate {
   import shapeless.contrib.spire._
 
   case class DeltaJobParam(
-                            to:   String,
-                            from: String
-                          )
+    to: String,
+    from: String)
 
   object DeltaQA {
 
     def main(args: Array[String]) {
 
-      val to:String = ""
-      val from:String =""
+      val to: String = ""
+      val from: String = ""
 
-      def read(s:String):RDD[(String,ByVisitor)] = ???
+      def read(s: String): RDD[(String, ByVisitor)] = ???
 
-
-          //TODO : to print in JSON for clarity
-          println(compare(dest = read(to), orig = read(from)))
-
-
+      //TODO : to print in JSON for clarity
+      println(compare(dest = read(to), orig = read(from)))
 
     }
 
@@ -70,10 +66,10 @@ package datalab.pj.validate {
       val zero = Monoid.additive[DeltaDataset].id
 
       val processJoin: ((Option[ByVisitor], Option[ByVisitor])) ⇒ DeltaDataset = {
-        case (None, Some(origH))        ⇒ zero.copy(orig = Traffic(1, origH))
-        case (Some(destH), None)        ⇒ zero.copy(dest = Traffic(1, destH))
+        case (None, Some(origH)) ⇒ zero.copy(orig = Traffic(1, origH))
+        case (Some(destH), None) ⇒ zero.copy(dest = Traffic(1, destH))
         case (Some(destH), Some(origH)) ⇒ zero.copy(both = DeltaDataset.change(destH, origH))
-        case _                          ⇒ zero // TO PLEASE THE COMPILER
+        case _ ⇒ zero // TO PLEASE THE COMPILER
       }
 
       dest.fullOuterJoin(orig)
@@ -96,8 +92,7 @@ package datalab.pj.validate {
         delta = minusKpi,
         error = minusKpi * minusKpi,
         orig = origKpi,
-        dest = destKpi
-      )
+        dest = destKpi)
     }
 
   }
@@ -105,30 +100,29 @@ package datalab.pj.validate {
   case class Traffic(nbVisitor: Long, kpi: ByVisitor)
 
   case class DeltaByVisitor(
-                             nbVisitor: Long,
-                             nbZero:    Long,
-                             delta:     ByVisitor,
-                             error:     ByVisitor,
-                             orig:      ByVisitor,
-                             dest:      ByVisitor
-                           )
+    nbVisitor: Long,
+    nbZero: Long,
+    delta: ByVisitor,
+    error: ByVisitor,
+    orig: ByVisitor,
+    dest: ByVisitor)
 
-  /** ALL THE FOLLOWING CODE IS SPECIFIC TO THE MODELEH DELTA
-    */
+  /**
+   * ALL THE FOLLOWING CODE IS SPECIFIC TO THE MODELEH DELTA
+   */
 
   //KPI DEFINITION
   case class ByVisitor(
-                        nbSearch:      Long,
-                        nbDisplayLR:   Long,
-                        nbFDMinLR:     Long,
-                        nbFDO:         Long,
-                        nbClicLR:      Long,
-                        nbClicFDMinLR: Long,
-                        nbClicFDO:     Long,
-                        // nbSearchWithBadLocality:         Long,
-                        // nbSearchDisplayEnrich:           Long,
-                        nbRechercheWithNonContinousBloc: Long
-                      ) {
+    nbSearch: Long,
+    nbDisplayLR: Long,
+    nbFDMinLR: Long,
+    nbFDO: Long,
+    nbClicLR: Long,
+    nbClicFDMinLR: Long,
+    nbClicFDO: Long,
+    // nbSearchWithBadLocality:         Long,
+    // nbSearchDisplayEnrich:           Long,
+    nbRechercheWithNonContinousBloc: Long) {
 
     def isZero: Boolean = Monoid.additive[ByVisitor].id == this
 
@@ -158,8 +152,7 @@ package datalab.pj.validate {
             val min = positions.min
             positions.size < max - min + 1
           } else false
-        })
-      )
+        }))
     }
   }
 
@@ -169,21 +162,21 @@ package datalab.pj.validate.hlight {
 
   import org.apache.spark.sql.Row
 
-  /** **
-    *
-    * FROM DATASCAN
-    *
-    * +-+-+-+-+-+-+-+ +-+-+-+-+-+
-    * |M|O|D|E|L|E|H| |L|I|G|H|T|
-    * +-+-+-+-+-+-+-+ +-+-+-+-+-+
-    *
-    */
+  /**
+   * **
+   *
+   * FROM DATASCAN
+   *
+   * +-+-+-+-+-+-+-+ +-+-+-+-+-+
+   * |M|O|D|E|L|E|H| |L|I|G|H|T|
+   * +-+-+-+-+-+-+-+ +-+-+-+-+-+
+   *
+   */
 
   case class Visiteur(
-                       visitorId:  String,
-                       typeSource: String,
-                       sessions:   Seq[Session]
-                     ) {
+    visitorId: String,
+    typeSource: String,
+    sessions: Seq[Session]) {
 
     def recherches = sessions.flatMap(_.recherches)
   }
@@ -191,45 +184,40 @@ package datalab.pj.validate.hlight {
   case class Session(recherches: Seq[Recherche])
 
   case class Recherche(
-                        typeReponse:        String,
-                        typeAccesRecherche: String,
-                        //history:            Seq[PageRecherche],
-                        lrs:           Seq[Reponse],
-                        codesLieuxBag: Seq[CodeLieu],
-                        fdSeo:         Seq[FicheDetailleeOrpheline]
-                      )
+    typeReponse: String,
+    typeAccesRecherche: String,
+    //history:            Seq[PageRecherche],
+    lrs: Seq[Reponse],
+    codesLieuxBag: Seq[CodeLieu],
+    fdSeo: Seq[FicheDetailleeOrpheline])
 
   case class PageRecherche(
-                            bandeaux: Seq[BandeauReponse]
-                          )
+    bandeaux: Seq[BandeauReponse])
 
   case class CodeLieu()
 
   case class FicheDetailleeOrpheline(clics: Seq[Clic])
 
   case class BandeauReponse(
-                             lrs: Seq[Reponse]
-                           )
+    lrs: Seq[Reponse])
 
   case class Reponse(
-                      blocNumeroClient: String,
-                      etablissements:   Seq[String],
-                      fd:               Seq[FicheDetaillee],
-                      clics:            Seq[Clic],
-                      blocPosition:     Option[Int]
-                    )
+    blocNumeroClient: String,
+    etablissements: Seq[String],
+    fd: Seq[FicheDetaillee],
+    clics: Seq[Clic],
+    blocPosition: Option[Int])
 
   case class FicheDetaillee(clics: Seq[Clic])
 
   case class Clic(coType: String, natureClic: Option[String])
 
   case class Annotation(
-                         level:    String,
-                         stage:    String,
-                         typeName: String,
-                         message:  String,
-                         path:     String
-                       )
+    level: String,
+    stage: String,
+    typeName: String,
+    message: String,
+    path: String)
 
   object ModeleHConverter {
 
@@ -238,7 +226,7 @@ package datalab.pj.validate.hlight {
         visitorId = r.getAs("visitorId"),
         typeSource = r.getAs("typeSource"),
         sessions = r.getAs[Seq[Row]]("sessions").map(sessionFromRow).toVector
-        //, annotations = r.getAs[Seq[Row]]("annotations").map(annotationFromRow).toList
+      //, annotations = r.getAs[Seq[Row]]("annotations").map(annotationFromRow).toList
       )
     }
 
@@ -248,14 +236,12 @@ package datalab.pj.validate.hlight {
         stage = r.getAs[String]("stage"),
         typeName = r.getAs[String]("typeName"),
         message = r.getAs[String]("message"),
-        path = r.getAs[String]("path")
-      )
+        path = r.getAs[String]("path"))
     }
 
     def sessionFromRow(r: Row): Session = {
       Session(
-        recherches = r.getAs[Seq[Row]]("recherches").map(rechercheFromRow).toList
-      )
+        recherches = r.getAs[Seq[Row]]("recherches").map(rechercheFromRow).toList)
     }
 
     def rechercheFromRow(r: Row): Recherche = {
@@ -271,8 +257,7 @@ package datalab.pj.validate.hlight {
             r.getAs[Seq[Row]]("bandeaux").map(bandeauFromRow).flatMap(_.lrs)
         },
         typeAccesRecherche = r.getAs[String]("typeAccesRecherche"),
-        fdSeo = r.getAs[Seq[Row]]("fdSeo").map(ficheDetailleeOrphelineFromRow)
-      )
+        fdSeo = r.getAs[Seq[Row]]("fdSeo").map(ficheDetailleeOrphelineFromRow))
     }
 
     def ficheDetailleeOrphelineFromRow(r: Row) =
@@ -282,14 +267,12 @@ package datalab.pj.validate.hlight {
 
     def pageRechercheFromRow(r: Row): PageRecherche = {
       PageRecherche(
-        bandeaux = r.getAs[Seq[Row]]("bandeaux").map(bandeauFromRow)
-      )
+        bandeaux = r.getAs[Seq[Row]]("bandeaux").map(bandeauFromRow))
     }
 
     def bandeauFromRow(r: Row): BandeauReponse = {
       BandeauReponse(
-        lrs = r.getAs[Seq[Row]]("lrs").map(reponseFromRow)
-      )
+        lrs = r.getAs[Seq[Row]]("lrs").map(reponseFromRow))
     }
 
     def reponseFromRow(r: Row): Reponse = {
@@ -298,21 +281,18 @@ package datalab.pj.validate.hlight {
         etablissements = r.getAs[Seq[String]]("etablissements"),
         fd = r.getAs[Seq[Row]]("fd").map(ficheDetailleeFromRow),
         clics = r.getAs[Seq[Row]]("clics").map(clicFromRow),
-        blocPosition = Option(r.getAs[Int]("blocPosition"))
-      )
+        blocPosition = Option(r.getAs[Int]("blocPosition")))
     }
 
     def clicFromRow(r: Row): Clic = {
       Clic(
         coType = r.getAs[String]("coType"),
-        natureClic = None
-      )
+        natureClic = None)
     }
 
     def ficheDetailleeFromRow(r: Row): FicheDetaillee = {
       FicheDetaillee(
-        clics = r.getAs[Seq[Row]]("clics").map(clicFromRow)
-      )
+        clics = r.getAs[Seq[Row]]("clics").map(clicFromRow))
     }
   }
 

@@ -1,6 +1,6 @@
 package io.univalence
 
-import io.univalence.centrifuge.{Result, _}
+import io.univalence.centrifuge.{ Result, _ }
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
 
@@ -20,11 +20,14 @@ object ModelScalaCheck extends Properties("String") {
       Some(a), Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1)))
   }
   property("map") = forAll { (a: String) =>
-    Result(Some(a), Vector(Annotation("msg", Some("oF"), Vector("fF"), false, 1))).map(_.toString) == Result(Some(a),
+    Result(Some(a), Vector(Annotation("msg", Some("oF"), Vector("fF"), false, 1))).map(_.toString) == Result(
+      Some(a),
       Vector(Annotation("msg", Some("oF"), Vector("fF"), false, 1)))
-    Result(Some(a), Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1))).map(_.toString) == Result(Some(a),
+    Result(Some(a), Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1))).map(_.toString) == Result(
+      Some(a),
       Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1)))
-    Result(Some("msg"), Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1))).map(_.toString) == Result(Some("msg"),
+    Result(Some("msg"), Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1))).map(_.toString) == Result(
+      Some("msg"),
       Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1)))
   }
 

@@ -1,15 +1,14 @@
 package io.univalence.centrifuge.sql
 
-import io.univalence.centrifuge.{Annotation, AnnotationSql, Result}
+import io.univalence.centrifuge.{ Annotation, AnnotationSql, Result }
 import org.apache.spark.sql.SparkSession
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.{ BeforeAndAfterAll, FunSuite }
 
 case class Person(name: String, age: Int)
 
 case class PersonWithAnnotations(name: String, age: Int, annotations: Seq[Annotation])
 
-case class BetterPerson(name:String,age:Option[Int])
-
+case class BetterPerson(name: String, age: Option[Int])
 
 object AnnotationTest {
   def to_age(i: Int): Result[Int] = {
@@ -34,38 +33,34 @@ object AnnotationTest {
 class AnnotationTest extends FunSuite with BeforeAndAfterAll {
 
   val ss: SparkSession = SparkSession.builder()
-    .config("spark.default.parallelism",2 )
-    .config("spark.sql.shuffle.partitions",2)
-    .config("spark.ui.enabled",false)
+    .config("spark.default.parallelism", 2)
+    .config("spark.sql.shuffle.partitions", 2)
+    .config("spark.ui.enabled", false)
     .appName("test").master("local[*]").getOrCreate()
 
   import ss.implicits._
 
   val joe = Person("Joe", 14)
-  val timmy = Person("Timmy",8)
-  val invalid = Person("",-1)
-
+  val timmy = Person("Timmy", 8)
+  val invalid = Person("", -1)
 
   val onePersonDf = ss.sparkContext.makeRDD(Seq(joe)).toDF()
-
-
 
   test("quickstart") {
 
     val joe = Person("Joe", 14)
-    val timmy = Person("Timmy",8)
-    val invalid = Person("",-1)
+    val timmy = Person("Timmy", 8)
+    val invalid = Person("", -1)
 
     import io.univalence.centrifuge.implicits._
     import ss.implicits._
 
     //val ss:SparkSession = ...
-    val ds = ss.sparkContext.makeRDD(Seq(joe,timmy,invalid)).toDS()
+    val ds = ss.sparkContext.makeRDD(Seq(joe, timmy, invalid)).toDS()
     ds.createOrReplaceTempView("personRaw")
 
-
     //register a transformation with data quality
-    ss.registerTransformation[Int,Int]("checkAge", {
+    ss.registerTransformation[Int, Int]("checkAge", {
       case i if i < 0 => Result.fromError("INVALID_AGE")
       case i if i < 13 => Result.fromWarning(i, "UNDER_13")
       case i if i > 140 => Result.fromError("OVER_140")
@@ -84,8 +79,7 @@ class AnnotationTest extends FunSuite with BeforeAndAfterAll {
 +-----+----+------+
      */
 
-
-/*
+    /*
     ss.sql("select name, checkAge(age) as age from personRaw").as[Person].collect().foreach(println)
     Caused by: java.lang.NullPointerException: Null value appeared in non-nullable field:
       - field (class: "scala.Int", name: "age")
@@ -94,7 +88,7 @@ class AnnotationTest extends FunSuite with BeforeAndAfterAll {
     //case class BetterPerson(name:String,age:Option[Int])
 
     ss.sql("select name, checkAge(age) as age from personRaw").as[BetterPerson].collect().foreach(println)
-/*
+    /*
 BetterPerson(Joe,Some(14))
 BetterPerson(Timmy,Some(8))
 BetterPerson(,None)
@@ -111,7 +105,7 @@ BetterPerson(,None)
 |     |null|[[INVALID_AGE,age,WrappedArray(age),true,1]]|
 +-----+----+--------------------------------------------+
      */
-/*
+    /*
 ++-----+----+------------------------------------------------+
 +|name |age |annotations                                     |
 +|     |    |message     |onField |fromFields |isError |count|
@@ -124,16 +118,11 @@ BetterPerson(,None)
 ++-----+----+------------+--------+-----------+--------+-----+
  */
 
-
   }
-
-
 
   import io.univalence.centrifuge.implicits._
 
-
   test("explore") {
-
 
     val select = onePersonDf.select("*")
 
@@ -145,8 +134,6 @@ BetterPerson(,None)
 
   }
 
-
-
   test("basic") {
     val p = onePersonDf.includeAnnotations.as[PersonWithAnnotations].collect().head
 
@@ -154,8 +141,6 @@ BetterPerson(,None)
     assert(p.name == "Joe")
     assert(p.age == 14)
   }
-
-
 
   test("with one annotation") {
     ss.registerTransformation("to_age", AnnotationTest.to_age)
@@ -215,22 +200,18 @@ BetterPerson(,None)
         isError = true,
         count = 1,
         onField = "person_name",
-        fromFields = Vector("name")))
-    )
+        fromFields = Vector("name"))))
   }
 
   test("") {
-
 
   }
 
   test("ajout du flag") {
 
-
   }
 
   test("ajout des causality cols") {
-
 
   }
   test("ajout du transformation name") {
@@ -243,14 +224,14 @@ BetterPerson(,None)
     ss.sparkContext.makeRDD(Seq("" -> "", "" -> "a", "" -> "b")).toDF().createOrReplaceTempView("togroup")
 
     val agg = ss.sql("select non_empty(_1) as f,FIRST(non_empty(_2),true) as s, count(*) as c from togroup group by non_empty(_1)")
-    val (a,b,c, as) = agg.includeAnnotations.as[(Option[String],String, Long,Seq[AnnotationSql])].collect().head
+    val (a, b, c, as) = agg.includeAnnotations.as[(Option[String], String, Long, Seq[AnnotationSql])].collect().head
 
     assert(as.size == 2)
 
   }
   test("join") {
 
-    ss.sparkContext.makeRDD(Seq(("a", 1, "aaa"),("b",2,""))).toDF().createOrReplaceTempView("a")
+    ss.sparkContext.makeRDD(Seq(("a", 1, "aaa"), ("b", 2, ""))).toDF().createOrReplaceTempView("a")
 
     ss.sparkContext.makeRDD(Seq((1, "", "a"))).toDF().createOrReplaceTempView("entity")
 
@@ -276,16 +257,14 @@ BetterPerson(,None)
     ss.sql("select *, concat(e.name,non_empty(a.name)) as supername from entity_validated e left join a_validated a on e.a_id = a.id")
   }
 
-
-
   test("sub select") {
     ss.registerTransformation("non_empty", AnnotationTest.non_empty_string)
 
-    ss.sparkContext.makeRDD(Seq(("",1))).toDS().createOrReplaceTempView("subtable")
+    ss.sparkContext.makeRDD(Seq(("", 1))).toDS().createOrReplaceTempView("subtable")
 
     val df = ss.sql("select * from (select non_empty(_1) as n1 from subtable where _2 == 1) t").includeAnnotations
 
-    val head = df.as[(String,Seq[AnnotationSql])].collect().head
+    val head = df.as[(String, Seq[AnnotationSql])].collect().head
 
     assert(head._2.nonEmpty)
   }
@@ -296,12 +275,10 @@ BetterPerson(,None)
 
     ss.sparkContext.makeRDD(Seq(
       Person("Joe", 12),
-      Person("Robert",-1),
-      Person("Jane",21))).toDS().createOrReplaceTempView("person")
-
+      Person("Robert", -1),
+      Person("Jane", 21))).toDS().createOrReplaceTempView("person")
 
     ss.sql("select name as person_name, to_age(age) as person_age, age as age_raw from person").includeAnnotations.show(false)
-
 
   }
 
@@ -327,10 +304,6 @@ BetterPerson(,None)
 
   test("support non numeric type in delta qa (equality + diff squared)") {
 
-
   }
-
-
-
 
 }

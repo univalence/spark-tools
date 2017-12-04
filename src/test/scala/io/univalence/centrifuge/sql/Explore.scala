@@ -4,10 +4,7 @@ import io.univalence.centrifuge.Result
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.expressions.UserDefinedFunction
 
-
-
 object Explore {
-
 
   def to_age(i: Int): Result[Int] = {
     {} match {
@@ -18,25 +15,22 @@ object Explore {
     }
   }
 
-  def non_empty_string(str:String):Result[String] = {
+  def non_empty_string(str: String): Result[String] = {
     str match {
       //case None => Result.fromError("NULL_VALUE")
       case "" => Result.fromError("EMPTY_STRING")
-      case _  => Result.pure(str)
+      case _ => Result.pure(str)
     }
   }
 
-
-
   def main(args: Array[String]): Unit = {
-
 
     import io.univalence.centrifuge.implicits._
 
     val ss = SparkSession.builder().appName("test").master("local[*]").getOrCreate()
 
     ss.registerTransformation("to_age", to_age)
-    ss.registerTransformation("non_empty_string",non_empty_string)
+    ss.registerTransformation("non_empty_string", non_empty_string)
 
     import ss.sqlContext.implicits._
 

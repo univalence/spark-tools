@@ -1,6 +1,5 @@
 package psug
 
-
 trait Applicative[M[_]] {
   def point[A](a: A): M[A]
 
@@ -34,7 +33,6 @@ trait ApplicativeAlternative[M[_]] {
   def apply2[A, B, C](m1: M[A], m2: M[B])(f: (A, B) => C): M[C] = map(zip(m1, m2))(f.tupled)
 }
 
-
 object IronSuit {
   implicit val applicativeInst: Applicative[IronSuit] = new Applicative[IronSuit] {
     override def point[A](a: A): IronSuit[A] = IronSuit(a)
@@ -59,7 +57,6 @@ object Test {
 
   def main(args: Array[String]) {
 
-
     implicitly[Applicative[IronSuit]].apply2(is1, isA)(_ + _)
 
     implicitly[ApplicativeAlternative[IronSuit]].apply2(is1, isA)(_ + _)
@@ -68,8 +65,4 @@ object Test {
 }
 
 case class MyValidation[T](nominal: Option[T], err: Option[String])
-
-
-
-
 

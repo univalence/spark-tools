@@ -1,10 +1,9 @@
 package io.univalence.autobuild
 
-import io.univalence.centrifuge.{Annotation, Result}
+import io.univalence.centrifuge.{ Annotation, Result }
 import org.scalatest.FunSuite
 
 class Quickstart extends FunSuite {
-
 
   test("quickstart autobuild") {
 
@@ -31,11 +30,11 @@ class Quickstart extends FunSuite {
 
     object Hello {
       @autoBuildResult
-      def build(name: Result[String],
-                greet: Result[Boolean]): Result[Hello] = MacroMarker.generated_applicative
+      def build(
+        name: Result[String],
+        greet: Result[Boolean]): Result[Hello] = MacroMarker.generated_applicative
 
     }
-
 
     // pure pure is pure
     assert(Hello.build(pureStrResult, pureBoolResult).isPure)

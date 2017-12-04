@@ -6,14 +6,13 @@ import io.univalence.centrifuge.Result
 
 case class Ahoy(name: String, i: Int, l: String)
 
-
 object testBuilder {
 
-
   //@autoBuildResult
-  def build(name: Result[String],
-            i: Result[Int],
-            l: Result[String]): Result[Ahoy] = {
+  def build(
+    name: Result[String],
+    i: Result[Int],
+    l: Result[String]): Result[Ahoy] = {
 
     val _1 = name.addPathPart("name")
     val _2 = i.addPathPart("i")
@@ -24,9 +23,5 @@ object testBuilder {
       case _ => None
     }, annotations = _1.annotations ++ _2.annotations ++ _3.annotations)
   }
-
-
-
-
 
 }

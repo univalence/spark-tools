@@ -3,13 +3,11 @@ package psug.part2
 import scala.language.higherKinds
 import scalaz.Applicative
 
-
-case class Hello(name:String, i:Int)
-
+case class Hello(name: String, i: Int)
 
 object Hello {
 
-  def build[A[_]:Applicative](name:A[String] ,i:A[Int]):A[Hello] = {
+  def build[A[_]: Applicative](name: A[String], i: A[Int]): A[Hello] = {
     import scalaz.syntax.applicative._
     (name |@| i)(Hello.apply)
 

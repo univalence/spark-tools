@@ -13,11 +13,11 @@ object StringSpecification extends Properties("String") {
   }*/
 
   property("compareStrings") = forAll { (a: String) =>
-    StringUtils.compareStrings(a,a) == 1
+    StringUtils.compareStrings(a, a) == 1
   }
 
-  property("compareStrings2") = forAll {(a:String,b:String) =>
-    (a != b) ==> (StringUtils.compareStrings(a,b) < 1 && utils.StringUtils.compareStrings(a,b) >= 0)
+  property("compareStrings2") = forAll { (a: String, b: String) =>
+    (a != b) ==> (StringUtils.compareStrings(a, b) < 1 && utils.StringUtils.compareStrings(a, b) >= 0)
   }
 
 }
