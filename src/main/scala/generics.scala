@@ -6,7 +6,6 @@ import shapeless._
 
 import scala.language.higherKinds
 
-
 trait TypeName[T] {
   def name: String
 }
@@ -29,8 +28,6 @@ object DefaultPathAwareness {
   }
 }
 
-
-
 trait FieldsNonRecur[L] {
   def fieldnames: List[(String, String)]
 
@@ -38,19 +35,18 @@ trait FieldsNonRecur[L] {
 
 trait LowPriorityFieldsNonRecur {
   implicit def caseClassFields[F, G](implicit gen: LabelledGeneric.Aux[F, G], encode: Lazy[FieldsNonRecur[G]]): FieldsNonRecur[F] =
-    new FieldsNonRecur[F] {override def fieldnames: List[(String, String)] = encode.value.fieldnames}
+    new FieldsNonRecur[F] { override def fieldnames: List[(String, String)] = encode.value.fieldnames }
 
-  implicit def hcon[K <: Symbol, H, T <: HList](implicit key: Witness.Aux[K],
-                                                tv: TypeName[H],
-                                                tailEncode: Lazy[FieldsNonRecur[T]]
-                                                 ):FieldsNonRecur[FieldType[K, H] :: T] = {
-    new FieldsNonRecur[FieldType[K, H] :: T] {override def fieldnames: List[(String, String)] = (key.value.name, tv.name) :: tailEncode.value.fieldnames}
+  implicit def hcon[K <: Symbol, H, T <: HList](implicit
+    key: Witness.Aux[K],
+    tv: TypeName[H],
+    tailEncode: Lazy[FieldsNonRecur[T]]): FieldsNonRecur[FieldType[K, H] :: T] = {
+    new FieldsNonRecur[FieldType[K, H] :: T] { override def fieldnames: List[(String, String)] = (key.value.name, tv.name) :: tailEncode.value.fieldnames }
   }
 }
 
-
 object FieldsNonRecur extends LowPriorityFieldsNonRecur {
-  implicit def hnil[L <: HNil]: FieldsNonRecur[L] = new FieldsNonRecur[L] {override def fieldnames: List[(String, String)] = Nil}
+  implicit def hnil[L <: HNil]: FieldsNonRecur[L] = new FieldsNonRecur[L] { override def fieldnames: List[(String, String)] = Nil }
 
   def fieldnames[A](implicit tmr: FieldsNonRecur[A]) = tmr.fieldnames
 }

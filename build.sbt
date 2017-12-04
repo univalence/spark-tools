@@ -1,3 +1,4 @@
+import scalariform.formatter.preferences._
 
 scalacOptions ++= Seq("-Yrangepos", "-unchecked", "-deprecation")
 

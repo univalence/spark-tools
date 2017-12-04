@@ -1,24 +1,23 @@
 package centrifuge.sql
 
-import org.apache.spark.rdd.{CoGroupedRDD, RDD}
+import org.apache.spark.rdd.{ CoGroupedRDD, RDD }
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.{HashPartitioner, Partitioner}
+import org.apache.spark.{ HashPartitioner, Partitioner }
 import shapeless._
-import shapeless.ops.hlist.{ToTraversable, Tupler}
+import shapeless.ops.hlist.{ ToTraversable, Tupler }
 import shapeless.ops.traversable.FromTraversable
 
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
-
 trait CheckCogroup[K, H <: HList] extends Serializable {
   type Res
 
-  def toSeq(h:H):List[RDD[(K,_)]]
+  def toSeq(h: H): List[RDD[(K, _)]]
 }
 
 object CheckCogroup {
-  type Aux[K, H <: HList, R] = CheckCogroup[K, H] {type Res = R}
+  type Aux[K, H <: HList, R] = CheckCogroup[K, H] { type Res = R }
 
   implicit def rFromNil[K]: CheckCogroup.Aux[K, HNil, HNil] = new CheckCogroup[K, HNil] {
     type Res = HNil
@@ -26,28 +25,25 @@ object CheckCogroup {
     override def toSeq(h: HNil): List[RDD[(K, _)]] = Nil
   }
 
-  implicit def rCons[K, V, REST <: HList, RES <: HList]
-  (implicit removeFirstT: CheckCogroup.Aux[K, REST, RES]): CheckCogroup.Aux[K, RDD[(K, V)] :: REST, Seq[V] :: RES] =
+  implicit def rCons[K, V, REST <: HList, RES <: HList](implicit removeFirstT: CheckCogroup.Aux[K, REST, RES]): CheckCogroup.Aux[K, RDD[(K, V)] :: REST, Seq[V] :: RES] =
     new CheckCogroup[K, RDD[(K, V)] :: REST] {
       type Res = Seq[V] :: RES
 
       //override def toSeq(h: ::[RDD[(K, V)], REST]): List[RDD[(K, _)]] = h.head.map(identity) :: removeFirstT.toSeq(h.tail)
-      override def toSeq(h: ::[RDD[(K, V)], REST]): List[RDD[(K, _)]] = h.head.asInstanceOf[RDD[(K,_)]] :: removeFirstT.toSeq(h.tail)
+      override def toSeq(h: ::[RDD[(K, V)], REST]): List[RDD[(K, _)]] = h.head.asInstanceOf[RDD[(K, _)]] :: removeFirstT.toSeq(h.tail)
     }
 }
-
 
 trait CoGroupN[K, H] extends Serializable {
   type Res <: (K, _)
 
   def arrayToRes(k: K, array: Array[Iterable[_]]): Res
 
-  def toSeq(h:H):List[RDD[(K,_)]]
+  def toSeq(h: H): List[RDD[(K, _)]]
 }
 
 object CoGroupN {
-  type Aux[K, H, R] = CoGroupN[K, H] {type Res = R}
-
+  type Aux[K, H, R] = CoGroupN[K, H] { type Res = R }
 
   //FOR THE LULZ, comme si quelqu'un allait faire un group by comme ça !
   //On peut supprimer ce cas, dans le cas d'un group by, le cogroupN reverra un RDD[(K,(Seq[V], Unit))]
@@ -56,20 +52,17 @@ object CoGroupN {
 
     override def arrayToRes(k: K, array: Array[Iterable[_]]): (K, Seq[V]) = (k, array.head.toSeq.asInstanceOf[Seq[V]])
 
-    override def toSeq(h: ::[RDD[(K, V)], HNil]): List[RDD[(K, _)]] = List(h.head.asInstanceOf[RDD[(K,_)]])
+    override def toSeq(h: ::[RDD[(K, V)], HNil]): List[RDD[(K, _)]] = List(h.head.asInstanceOf[RDD[(K, _)]])
   }
 
-
-  implicit def cogroupNByCase[K, H1 <: RDD[_], HRest <: HList, ABC <: HList, R <: Product]
-  (implicit
-   // verifie que c'est une séquence de RDD[(K,V)] :: RDD[(K,VV)] ::  ...
-   // et permet d'extraire le type ABC : Seq[V] :: Seq[VV] :: ...
-   checkCoGroup: CheckCogroup.Aux[K, H1 :: HRest, ABC],
-   // permet de passer de ABC au tuple R (Seq[V], Seq[VV], ... )
-   tupler: Tupler.Aux[ABC, R],
-   // permet d'extraire ABC depuis un Array[Iterable[_]]
-   fromTraversable: FromTraversable[ABC]
-  ): CoGroupN.Aux[K, H1 :: HRest, (K, R)] = new CoGroupN[K, H1 :: HRest] {
+  implicit def cogroupNByCase[K, H1 <: RDD[_], HRest <: HList, ABC <: HList, R <: Product](implicit
+    // verifie que c'est une séquence de RDD[(K,V)] :: RDD[(K,VV)] ::  ...
+    // et permet d'extraire le type ABC : Seq[V] :: Seq[VV] :: ...
+    checkCoGroup: CheckCogroup.Aux[K, H1 :: HRest, ABC],
+    // permet de passer de ABC au tuple R (Seq[V], Seq[VV], ... )
+    tupler: Tupler.Aux[ABC, R],
+    // permet d'extraire ABC depuis un Array[Iterable[_]]
+    fromTraversable: FromTraversable[ABC]): CoGroupN.Aux[K, H1 :: HRest, (K, R)] = new CoGroupN[K, H1 :: HRest] {
     type Res = (K, R)
 
     override def arrayToRes(k: K, array: Array[Iterable[_]]): Res = {
@@ -78,7 +71,6 @@ object CoGroupN {
 
     override def toSeq(h: ::[H1, HRest]): List[RDD[(K, _)]] = checkCoGroup.toSeq(h)
   }
-
 
   /*
     Usage : cogroupN(rdd1 :: rdd2 :: rdd3 :: HNil)
@@ -95,9 +87,7 @@ object CoGroupN {
 
 }
 
-
 object CoGroupX {
-
 
   def main(args: Array[String]): Unit = {
     val ss = SparkSession.builder().appName("toto").master("local[*]").getOrCreate()
@@ -105,7 +95,6 @@ object CoGroupX {
     val d = ss.sparkContext.makeRDD(Seq("a" -> "b", "a" -> "c", "b" -> "d"))
 
     val f = d.mapValues(_ => 1)
-
 
     val n: RDD[(String, (Seq[String], Seq[String], Seq[String]))] = CoGroupN.cogroupN(d :: d :: d :: HNil)
 
@@ -119,7 +108,5 @@ object CoGroupX {
 
     n3.collect.foreach(println)
   }
-
-
 
 }
