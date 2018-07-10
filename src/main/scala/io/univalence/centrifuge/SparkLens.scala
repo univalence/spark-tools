@@ -1,4 +1,4 @@
-package org.apache.spark.sql.univalence.utils
+package io.univalence
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ DataFrame, Row }
@@ -24,13 +24,13 @@ object SparkLens {
     case PrefixArray      ⇒ "[]"
   }).mkString("/")
 
-  def lensRegExp(df: DataFrame)(fieldSelect: (String, DataType) ⇒ Boolean, transform: (Any, DataType) ⇒ Option[Any]): DataFrame = {
+  def lensRegExp(df: DataFrame)(fieldSelect: (String, DataType) ⇒ Boolean, transform: (Any, DataType) ⇒ Any): DataFrame = {
     lens(df)({ case (p, dt) ⇒ fieldSelect(pathToStr(p), dt) }, transform)
   }
 
   type Jump = Seq[Option[Int]]
 
-  def lens(df: DataFrame)(fieldSelect: (Path, DataType) ⇒ Boolean, transform: (Any, DataType) ⇒ Option[Any]): DataFrame = {
+  def lens(df: DataFrame)(fieldSelect: (Path, DataType) ⇒ Boolean, transform: (Any, DataType) ⇒ Any): DataFrame = {
 
     val schema = df.schema
 
@@ -61,7 +61,7 @@ object SparkLens {
       gen ⇒
         toTx.foldLeft(gen)({
           case (r, (j, dt)) ⇒
-            update(j, r, a ⇒ transform(a, dt).getOrElse(a)).asInstanceOf[Row]
+            update(j, r, a ⇒ transform(a, dt)).asInstanceOf[Row]
         })
     }
 
@@ -69,8 +69,7 @@ object SparkLens {
 
   }
 
-  //TODO Burn Any
-  def update(j: Jump, r: Any, f: Any ⇒ Any): Any = {
+  private def update(j: Jump, r: Any, f: Any ⇒ Any): Any = {
     j.toList match {
       case Nil        ⇒ f(r)
       case None :: xs ⇒ r.asInstanceOf[Seq[Any]].map(x ⇒ update(xs, x, f))
@@ -83,9 +82,9 @@ object SparkLens {
 
 }
 
-//TODO Use a tree
+/* //TODO Use a tree
 sealed trait JumpTree
 
 case class Root(childs: Seq[BranchTree]) extends JumpTree
 case class BranchTree(pos: Option[Int], childs: Seq[BranchTree]) extends JumpTree
-
+*/

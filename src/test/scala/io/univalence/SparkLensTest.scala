@@ -3,7 +3,7 @@ package io.univalence
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{ DataFrame, SparkSession }
 import org.apache.spark.sql.types.{ ArrayType, StringType }
-import org.apache.spark.sql.univalence.utils.SparkLens._
+import io.univalence.SparkLens._
 import org.scalatest.FunSuite
 
 case class Toto(name: String, age: Int)
