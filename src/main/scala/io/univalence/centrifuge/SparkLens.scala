@@ -13,9 +13,9 @@ case class PrefixName(name: String) extends Prefix
 
 object SparkLens {
 
-  implicit class Regex(sc: StringContext) {
+  /*implicit class Regex(sc: StringContext) {
     def r = new util.matching.Regex(sc.parts.mkString, sc.parts.tail.map(_ ⇒ "x"): _*)
-  }
+  }*/
 
   type Path = Seq[Prefix]
 
@@ -69,6 +69,7 @@ object SparkLens {
 
   }
 
+  //TODO Burn Any
   def update(j: Jump, r: Any, f: Any ⇒ Any): Any = {
     j.toList match {
       case Nil        ⇒ f(r)
@@ -82,6 +83,7 @@ object SparkLens {
 
 }
 
+//TODO Use a tree
 sealed trait JumpTree
 
 case class Root(childs: Seq[BranchTree]) extends JumpTree
