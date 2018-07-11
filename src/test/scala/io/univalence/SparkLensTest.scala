@@ -24,14 +24,14 @@ class SparkLensTest extends FunSuite {
     assert(lensRegExp(ss.createDataFrame(Seq(Toto("a", 1))))({
       case ("name", StringType) ⇒ true
       case _                    ⇒ false
-    }, { case (a: String, d) ⇒ Some(a.toUpperCase) }).as[Toto].first() == Toto("A", 1))
+    }, { case (a: String, d) ⇒ a.toUpperCase}).as[Toto].first() == Toto("A", 1))
   }
 
   test("change Int") {
     assert(lensRegExp(ss.createDataFrame(Seq(Tata(Toto("a", 1)))))({
       case ("toto/age", _) ⇒ true
       case _               ⇒ false
-    }, { case (a: Int, d) ⇒ Some(a + 1) }).as[Tata].first() == Tata(Toto("a", 2)))
+    }, { case (a: Int, d) ⇒ a + 1 }).as[Tata].first() == Tata(Toto("a", 2)))
   }
 
   ignore("change null to Some(Nil) and not None because it is already used xddd") {

@@ -16,10 +16,10 @@ class ModelTest extends FunSuite {
   val testResultBothEmpty = Result(None, Vector())
 
   test("isPure") {
-    assert(testResult.isPure == false)
-    assert(testResultEmptyValue.isPure == false)
-    assert(testResultBothEmpty.isPure == false)
-    assert(testResultEmptyAnnotation.isPure == true)
+    assert(!testResult.isPure)
+    assert(!testResultEmptyValue.isPure)
+    assert(!testResultBothEmpty.isPure)
+    assert(testResultEmptyAnnotation.isPure)
   }
 
   import CatsContrib._
@@ -52,10 +52,10 @@ class ModelTest extends FunSuite {
   }
 
   test("hasAnnotations") {
-    assert(testResult.hasAnnotations == true)
-    assert(testResultEmptyValue.hasAnnotations == true)
-    assert(testResultEmptyAnnotation.hasAnnotations == false)
-    assert(testResultBothEmpty.hasAnnotations == false)
+    assert(testResult.hasAnnotations)
+    assert(testResultEmptyValue.hasAnnotations)
+    assert(!testResultEmptyAnnotation.hasAnnotations)
+    assert(!testResultBothEmpty.hasAnnotations)
   }
 
   test("map") {

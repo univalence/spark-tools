@@ -24,7 +24,7 @@ object CircuitBreaker {
   }
 }
 
-case class Closed private (failCount: Int = 0, circuitBreakerConfig: CircuitBreakerConfig) extends CircuitBreaker {
+case class Closed protected[centrifuge] (failCount: Int = 0, circuitBreakerConfig: CircuitBreakerConfig) extends CircuitBreaker {
   override def run[T](t: ⇒ Try[T]): (Try[T], CircuitBreaker) = {
 
     import scala.concurrent.duration._
@@ -54,7 +54,7 @@ case class Closed private (failCount: Int = 0, circuitBreakerConfig: CircuitBrea
   override def forceClose: CircuitBreaker = this
 }
 
-case class Open private (timer: Long, nextTimer: Long, circuitBreakerConfig: CircuitBreakerConfig) extends CircuitBreaker {
+case class Open protected[centrifuge] (timer: Long, nextTimer: Long, circuitBreakerConfig: CircuitBreakerConfig) extends CircuitBreaker {
   override def run[T](t: ⇒ Try[T]): (Try[T], CircuitBreaker) = {
 
     if (timer > 0) {
