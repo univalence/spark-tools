@@ -32,6 +32,7 @@ libraryDependencies ++= Seq(
 //  "io.univalence" %% "excelsius" % "0.1-SNAPSHOT",
   "org.apache.spark" %% "spark-core" % sparkV,
   "org.apache.spark" %% "spark-sql" % sparkV,
+  "org.apache.spark" %% "spark-mllib" % sparkV % "test",
   "org.scalatest" %% "scalatest" % "3.0.3" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
   "org.typelevel" %% "cats-core" % "1.0.0-MF",

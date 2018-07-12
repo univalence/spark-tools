@@ -120,7 +120,7 @@ class ModelTest extends FunSuite {
     assert(Result.fromEither(testResultEmptyAnnotation.toEither)(_.toString) == testResultEmptyAnnotation)
     assert(Result.fromEither(testResultBothEmpty.toEither)(_.toString) == Result(None, Vector(Annotation(
       "Vector()",
-      None, Vector(), true, 1
+      None, Vector(), isError = true, 1
     ))))
     //assert(Result.fromEither(testResultEmptyValue.toEither)(_.toString) == Result(None,Vector(Annotation(Vector(Annotation(msg,Some(oF),Vector(fF),false,1)),None,Vector(),true,1))))
   }
