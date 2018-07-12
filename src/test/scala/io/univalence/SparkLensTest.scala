@@ -24,7 +24,7 @@ class SparkLensTest extends FunSuite {
     assert(lensRegExp(ss.createDataFrame(Seq(Toto("a", 1))))({
       case ("name", StringType) ⇒ true
       case _                    ⇒ false
-    }, { case (a: String, d) ⇒ a.toUpperCase}).as[Toto].first() == Toto("A", 1))
+    }, { case (a: String, d) ⇒ a.toUpperCase }).as[Toto].first() == Toto("A", 1))
   }
 
   test("change Int") {
@@ -36,12 +36,14 @@ class SparkLensTest extends FunSuite {
 
   ignore("change null to Some(Nil) and not None because it is already used xddd") {
 
-    val df: DataFrame = ???
+    val df: DataFrame = ss.read.parquet("/home/phong/daily_gpp_20180705")
 
-    lensRegExp(df)({
+    val yoho: DataFrame = lensRegExp(df)({
       case (_, ArrayType(_, _)) ⇒ true
       case _                    ⇒ false
-    }, (a, b) ⇒ if (a == null) Some(Nil) else None)
+    }, (a, b) ⇒ if (a == null) Nil else a)
+
+    yoho.printSchema()
   }
 
 }

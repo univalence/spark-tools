@@ -71,8 +71,9 @@ object SparkLens {
 
   private def update(j: Jump, r: Any, f: Any ⇒ Any): Any = {
     j.toList match {
-      case Nil        ⇒ f(r)
-      case None :: xs ⇒ r.asInstanceOf[Seq[Any]].map(x ⇒ update(xs, x, f))
+      case Nil                  ⇒ f(r)
+      case x :: xs if r == null ⇒ null
+      case None :: xs           ⇒ r.asInstanceOf[Seq[Any]].map(x ⇒ update(xs, x, f))
       case Some(i) :: xs ⇒
         val row = r.asInstanceOf[Row]
         val s = row.toSeq
