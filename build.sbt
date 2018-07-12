@@ -2,7 +2,7 @@ import scalariform.formatter.preferences._
 
 scalacOptions ++= Seq("-Yrangepos", "-unchecked", "-deprecation")
 
-version := "0.1-SNAPSHOT"
+version := "0.1"
 
 name := "centrifuge"
 

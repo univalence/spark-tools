@@ -1,8 +1,10 @@
 package io.univalence.centrifuge
 
+import org.apache.spark.SparkConf
+import org.apache.spark.sql.SparkSession
 import org.scalatest.FunSuite
 
-import scala.util.Try
+import scala.util.{ Failure, Success, Try }
 
 class ExecutorTest extends FunSuite {
 
@@ -74,7 +76,7 @@ class ExecutorTest extends FunSuite {
     assert(System.currentTimeMillis() - start >= 100)
   }
 
-  test("toto") {
+  test("backoff") {
 
     val executor: Executor = Executor.build.name().backoff(10).attempt(100).getOrCreate()
 
@@ -86,6 +88,34 @@ class ExecutorTest extends FunSuite {
     s(r().get)
     assert(System.currentTimeMillis() - start >= 100)
 
+  }
+
+  test("spark") {
+
+    val conf: SparkConf = new SparkConf()
+    conf.setAppName("yo")
+    conf.set("spark.sql.caseSensitive", "true")
+    conf.setMaster("local[2]")
+
+    implicit val ss: SparkSession = SparkSession.builder.config(conf).getOrCreate
+    import ss.implicits._
+
+    val totoes = Seq(Toto("a", 1), Toto("b", 2))
+    val ds = ss.createDataset(totoes)
+
+    assert(PrgSpark.retryDs(ds)(run = x ⇒ Try(2 -> 1))({ case (a, Success((2, 1))) ⇒ a })(nbAttemptStageMax = 2).collect().toSeq == totoes)
+
+    val startDate: Long = System.currentTimeMillis()
+
+    val wait = 5000
+
+    val res = PrgSpark.retryDs(ds)(
+      run = x ⇒ if (System.currentTimeMillis() - startDate > wait) Try(2 -> 1) else Failure(new Exception("too soon"))
+    )({ case (a, _) ⇒ a })(nbAttemptStageMax = 1000)
+
+    assert(res.collect().toSeq == totoes)
+
+    assert(System.currentTimeMillis() - startDate > wait)
   }
 
 }

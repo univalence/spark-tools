@@ -246,7 +246,7 @@ object PrgSpark {
       case (toto, Success(value)) ⇒ (toto.copy(age = toto.age * value._1 + value._2), true)
       case (toto, Failure(_))     ⇒ (toto, false)
 
-    })(nbAttemptStageMax = 1)
+    })(nbAttemptStageMax = 10)
 
   }
 }
