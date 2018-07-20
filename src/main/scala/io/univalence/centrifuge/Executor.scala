@@ -1,11 +1,14 @@
 package io.univalence.centrifuge
 
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
 
 import org.apache.spark.sql.{ Dataset, SparkSession }
 
 import scala.annotation.tailrec
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ Await, Future }
 import scala.util.{ Failure, Success, Try }
 
 object CircuitOpenException extends Exception
@@ -26,7 +29,18 @@ protected class ThreadLocalExecutor(var circuitClosed: Boolean = true, config: E
       ThreadLocalExecutor.skipped
     } else {
       config.rateLimitPerSeconds.foreach(_ ⇒ startTime = System.currentTimeMillis())
-      val t = f()
+
+      val t = config.timeout match {
+        case None ⇒ f()
+        case Some(ms) ⇒
+
+          import scala.concurrent.ExecutionContext
+          import ExecutionContext.Implicits.global
+
+          val ff = Future(f())
+          Try(Await.result(ff, Duration(ms, TimeUnit.MILLISECONDS))).flatten
+
+      }
       config.rateLimitPerSeconds.foreach(l ⇒ {
         val remaining: Long = 1000 / l - (System.currentTimeMillis() - startTime)
         if (remaining > 0) Thread.sleep(remaining)
@@ -77,8 +91,9 @@ case class ExecutorConfig(
   attempt:                Int,
   backoff:                Option[Long] = None,
   withExponentialBackoff: Boolean      = false,
+  rateLimitPerSeconds:    Option[Int]  = None,
   breakAfterNFailure:     Option[Int]  = None,
-  rateLimitPerSeconds:    Option[Int]  = None
+  timeout:                Option[Long] = None
 )
 
 object Executor {
@@ -92,7 +107,8 @@ case class ExecutorBuildRep(
   backoff:                    Option[Long]   = None,
   activateExponentialBackoff: Boolean        = false,
   breakAfterNbFailure:        Option[Int]    = None,
-  maxNbCallPerSeconds:        Option[Int]    = None
+  maxNbCallPerSeconds:        Option[Int]    = None,
+  timeout:                    Option[Long]   = None
 ) extends ExecutorBuilder {
 
   def isValid: Boolean = name.isDefined
@@ -116,11 +132,12 @@ case class ExecutorBuildRep(
   override def getOrCreate(): Executor = {
     if (!isValid) throw new Exception("Invalid executor configuration")
 
-    Executor(ExecutorConfig(name = name.get, attempt.filter(_ > 1).getOrElse(1), breakAfterNFailure = breakAfterNbFailure, rateLimitPerSeconds = maxNbCallPerSeconds, backoff = backoff))
+    Executor(ExecutorConfig(name = name.get, attempt.filter(_ > 1).getOrElse(1), breakAfterNFailure = breakAfterNbFailure, rateLimitPerSeconds = maxNbCallPerSeconds, backoff = backoff, timeout = timeout))
   }
 
   override def limitRate(nbCallPerSeconds: Int): ExecutorBuilder = copy(maxNbCallPerSeconds = nbCallPerSeconds)
 
+  override def timeout(milliseconds: Long): ExecutorBuilder = copy(timeout = milliseconds)
 }
 
 trait ExecutorBuilder {
@@ -133,6 +150,8 @@ trait ExecutorBuilder {
   def withExponentialBackoff: ExecutorBuilder
 
   def breakAfter(nbFailure: Int): ExecutorBuilder
+
+  def timeout(milliseconds: Long): ExecutorBuilder
 
   def getOrCreate(): Executor
 }
@@ -150,7 +169,6 @@ case class ExecutionResult[+T](out: Option[T], info: Option[ExecutionInfo]) {
 }
 
 case class ExecutionInfo(nbAttempt: Int, skipped: Boolean, lastError: Option[String])
-
 case class ExecMetrics(success: Long = 0, skipped: Long = 0, failed: Long = 0, totalAttempts: Long = 0) {
 
   def isPureSuccess: Boolean = skipped == 0 && failed == 0
@@ -169,8 +187,7 @@ object PrgSpark {
 
   def retryDs[A <: Product: TypeTag, B <: Product: TypeTag, CallRes <: Product: TypeTag](in: Dataset[A])(run: A ⇒ Try[CallRes])(integrate: (A, Try[CallRes]) ⇒ B)(
     nbAttemptStageMax: Int,
-    executor:          Executor            = Executor.build.name().breakAfter(20).getOrCreate(),
-    recoverOutput:     A ⇒ Option[CallRes] = (a: A) ⇒ None
+    executor:          Executor = Executor.build.name().breakAfter(20).getOrCreate()
   ): Dataset[B] = {
 
     @tailrec
