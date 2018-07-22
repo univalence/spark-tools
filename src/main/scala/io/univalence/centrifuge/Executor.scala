@@ -4,12 +4,14 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
 
-import org.apache.spark.sql.{ Dataset, SparkSession }
+import io.univalence.centrifuge.util.TaskLimiter
+import monix.eval.{Task, TaskCircuitBreaker}
+import org.apache.spark.sql.{Dataset, SparkSession}
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ Await, Future }
-import scala.util.{ Failure, Success, Try }
+import scala.concurrent.{Await, Future}
+import scala.util.{Failure, Success, Try}
 
 object CircuitOpenException extends Exception
 
@@ -18,51 +20,72 @@ protected object ThreadLocalExecutor {
 }
 
 protected class ThreadLocalExecutor(var circuitClosed: Boolean = true, config: ExecutorConfig) {
+  import scala.concurrent.duration._
 
-  private var nbFailed: Int = 0
 
-  private var startTime: Long = _
+  private val circuitBreaker: Option[TaskCircuitBreaker] =  config.breakAfterNFailure.map(n => TaskCircuitBreaker(
+    maxFailures = n ,
+    resetTimeout = 600.seconds // 10 minutes by default
+    //exponentialBackoffFactor = 2,
+    //maxResetTimeout = 10.minutes
+  ))
 
-  @tailrec
-  final def run[T](f: () ⇒ Try[T], nbAttemptRemaining: Int = config.attempt - 1, tried: Int = 0): ExecutionResult[T] = {
-    if (!circuitClosed) {
-      ThreadLocalExecutor.skipped
-    } else {
-      config.rateLimitPerSeconds.foreach(_ ⇒ startTime = System.currentTimeMillis())
 
-      val t = config.timeout match {
-        case None ⇒ f()
-        case Some(ms) ⇒
 
-          import scala.concurrent.ExecutionContext
-          import ExecutionContext.Implicits.global
+  def retryBackoff[A](source: Task[A],
+                      maxRetries: Int, firstDelay: FiniteDuration): Task[A] = {
 
-          val ff = Future(f())
-          Try(Await.result(ff, Duration(ms, TimeUnit.MILLISECONDS))).flatten
-
-      }
-      config.rateLimitPerSeconds.foreach(l ⇒ {
-        val remaining: Long = 1000 / l - (System.currentTimeMillis() - startTime)
-        if (remaining > 0) Thread.sleep(remaining)
-      })
-      t match {
-        case Success(v) ⇒ ExecutionResult(Some(v), None)
-        case Failure(e) ⇒
-
-          if (nbAttemptRemaining >= 1) {
-            config.backoff.foreach(t ⇒ Thread.sleep(t))
-            run(f, nbAttemptRemaining - 1, tried + 1)
-          } else {
-            nbFailed = nbFailed + 1
-            if (config.breakAfterNFailure.exists(_ <= nbFailed)) {
-              circuitClosed = false
-            }
-            ExecutionResult(None, Some(ExecutionInfo(1 + tried, skipped = false, Some(e.getMessage))))
-          }
-
-      }
+    source.onErrorHandleWith {
+      case ex: Exception =>
+        if (maxRetries > 0)
+        // Recursive call, it's OK as Monix is stack-safe
+          retryBackoff(source, maxRetries-1, firstDelay*2)
+            .delayExecution(firstDelay)
+        else
+          Task.raiseError(ex)
     }
   }
+
+
+  private val aWeek: FiniteDuration = (60 * 60 * 24 * 7).seconds
+
+  //private var nbFailed: Int = 0
+
+  /*val limitRate: Option[TaskLimiter] = config.rateLimitPerSeconds.map(l => {
+    TaskLimiter(TimeUnit.SECONDS,l)
+  })*/
+
+  def endo[T](task:Task[T]):Task[T] = {
+
+    type Endo = Task[T] => Task[T]
+
+
+    List[Endo](
+      x => config.timeout.fold(x)(n => x.timeout(n.millisecond)),
+      config.rateLimitPerSeconds.fold[Endo](identity)((n:Int) => (x:Task[T]) => x.delayResult((1000 / n ).millisecond)),
+      x => config.backoff.fold(x.onErrorRestart(config.attempt - 1))(n => retryBackoff(x,config.attempt, n.millisecond)),
+      circuitBreaker.fold[Endo](identity)(t => x => t.protect(x))
+    ).foldLeft(task)((e,f) => f(e))
+  }
+
+  private var startTime: Long = _
+  final def run[T](f: () => Try[T]):ExecutionResult[T] = {
+
+    import monix.execution.Scheduler.Implicits.global
+    import scala.concurrent.Await
+
+    import scala.concurrent.duration._
+    val t: Try[T] = Try{
+      Await.result(endo(Task(f().get)).runAsync,aWeek)
+    }
+
+    t match {
+      case Success(v) => ExecutionResult(Some(v),None)
+      case Failure(e) => ExecutionResult(None, Some(ExecutionInfo(1, skipped = false, Some(e.getMessage))))
+    }
+
+  }
+
 }
 
 case class Executor protected[centrifuge] (config: ExecutorConfig) {

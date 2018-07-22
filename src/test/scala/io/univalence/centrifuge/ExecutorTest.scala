@@ -32,7 +32,7 @@ class ExecutorTest extends FunSuite {
       override def apply(): Try[A] = {
         if (nbFailure > 0) {
           nbFailure = nbFailure - 1
-          Try { ??? }
+          Try { throw new Exception("fail")}
         } else {
           Try(a)
         }
@@ -55,12 +55,14 @@ class ExecutorTest extends FunSuite {
       assert(f().isSuccess)
     }
 
-    val r1: () ⇒ Try[String] = failN(1, "value")
-    s(r1().get)
 
-    val r2 = failN(2, "value")
-    f(r2().get)
-    s(r2().get)
+      val r1: () ⇒ Try[String] = failN(1, "value")
+      s(r1().get)
+
+      val r2 = failN(2, "value")
+      f(r2().get)
+      s(r2().get)
+
 
   }
 
@@ -83,8 +85,10 @@ class ExecutorTest extends FunSuite {
     def s(e: ⇒ Any) = assert(executor.run(() ⇒ Try(e)).isSuccess)
     def f(e: ⇒ Any) = assert(!executor.run(() ⇒ Try(e)).isSuccess)
 
+    s(1)
+
     val start = System.currentTimeMillis()
-    val r = failN(10, 1)
+    val r = failN(4, 1)
     s(r().get)
     assert(System.currentTimeMillis() - start >= 100)
 

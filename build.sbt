@@ -29,12 +29,13 @@ libraryDependencies ++= Seq(
   "org.spire-math" % "spire_2.11" % "0.13.0",
   "org.typelevel" %% "shapeless-spire" % "0.6.1",
   "org.typelevel" %% "shapeless-scalaz" % "0.4",
-//  "io.univalence" %% "excelsius" % "0.1-SNAPSHOT",
+  //  "io.univalence" %% "excelsius" % "0.1-SNAPSHOT",
   "org.apache.spark" %% "spark-core" % sparkV,
   "org.apache.spark" %% "spark-sql" % sparkV,
   "org.apache.spark" %% "spark-mllib" % sparkV % "test",
   "org.scalatest" %% "scalatest" % "3.0.3" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
+  "io.monix" %% "monix" % "2.3.3",
   "org.typelevel" %% "cats-core" % "1.0.0-MF",
   "org.typelevel" %% "cats-laws" % "1.0.0-MF"
 )
