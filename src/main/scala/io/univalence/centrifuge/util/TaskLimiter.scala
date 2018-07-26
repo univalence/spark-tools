@@ -1,8 +1,6 @@
 package io.univalence.centrifuge.util
 
-
 //from https://gist.github.com/alexandru/623fe6c587d73e89a8f14de284ca1e2d
-
 
 import monix.eval.Task
 import java.util.concurrent.TimeUnit
@@ -21,15 +19,14 @@ final class TaskLimiter(period: TimeUnit, limit: Int) {
   import monix.execution.atomic.Atomic
   import TaskLimiter.State
 
-  private[this] val state =
-    Atomic(State(0, period, 0, limit))
+  @transient private[this] val state = Atomic(State(0, period, 0, limit))
 
   def request[A](task: Task[A]): Task[A] =
-    Task.deferAction { ec =>
+    Task.deferAction { ec ⇒
       val now = ec.currentTimeMillis()
       state.transformAndExtract(_.request(now)) match {
-        case None => task
-        case Some(delay) =>
+        case None ⇒ task
+        case Some(delay) ⇒
           // Recursive call, retrying request after delay
           request(task).delayExecution(delay)
       }
