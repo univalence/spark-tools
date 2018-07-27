@@ -34,6 +34,7 @@ final class TaskLimiter(period: TimeUnit, limit: Int) {
 }
 
 object TaskLimiter {
+
   /** Builder for [[TaskLimiter]]. */
   def apply(period: TimeUnit, limit: Int): TaskLimiter =
     new TaskLimiter(period, limit)
@@ -44,7 +45,10 @@ object TaskLimiter {
   type Timestamp = Long
 
   /** Internal state of [[TaskLimiter]]. */
-  final case class State(window: Long, period: TimeUnit, requested: Int, limit: Int) {
+  final case class State(window: Long,
+                         period: TimeUnit,
+                         requested: Int,
+                         limit: Int) {
     private def periodMillis =
       TimeUnit.MILLISECONDS.convert(1, period)
 

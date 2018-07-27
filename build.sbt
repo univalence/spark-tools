@@ -1,5 +1,3 @@
-import scalariform.formatter.preferences._
-
 scalacOptions ++= Seq("-Yrangepos", "-unchecked", "-deprecation")
 
 version := "0.1"
@@ -8,10 +6,9 @@ name := "centrifuge"
 
 organization := "io.univalence"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.12"
 
 val sparkV = "2.1.1"
-
 
 resolvers ++= Seq(
   "sonatype-oss" at "http://oss.sonatype.org/content/repositories/snapshots",
@@ -55,26 +52,5 @@ publishTo := Some(
     Opts.resolver.sonatypeStaging
 )
 
-scalariformPreferences := scalariformPreferences.value
-  .setPreference(RewriteArrowSymbols, true)
-  .setPreference(IndentSpaces, 2)
-  .setPreference(SpaceBeforeColon, false)
-  .setPreference(CompactStringConcatenation, false)
-  .setPreference(PreserveSpaceBeforeArguments, false)
-  .setPreference(AlignParameters, true)
-  .setPreference(AlignArguments, false)
-  .setPreference(DoubleIndentConstructorArguments, false)
-  .setPreference(FormatXml, true)
-  .setPreference(IndentPackageBlocks, true)
-  .setPreference(AlignSingleLineCaseStatements, true)
-  .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 50)
-  .setPreference(IndentLocalDefs, false)
-  .setPreference(DanglingCloseParenthesis, Force)
-  .setPreference(SpaceInsideParentheses, false)
-  .setPreference(SpaceInsideBrackets, false)
-  .setPreference(SpacesWithinPatternBinders, true)
-  .setPreference(MultilineScaladocCommentsStartOnFirstLine, true)
-  .setPreference(IndentWithTabs, false)
-  .setPreference(CompactControlReadability, false)
-  .setPreference(PlaceScaladocAsterisksBeneathSecondAsterisk, true)
-  .setPreference(SpacesAroundMultiImports, true)
+
+

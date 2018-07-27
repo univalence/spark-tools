@@ -1,17 +1,20 @@
 package io.univalence.centrifuge
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 case class Result[+T](
-  value:       Option[T],
-  annotations: Vector[Annotation]
+    value: Option[T],
+    annotations: Vector[Annotation]
 ) {
 
-  def addPathPart(s: String): Result[T] = mapAnnotations(x ⇒ x.copy(onField = x.onField.map(s + _).orElse(Some(s))))
+  def addPathPart(s: String): Result[T] =
+    mapAnnotations(x ⇒ x.copy(onField = x.onField.map(s + _).orElse(Some(s))))
 
-  def mapAnnotations(f: Annotation ⇒ Annotation): Result[T] = Result(value, annotations.map(f))
+  def mapAnnotations(f: Annotation ⇒ Annotation): Result[T] =
+    Result(value, annotations.map(f))
 
-  def prependAnnotations(xs: Vector[AnnotationSql]): Result[T] = Result(value, xs ++ annotations)
+  def prependAnnotations(xs: Vector[AnnotationSql]): Result[T] =
+    Result(value, xs ++ annotations)
 
   def isEmpty: Boolean = value.isEmpty
 
@@ -24,7 +27,7 @@ case class Result[+T](
   def map2[U, V](result: Result[U])(f: (T, U) ⇒ V): Result[V] = {
     Result((value, result.value) match {
       case (Some(t), Some(u)) ⇒ Some(f(t, u))
-      case _                  ⇒ None
+      case _ ⇒ None
     }, annotations ++ result.annotations)
   }
 
@@ -39,11 +42,15 @@ case class Result[+T](
 
   def filter(f: T ⇒ Boolean): Result[T] = Result(value.filter(f), annotations)
 
-  def get: T = value.getOrElse(throw new Exception("empty result : " + annotations.mkString("|")))
+  def get: T =
+    value.getOrElse(
+      throw new Exception("empty result : " + annotations.mkString("|")))
 
   def toTry: Try[T] = Try(get)
 
-  def toEither: Either[Vector[Annotation], T] = value.fold(Left(annotations).asInstanceOf[Either[Vector[Annotation], T]])(Right(_))
+  def toEither: Either[Vector[Annotation], T] =
+    value.fold(Left(annotations).asInstanceOf[Either[Vector[Annotation], T]])(
+      Right(_))
 }
 
 object Result {
@@ -55,7 +62,8 @@ object Result {
     }
   }
 
-  def fromEither[L, R](either: Either[L, R])(leftToString: L ⇒ String): Result[R] = {
+  def fromEither[L, R](either: Either[L, R])(
+      leftToString: L ⇒ String): Result[R] = {
     either.fold(leftToString.andThen(fromError), pure)
   }
 
@@ -79,22 +87,26 @@ object Result {
 }
 
 case class Annotation(
-  message:    String,
-  onField:    Option[String] = None,
-  fromFields: Vector[String] = Vector.empty,
-  isError:    Boolean,
-  count:      Long           = 1L
+    message: String,
+    onField: Option[String] = None,
+    fromFields: Vector[String] = Vector.empty,
+    isError: Boolean,
+    count: Long = 1L
 ) {
 
-  def this(message: String, onField: Option[String], fromFields: Seq[String], isError: Boolean, count: Long) = {
+  def this(message: String,
+           onField: Option[String],
+           fromFields: Seq[String],
+           isError: Boolean,
+           count: Long) = {
     this(message, onField, fromFields.toVector, isError, count)
   }
 }
 
 object Annotation {
   def fromString(
-    msg:   String,
-    error: Boolean
+      msg: String,
+      error: Boolean
   ): Annotation =
     Annotation(
       message = msg,
@@ -103,6 +115,8 @@ object Annotation {
     )
 
   def missingField(fieldName: String): Annotation = {
-    Annotation(message = "MISSING_VALUE", onField = Some(fieldName), isError = true)
+    Annotation(message = "MISSING_VALUE",
+               onField = Some(fieldName),
+               isError = true)
   }
 }

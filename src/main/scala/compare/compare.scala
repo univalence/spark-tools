@@ -11,17 +11,21 @@ object StringUtils {
 
     val union = pairs1.length + pairs2.length
 
-    def frequencies[T](s1: Seq[T]): Map[T, Int] = s1.groupBy(identity).mapValues(_.size)
+    def frequencies[T](s1: Seq[T]): Map[T, Int] =
+      s1.groupBy(identity).mapValues(_.size)
 
-    def joinMap[K, V](m1: Map[K, V], m2: Map[K, V]): Map[K, (Option[V], Option[V])] = {
+    def joinMap[K, V](m1: Map[K, V],
+                      m2: Map[K, V]): Map[K, (Option[V], Option[V])] = {
       //todo : optimize
       (m1.keySet ++ m2.keySet).toSeq.map(k ⇒ k -> (m1.get(k), m2.get(k))).toMap
     }
 
-    val inter = joinMap(frequencies(pairs1), frequencies(pairs2)).values.map({
-      case (Some(l), Some(r)) ⇒ Math.min(l, r)
-      case _                  ⇒ 0
-    }).sum
+    val inter = joinMap(frequencies(pairs1), frequencies(pairs2)).values
+      .map({
+        case (Some(l), Some(r)) ⇒ Math.min(l, r)
+        case _ ⇒ 0
+      })
+      .sum
 
     inter.toDouble * 2 / union
   }

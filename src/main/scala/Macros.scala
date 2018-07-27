@@ -2,7 +2,7 @@ package io.univalence.autobuild
 
 import shapeless.CaseClassMacros
 
-import scala.annotation.{ StaticAnnotation, compileTimeOnly }
+import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.language.existentials
 import scala.language.experimental.macros
 import scala.reflect.macros._
@@ -15,13 +15,15 @@ object TypeName {
 
   import scala.reflect.runtime.universe.TypeTag
 
-  implicit def fromTypeTag[T](implicit typeTag: TypeTag[T]): TypeName[T] = new TypeName[T] {
-    override def name: String = typeTag.tpe.toString
-  }
+  implicit def fromTypeTag[T](implicit typeTag: TypeTag[T]): TypeName[T] =
+    new TypeName[T] {
+      override def name: String = typeTag.tpe.toString
+    }
 }
 
 object MacroMarker {
-  def generated_applicative: Nothing = throw new NotImplementedError("should not exist at runtime")
+  def generated_applicative: Nothing =
+    throw new NotImplementedError("should not exist at runtime")
 }
 
 object CaseClassApplicativeBuilder {
@@ -30,26 +32,40 @@ object CaseClassApplicativeBuilder {
     def all: String = declaration + " = " + impl
   }
 
-  def generateDef(fieldNames: List[(String, String)], name: String): Generated = {
-    val signature: String = "def build(" + fieldNames.map(
-      { case (n, t) ⇒ s"$n : Result[$t]" }
-    ).mkString(",\n") + "):Result[" + name + "]"
+  def generateDef(fieldNames: List[(String, String)],
+                  name: String): Generated = {
+    val signature: String = "def build(" + fieldNames
+      .map(
+        { case (n, t) ⇒ s"$n : Result[$t]" }
+      )
+      .mkString(",\n") + "):Result[" + name + "]"
 
-    val map: List[(String, Int, String)] = fieldNames.zipWithIndex.map(t ⇒ (t._1._1, t._2 + 1, t._1._2))
-    val vals: String = map.map({ case (n, i, _) ⇒ s"""val _$i = $n.addPathPart("$n")""" }).mkString("\n")
+    val map: List[(String, Int, String)] =
+      fieldNames.zipWithIndex.map(t ⇒ (t._1._1, t._2 + 1, t._1._2))
+    val vals: String = map
+      .map({ case (n, i, _) ⇒ s"""val _$i = $n.addPathPart("$n")""" })
+      .mkString("\n")
 
-    val allResults: String = "List(" + map.map({ case (n, i, _) ⇒ "_" + i }).mkString(",") + ")"
+    val allResults: String = "List(" + map
+      .map({ case (n, i, _) ⇒ "_" + i })
+      .mkString(",") + ")"
 
     Generated(
       signature,
       s"""{
     $vals
-    val allResults:Vector[Result[Any]] = Vector(${map.map({ case (_, i, _) ⇒ "_" + i }).mkString(",")})
+    val allResults:Vector[Result[Any]] = Vector(${map
+        .map({ case (_, i, _) ⇒ "_" + i })
+        .mkString(",")})
     val allAnnotations = allResults.flatMap(_.annotations)
     if(allResults.forall(_.value.isDefined)) {
-      Result(Some($name(${map.map({ case (n, i, _) ⇒ s"$n = _$i.value.get" }).mkString(",\n")})),allAnnotations)
+      Result(Some($name(${map
+        .map({ case (n, i, _) ⇒ s"$n = _$i.value.get" })
+        .mkString(",\n")})),allAnnotations)
     } else {
-       val missingFields = allResults.zip(List(${map.map({ case (n, _, t) ⇒ "(\"" + n + "\",\"" + t + "\")" }).mkString(",")})).filter(!_._1.value.isDefined).map(_._2)
+       val missingFields = allResults.zip(List(${map
+        .map({ case (n, _, t) ⇒ "(\"" + n + "\",\"" + t + "\")" })
+        .mkString(",")})).filter(!_._1.value.isDefined).map(_._2)
        import io.univalence.centrifuge.Annotation
        val missingFieldsAnnotations = missingFields.map(f => Annotation.missingField(f._1))
        Result(None,missingFieldsAnnotations ++ allAnnotations)
@@ -63,16 +79,19 @@ object CaseClassApplicativeBuilder {
 
 @compileTimeOnly("enable macro paradise to expand macro annotations")
 class autoBuildResult extends StaticAnnotation {
-  def macroTransform(annottees: Any*): Any = macro AutoBuildConstruct.autoBuildResultImpl
+  def macroTransform(annottees: Any*): Any =
+    macro AutoBuildConstruct.autoBuildResultImpl
 }
 
 object CleanTypeName {
   def clean(s: String): String = {
-    s.replaceAll("([a-zA-Z@0-9]+\\.)+([a-zA-Z@0-9]+)", "$2").replaceAll("@@\\[([a-zA-Z0-9]+) *, *([a-zA-Z0-9]+)\\]", "$1 @@ $2")
+    s.replaceAll("([a-zA-Z@0-9]+\\.)+([a-zA-Z@0-9]+)", "$2")
+      .replaceAll("@@\\[([a-zA-Z0-9]+) *, *([a-zA-Z0-9]+)\\]", "$1 @@ $2")
   }
 }
 
-class AutoBuildConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacros {
+class AutoBuildConstruct[C <: whitebox.Context](val c: C)
+    extends CaseClassMacros {
 
   def autoBuildResultImpl(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
@@ -106,19 +125,27 @@ class AutoBuildConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacro
 
             val of: List[(TermName, Type)] = fieldsOf(typeToBuild)
 
-            val argSpec: List[(TermName, Type)] = paramss.headOption.getOrElse(Nil).asInstanceOf[List[ValDef]].map({
-              case ValDef(_, vname, vtpt, _) ⇒ {
-                val inType = vtpt match {
-                  case tq"Result[$paramInType]" ⇒ paramInType
+            val argSpec: List[(TermName, Type)] = paramss.headOption
+              .getOrElse(Nil)
+              .asInstanceOf[List[ValDef]]
+              .map({
+                case ValDef(_, vname, vtpt, _) ⇒ {
+                  val inType = vtpt match {
+                    case tq"Result[$paramInType]" ⇒ paramInType
+                  }
+                  vname → stringToType(inType.toString)
                 }
-                vname → stringToType(inType.toString)
-              }
-            })
+              })
 
-            val generateDef = CaseClassApplicativeBuilder.generateDef(of.map(t ⇒ t._1.encoded → CleanTypeName.clean(t._2.toString)), CleanTypeName.clean(typeToBuild.toString))
+            val generateDef = CaseClassApplicativeBuilder.generateDef(
+              of.map(t ⇒ t._1.encoded → CleanTypeName.clean(t._2.toString)),
+              CleanTypeName.clean(typeToBuild.toString))
 
             if (of.toMap != argSpec.toMap) {
-              c.abort(annottee.pos, "signature not matching to build " + typeToBuild.toString + ", use : \n\n @autoBuildResult\n " + generateDef.declaration + " = MacroMarker.generated_applicative")
+              c.abort(
+                annottee.pos,
+                "signature not matching to build " + typeToBuild.toString + ", use : \n\n @autoBuildResult\n " + generateDef.declaration + " = MacroMarker.generated_applicative"
+              )
             }
 
             val result = c.parse(generateDef.all)
@@ -132,5 +159,7 @@ class AutoBuildConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacro
 }
 
 object AutoBuildConstruct {
-  def autoBuildResultImpl(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = new AutoBuildConstruct[c.type](c).autoBuildResultImpl(annottees: _*)
+  def autoBuildResultImpl(c: whitebox.Context)(
+      annottees: c.Expr[Any]*): c.Expr[Any] =
+    new AutoBuildConstruct[c.type](c).autoBuildResultImpl(annottees: _*)
 }
