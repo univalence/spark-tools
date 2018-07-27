@@ -54,4 +54,4 @@ object TestTest {
     import io.univalence.excelsius._
     HelloHello.build(Result(None, Nil), Result(Some(1), List(Annotation("", "c'est pas bon")))).excel()
   }
-}*/ 
+}*/

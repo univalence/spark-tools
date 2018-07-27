@@ -112,7 +112,7 @@ object CoGroupX {
     val ss =
       SparkSession.builder().appName("toto").master("local[*]").getOrCreate()
 
-    val d = ss.sparkContext.makeRDD(Seq("a" -> "b", "a" -> "c", "b" -> "d"))
+    val d = ss.sparkContext.makeRDD(Seq("a" → "b", "a" → "c", "b" → "d"))
 
     val f = d.mapValues(_ ⇒ 1)
 

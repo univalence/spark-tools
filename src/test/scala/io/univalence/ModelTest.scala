@@ -3,10 +3,10 @@ package io.univalence.centrifuge
 import cats.instances.all._
 import cats.laws.discipline.MonadTests
 import io.univalence._
-import org.scalacheck.{ Arbitrary, Gen }
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.FunSuite
 
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 
 class ModelTest extends FunSuite {
   val testAnnotation = Annotation("msg", Some("oF"), Vector("fF"), false, 1)
@@ -24,13 +24,15 @@ class ModelTest extends FunSuite {
 
   import CatsContrib._
 
-  implicit val arbitraryAnn: Arbitrary[Annotation] = Arbitrary(Gen.resultOf(Annotation.apply _))
+  implicit val arbitraryAnn: Arbitrary[Annotation] = Arbitrary(
+    Gen.resultOf(Annotation.apply _))
 
-  implicit def arbitraryResult[T](implicit
-    oA: Arbitrary[Option[T]],
-                                  aAnn: Arbitrary[Vector[Annotation]]
-  ): Arbitrary[Result[T]] = {
-    Arbitrary(Gen.resultOf[Option[T], Vector[Annotation], Result[T]](Result.apply))
+  implicit def arbitraryResult[T](
+      implicit
+      oA: Arbitrary[Option[T]],
+      aAnn: Arbitrary[Vector[Annotation]]): Arbitrary[Result[T]] = {
+    Arbitrary(
+      Gen.resultOf[Option[T], Vector[Annotation], Result[T]](Result.apply))
   }
 
   test("Monad laws") {
@@ -47,9 +49,7 @@ class ModelTest extends FunSuite {
   }
 
   //TODO
-  test("addPathPart") {
-
-  }
+  test("addPathPart") {}
 
   test("hasAnnotations") {
     assert(testResult.hasAnnotations)
@@ -59,14 +59,14 @@ class ModelTest extends FunSuite {
   }
 
   test("map") {
-    assert(testResult.map(_.toUpperCase) == Result(Some("MSG"), Vector(testAnnotation)))
+    assert(
+      testResult.map(_.toUpperCase) == Result(Some("MSG"),
+                                              Vector(testAnnotation)))
     assert(testResult.map(_.toString) == testResult)
   }
 
   //TODO
-  test("map2") {
-
-  }
+  test("map2") {}
 
   test("filter") {
     assert(testResult.filter(_.startsWith("m")) == testResult)
@@ -82,7 +82,8 @@ class ModelTest extends FunSuite {
       testResultEmptyValue.get
     }
 
-    assert(throwEmptyValue.getMessage == "empty result : Annotation(msg,Some(oF),Vector(fF),false,1)")
+    assert(
+      throwEmptyValue.getMessage == "empty result : Annotation(msg,Some(oF),Vector(fF),false,1)")
 
     val throwBothEmpty = intercept[Exception] {
       testResultBothEmpty.get
@@ -108,20 +109,31 @@ class ModelTest extends FunSuite {
 
   //TODO
   test("fromTry") {
-    assert(Result.fromTry(testResultEmptyAnnotation.toTry)(_.toString) == testResultEmptyAnnotation)
-    assert(Result.fromTry(testResult.toTry)(_.toString) == testResultEmptyAnnotation)
+    assert(
+      Result.fromTry(testResultEmptyAnnotation.toTry)(_.toString) == testResultEmptyAnnotation)
+    assert(
+      Result.fromTry(testResult.toTry)(_.toString) == testResultEmptyAnnotation)
     //assert(Result.fromTry(testResultBothEmpty.toTry)(_.toString) == testResultEmptyAnnotation)
     //assert(Result.fromTry(testResultEmptyValue.toTry)(_.toString) == testResultEmptyAnnotation)
 
   }
 
   test("fromEither") {
-    assert(Result.fromEither(testResult.toEither)(_.toString) == testResultEmptyAnnotation)
-    assert(Result.fromEither(testResultEmptyAnnotation.toEither)(_.toString) == testResultEmptyAnnotation)
-    assert(Result.fromEither(testResultBothEmpty.toEither)(_.toString) == Result(None, Vector(Annotation(
-      "Vector()",
-      None, Vector(), isError = true, 1
-    ))))
+    assert(Result
+      .fromEither(testResult.toEither)(_.toString) == testResultEmptyAnnotation)
+    assert(
+      Result.fromEither(testResultEmptyAnnotation.toEither)(_.toString) == testResultEmptyAnnotation)
+    assert(
+      Result.fromEither(testResultBothEmpty.toEither)(_.toString) == Result(
+        None,
+        Vector(
+          Annotation(
+            "Vector()",
+            None,
+            Vector(),
+            isError = true,
+            1
+          ))))
     //assert(Result.fromEither(testResultEmptyValue.toEither)(_.toString) == Result(None,Vector(Annotation(Vector(Annotation(msg,Some(oF),Vector(fF),false,1)),None,Vector(),true,1))))
   }
 }

@@ -3,10 +3,11 @@ package psug.part0
 import scala.language.higherKinds
 
 class Part0 {
+
   /** HELLO PSUG !!!
-    *
-    * MY NAME IS AHOY-JON
-    */
+  *
+  * MY NAME IS AHOY-JON
+  */
 }
 
 trait Functor[F[_]] {
@@ -39,17 +40,21 @@ case class IronSuit[T](value: T) {
 object Functor {
 
   implicit val ironSuitInstance: Monads[IronSuit] = new Monads[IronSuit] {
-    override def flatMap[A, B](ma: IronSuit[A])(f: (A) ⇒ IronSuit[B]): IronSuit[B] = f(ma.value)
+    override def flatMap[A, B](ma: IronSuit[A])(
+        f: (A) ⇒ IronSuit[B]): IronSuit[B] = f(ma.value)
 
     override def point[A](a: A): IronSuit[A] = IronSuit(a)
 
-    override def map[A, B](fa: IronSuit[A])(f: (A) ⇒ B): IronSuit[B] = IronSuit(f(fa.value))
+    override def map[A, B](fa: IronSuit[A])(f: (A) ⇒ B): IronSuit[B] =
+      IronSuit(f(fa.value))
 
-    override def ap[A, B](ma: IronSuit[A], mb: IronSuit[(A) ⇒ B]): IronSuit[B] = {
+    override def ap[A, B](ma: IronSuit[A],
+                          mb: IronSuit[(A) ⇒ B]): IronSuit[B] = {
       point(mb.value(ma.value))
     }
 
-    override def zip[A, B](ma: IronSuit[A], mb: IronSuit[B]): IronSuit[(A, B)] = ???
+    override def zip[A, B](ma: IronSuit[A], mb: IronSuit[B]): IronSuit[(A, B)] =
+      ???
   }
 
   implicit class monadOps[M[_], A](fa: M[A])(implicit monad: Monads[M]) {
@@ -77,4 +82,3 @@ object Test2 {
 
   }
 }
-

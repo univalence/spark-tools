@@ -1,6 +1,6 @@
 package io.univalence.autobuild
 
-import io.univalence.centrifuge.{ Annotation, Result }
+import io.univalence.centrifuge.{Annotation, Result}
 import org.scalatest.FunSuite
 
 class Quickstart extends FunSuite {
@@ -15,24 +15,27 @@ class Quickstart extends FunSuite {
       @autoBuildResult
       def build:Result[Hello] = ???
     }
-    */
+     */
 
     val name = "Edgar Allan Poe"
     val pureStrResult = Result.pure(name)
     val pureBoolResult = Result.pure(true)
 
-    val errorAnnotation = Annotation.fromString(msg = "errorAnnotation", error = true)
-    val regularAnnotation = Annotation.fromString(msg = "regularAnnotation", error = false)
+    val errorAnnotation =
+      Annotation.fromString(msg = "errorAnnotation", error = true)
+    val regularAnnotation =
+      Annotation.fromString(msg = "regularAnnotation", error = false)
     val errorStrResult = Result(None, Vector(errorAnnotation))
     val errorBoolResult = Result(None, Vector(errorAnnotation))
-    val regularStrResult = Result(Some("regularStrResult"), Vector(regularAnnotation))
+    val regularStrResult =
+      Result(Some("regularStrResult"), Vector(regularAnnotation))
     val regularBoolResult = Result(Some(true), Vector(regularAnnotation))
 
     object Hello {
       @autoBuildResult
       def build(
-        name:  Result[String],
-        greet: Result[Boolean]
+          name: Result[String],
+          greet: Result[Boolean]
       ): Result[Hello] = MacroMarker.generated_applicative
 
     }

@@ -19,7 +19,6 @@ resolvers ++= Seq(
   "m2-repo-github" at "https://github.com/ahoy-jon/m2-repo/raw/master"
 )
 
-
 libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.2.5",
   "org.scalaz" %% "scalaz-core" % "7.1.4",
@@ -37,9 +36,9 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-laws" % "1.0.0-MF"
 )
 
-
 //2.1.0-SNAPSHOT
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion.full)
+addCompilerPlugin(
+  "org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
@@ -52,5 +51,4 @@ publishTo := Some(
     Opts.resolver.sonatypeStaging
 )
 
-
-
+scalafmtOnCompile in ThisBuild := true

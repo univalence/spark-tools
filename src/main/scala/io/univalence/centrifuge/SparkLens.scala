@@ -44,7 +44,7 @@ object SparkLens {
                   dataType: DataType): Seq[(Jump, DataType)] = {
 
       val first: Option[(Jump, DataType)] =
-        if (fieldSelect(path, dataType)) Some(prefix -> dataType) else None
+        if (fieldSelect(path, dataType)) Some(prefix → dataType) else None
 
       val recur: Seq[(Jump, DataType)] = dataType match {
         case StructType(fields) ⇒

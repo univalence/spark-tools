@@ -17,7 +17,7 @@ object StringUtils {
     def joinMap[K, V](m1: Map[K, V],
                       m2: Map[K, V]): Map[K, (Option[V], Option[V])] = {
       //todo : optimize
-      (m1.keySet ++ m2.keySet).toSeq.map(k ⇒ k -> (m1.get(k), m2.get(k))).toMap
+      (m1.keySet ++ m2.keySet).toSeq.map(k ⇒ k → (m1.get(k), m2.get(k))).toMap
     }
 
     val inter = joinMap(frequencies(pairs1), frequencies(pairs2)).values

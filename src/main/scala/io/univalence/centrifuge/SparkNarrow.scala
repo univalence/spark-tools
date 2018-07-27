@@ -37,7 +37,7 @@ object Sparknarrow {
     SCC(
       names = pck.toSeq ++ List(name),
       schema.map(strucField ⇒ {
-        strucField.name -> SOption(
+        strucField.name → SOption(
           SClass(dataTypeToTypeName(strucField.dataType)))
       })
     )

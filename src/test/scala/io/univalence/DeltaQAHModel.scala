@@ -1,9 +1,6 @@
-
-
 /** Dependencies :"org.typelevel" %% "shapeless-spire" % "0.4"
   *
   */
-
 /** +-+-+-+-+-+-+-+
   * |D|e|l|t|a|Q|A|
   * +-+-+-+-+-+-+-+
@@ -28,7 +25,6 @@
   * by shapeless.contrib.spire.
   *
   */
-
 package datalab.pj.validate {
 
   import datalab.pj.validate.hlight._
@@ -42,8 +38,8 @@ package datalab.pj.validate {
   import shapeless.contrib.spire._
 
   case class DeltaJobParam(
-    to:   String,
-    from: String
+      to: String,
+      from: String
   )
 
   object DeltaQA {
@@ -60,19 +56,24 @@ package datalab.pj.validate {
 
     }
 
-    def compare(dest: RDD[(String, ByVisitor)], orig: RDD[(String, ByVisitor)]): DeltaDataset = {
+    def compare(dest: RDD[(String, ByVisitor)],
+                orig: RDD[(String, ByVisitor)]): DeltaDataset = {
 
       val zero = Monoid.additive[DeltaDataset].id
 
-      val processJoin: ((Option[ByVisitor], Option[ByVisitor])) ⇒ DeltaDataset = {
-        case (None, Some(origH))        ⇒ zero.copy(orig = Traffic(1, origH))
-        case (Some(destH), None)        ⇒ zero.copy(dest = Traffic(1, destH))
-        case (Some(destH), Some(origH)) ⇒ zero.copy(both = DeltaDataset.change(destH, origH))
-        case _                          ⇒ zero // TO PLEASE THE COMPILER
+      val processJoin
+        : ((Option[ByVisitor], Option[ByVisitor])) ⇒ DeltaDataset = {
+        case (None, Some(origH)) ⇒ zero.copy(orig = Traffic(1, origH))
+        case (Some(destH), None) ⇒ zero.copy(dest = Traffic(1, destH))
+        case (Some(destH), Some(origH)) ⇒
+          zero.copy(both = DeltaDataset.change(destH, origH))
+        case _ ⇒ zero // TO PLEASE THE COMPILER
       }
 
-      dest.fullOuterJoin(orig)
-        .values.map(processJoin)
+      dest
+        .fullOuterJoin(orig)
+        .values
+        .map(processJoin)
         .reduce(_ + _)
 
     }
@@ -100,29 +101,28 @@ package datalab.pj.validate {
   case class Traffic(nbVisitor: Long, kpi: ByVisitor)
 
   case class DeltaByVisitor(
-    nbVisitor: Long,
-    nbZero:    Long,
-    delta:     ByVisitor,
-    error:     ByVisitor,
-    orig:      ByVisitor,
-    dest:      ByVisitor
+      nbVisitor: Long,
+      nbZero: Long,
+      delta: ByVisitor,
+      error: ByVisitor,
+      orig: ByVisitor,
+      dest: ByVisitor
   )
 
   /** ALL THE FOLLOWING CODE IS SPECIFIC TO THE MODELEH DELTA
     */
-
   //KPI DEFINITION
   case class ByVisitor(
-    nbSearch:      Long,
-    nbDisplayLR:   Long,
-    nbFDMinLR:     Long,
-    nbFDO:         Long,
-    nbClicLR:      Long,
-    nbClicFDMinLR: Long,
-    nbClicFDO:     Long,
-    // nbSearchWithBadLocality:         Long,
-    // nbSearchDisplayEnrich:           Long,
-    nbRechercheWithNonContinousBloc: Long
+      nbSearch: Long,
+      nbDisplayLR: Long,
+      nbFDMinLR: Long,
+      nbFDO: Long,
+      nbClicLR: Long,
+      nbClicFDMinLR: Long,
+      nbClicFDO: Long,
+      // nbSearchWithBadLocality:         Long,
+      // nbSearchDisplayEnrich:           Long,
+      nbRechercheWithNonContinousBloc: Long
   ) {
 
     def isZero: Boolean = Monoid.additive[ByVisitor].id == this
@@ -173,11 +173,10 @@ package datalab.pj.validate.hlight {
     * +-+-+-+-+-+-+-+ +-+-+-+-+-+
     *
     */
-
   case class Visiteur(
-    visitorId:  String,
-    typeSource: String,
-    sessions:   Seq[Session]
+      visitorId: String,
+      typeSource: String,
+      sessions: Seq[Session]
   ) {
 
     def recherches = sessions.flatMap(_.recherches)
@@ -186,16 +185,16 @@ package datalab.pj.validate.hlight {
   case class Session(recherches: Seq[Recherche])
 
   case class Recherche(
-    typeReponse:        String,
-    typeAccesRecherche: String,
-    //history:            Seq[PageRecherche],
-    lrs:           Seq[Reponse],
-    codesLieuxBag: Seq[CodeLieu],
-    fdSeo:         Seq[FicheDetailleeOrpheline]
+      typeReponse: String,
+      typeAccesRecherche: String,
+      //history:            Seq[PageRecherche],
+      lrs: Seq[Reponse],
+      codesLieuxBag: Seq[CodeLieu],
+      fdSeo: Seq[FicheDetailleeOrpheline]
   )
 
   case class PageRecherche(
-    bandeaux: Seq[BandeauReponse]
+      bandeaux: Seq[BandeauReponse]
   )
 
   case class CodeLieu()
@@ -203,15 +202,15 @@ package datalab.pj.validate.hlight {
   case class FicheDetailleeOrpheline(clics: Seq[Clic])
 
   case class BandeauReponse(
-    lrs: Seq[Reponse]
+      lrs: Seq[Reponse]
   )
 
   case class Reponse(
-    blocNumeroClient: String,
-    etablissements:   Seq[String],
-    fd:               Seq[FicheDetaillee],
-    clics:            Seq[Clic],
-    blocPosition:     Option[Int]
+      blocNumeroClient: String,
+      etablissements: Seq[String],
+      fd: Seq[FicheDetaillee],
+      clics: Seq[Clic],
+      blocPosition: Option[Int]
   )
 
   case class FicheDetaillee(clics: Seq[Clic])
@@ -219,11 +218,11 @@ package datalab.pj.validate.hlight {
   case class Clic(coType: String, natureClic: Option[String])
 
   case class Annotation(
-    level:    String,
-    stage:    String,
-    typeName: String,
-    message:  String,
-    path:     String
+      level: String,
+      stage: String,
+      typeName: String,
+      message: String,
+      path: String
   )
 
   object ModeleHConverter {
@@ -233,7 +232,7 @@ package datalab.pj.validate.hlight {
         visitorId = r.getAs("visitorId"),
         typeSource = r.getAs("typeSource"),
         sessions = r.getAs[Seq[Row]]("sessions").map(sessionFromRow).toVector
-      //, annotations = r.getAs[Seq[Row]]("annotations").map(annotationFromRow).toList
+        //, annotations = r.getAs[Seq[Row]]("annotations").map(annotationFromRow).toList
       )
     }
 
@@ -249,7 +248,8 @@ package datalab.pj.validate.hlight {
 
     def sessionFromRow(r: Row): Session = {
       Session(
-        recherches = r.getAs[Seq[Row]]("recherches").map(rechercheFromRow).toList
+        recherches =
+          r.getAs[Seq[Row]]("recherches").map(rechercheFromRow).toList
       )
     }
 
@@ -257,11 +257,13 @@ package datalab.pj.validate.hlight {
       Recherche(
         typeReponse = r.getAs[String]("typereponse"),
         codesLieuxBag = r.getAs[Seq[Row]]("codesLieuxBag").map(codeLieuFromRow),
-
         /*ACHTUNG*/
         lrs = {
           if (r.schema.fieldNames.contains("history"))
-            r.getAs[Seq[Row]]("history").map(pageRechercheFromRow).flatMap(_.bandeaux).flatMap(_.lrs)
+            r.getAs[Seq[Row]]("history")
+              .map(pageRechercheFromRow)
+              .flatMap(_.bandeaux)
+              .flatMap(_.lrs)
           else
             r.getAs[Seq[Row]]("bandeaux").map(bandeauFromRow).flatMap(_.lrs)
         },

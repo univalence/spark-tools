@@ -25,27 +25,37 @@ object CompareValue {
   def levenshtein(s1: String, s2: String): Int = {
     import scala.math._
     def minimum(i1: Int, i2: Int, i3: Int) = min(min(i1, i2), i3)
-    val dist = Array.tabulate(s2.length + 1, s1.length + 1) { (j, i) ⇒ if (j == 0) i else if (i == 0) j else 0 }
+    val dist = Array.tabulate(s2.length + 1, s1.length + 1) { (j, i) ⇒
+      if (j == 0) i else if (i == 0) j else 0
+    }
     for (j ← 1 to s2.length; i ← 1 to s1.length)
-      dist(j)(i) = if (s2(j - 1) == s1(i - 1)) dist(j - 1)(i - 1)
-      else minimum(dist(j - 1)(i) + 1, dist(j)(i - 1) + 1, dist(j - 1)(i - 1) + 1)
+      dist(j)(i) =
+        if (s2(j - 1) == s1(i - 1)) dist(j - 1)(i - 1)
+        else
+          minimum(dist(j - 1)(i) + 1,
+                  dist(j)(i - 1) + 1,
+                  dist(j - 1)(i - 1) + 1)
     dist(s2.length)(s1.length)
   }
 
-  implicit val compareValueInt: CompareValue.Aux[Int, Int] = new CompareValue[Int] {
-    type Out = Int
-    override def compare(t1: Int, t2: Int): Int = t1 - t2
-  }
+  implicit val compareValueInt: CompareValue.Aux[Int, Int] =
+    new CompareValue[Int] {
+      type Out = Int
+      override def compare(t1: Int, t2: Int): Int = t1 - t2
+    }
 
-  implicit val compareValueString: CompareValue.Aux[String, Int] = new CompareValue[String] {
-    type Out = Int
-    override def compare(t1: String, t2: String): Int = levenshtein(t1, t2)
-  }
+  implicit val compareValueString: CompareValue.Aux[String, Int] =
+    new CompareValue[String] {
+      type Out = Int
+      override def compare(t1: String, t2: String): Int = levenshtein(t1, t2)
+    }
 
-  implicit val compareValueBoolean: CompareValue.Aux[Boolean, Boolean] = new CompareValue[Boolean] {
-    override type Out = Boolean
-    override def compare(t1: Boolean, t2: Boolean): Boolean = !(t1 ^ t2) // XNOR // ==
-  }
+  implicit val compareValueBoolean: CompareValue.Aux[Boolean, Boolean] =
+    new CompareValue[Boolean] {
+      override type Out = Boolean
+      override def compare(t1: Boolean, t2: Boolean): Boolean =
+        !(t1 ^ t2) // XNOR // ==
+    }
 }
 
 object IntroScala {
@@ -60,20 +70,21 @@ object IntroScala {
 
   withInput(f)(3)
 
-  def compare[A, B, C](f: A ⇒ B)(rs: (B, A))(implicit compareValue: CompareValue.Aux[B, C]): (B, A, C) = {
+  def compare[A, B, C](f: A ⇒ B)(rs: (B, A))(
+      implicit compareValue: CompareValue.Aux[B, C]): (B, A, C) = {
     val r = f(rs._2)
     (r, rs._2, compareValue.compare(r, rs._1))
   }
 
   def compareList[A, B, C](f: A ⇒ B)(rss: Seq[(B, A)])(
-    implicit
-    compareValue: CompareValue.Aux[B, C],
-    monoid:       Monoid[C]
+      implicit
+      compareValue: CompareValue.Aux[B, C],
+      monoid: Monoid[C]
   ): (Seq[(B, A)], C) = {
 
     val r: Seq[(B, A, C)] = rss.map(rs ⇒ compare(f)(rs))
 
-    (r.map(t ⇒ t._1 -> t._2), r.map(_._3).fold(monoid.zero)(monoid.op))
+    (r.map(t ⇒ t._1 → t._2), r.map(_._3).fold(monoid.zero)(monoid.op))
   }
 
   sealed trait MyList[+T] {
@@ -90,7 +101,8 @@ object IntroScala {
 
   object MyList {
 
-    def apply[T](ts: T*): MyList[T] = ts.foldRight(MyNil.asInstanceOf[MyList[T]])(MyCons.apply)
+    def apply[T](ts: T*): MyList[T] =
+      ts.foldRight(MyNil.asInstanceOf[MyList[T]])(MyCons.apply)
   }
 
   case object MyNil extends MyList[Nothing] {
@@ -113,11 +125,14 @@ object IntroScala {
       } else tail.filter(pred)
     }
 
-    override def fold[C](zero: () ⇒ C)(f: (T, C) ⇒ C): C = f(head, tail.fold(zero)(f))
+    override def fold[C](zero: () ⇒ C)(f: (T, C) ⇒ C): C =
+      f(head, tail.fold(zero)(f))
 
-    override def flatMap[B](f: (T) ⇒ MyList[B]): MyList[B] = f(head).union(tail.flatMap(f))
+    override def flatMap[B](f: (T) ⇒ MyList[B]): MyList[B] =
+      f(head).union(tail.flatMap(f))
 
-    override def union[B >: T](myList: MyList[B]): MyList[B] = MyCons(head, tail.union(myList))
+    override def union[B >: T](myList: MyList[B]): MyList[B] =
+      MyCons(head, tail.union(myList))
   }
 
   def main(args: Array[String]): Unit = {

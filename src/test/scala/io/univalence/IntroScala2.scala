@@ -1,14 +1,14 @@
 package io.univalence
 
-import java.sql.{ Date, Timestamp }
+import java.sql.{Date, Timestamp}
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.expressions.{ Expression, Literal }
-import org.apache.spark.sql.types.{ LongType, StructField, TimestampType }
-import org.apache.spark.{ SparkConf, SparkContext }
+import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
+import org.apache.spark.sql.types.{LongType, StructField, TimestampType}
+import org.apache.spark.{SparkConf, SparkContext}
 
-import scala.util.{ Success, Try }
+import scala.util.{Success, Try}
 
 object IntroScala2 {
 
@@ -27,22 +27,26 @@ object IntroScala2 {
     def join[VV](ll: List[(K, VV)]): List[(K, (V, VV))] = {
       val l = lkv.map({ case (k, v) ⇒ (k, Left(v)) }) ++
         ll.map({ case (k, v) ⇒ (k, Right(v)) })
-      l.groupBy(_._1).mapValues(x ⇒ {
+      l.groupBy(_._1)
+        .mapValues(x ⇒ {
 
-        val all = x.map(_._2)
-        val left: List[V] = all.collect({ case Left(v) ⇒ v })
-        val right: List[VV] = all.collect({ case Right(v) ⇒ v })
+          val all = x.map(_._2)
+          val left: List[V] = all.collect({ case Left(v) ⇒ v })
+          val right: List[VV] = all.collect({ case Right(v) ⇒ v })
 
-        (left, right) match {
-          case (Nil, rxs) ⇒ ???
-          case (lxs, Nil) ⇒ ???
-          case _ ⇒ for {
-            l ← left
-            r ← right
-          } yield (l, r)
-        }
+          (left, right) match {
+            case (Nil, rxs) ⇒ ???
+            case (lxs, Nil) ⇒ ???
+            case _ ⇒
+              for {
+                l ← left
+                r ← right
+              } yield (l, r)
+          }
 
-      }).toList.flatMap(x ⇒ x._2.map(x._1 -> _))
+        })
+        .toList
+        .flatMap(x ⇒ x._2.map(x._1 → _))
     }
   }
 
@@ -76,11 +80,13 @@ object IntroSpark {
 
   def main(args: Array[String]): Unit = {
 
-    val ss: SparkSession = SparkSession.builder().master("local[*]").appName("toto").getOrCreate()
+    val ss: SparkSession =
+      SparkSession.builder().master("local[*]").appName("toto").getOrCreate()
 
     import ss.implicits._
 
-    val rdd1: RDD[String] = ss.sparkContext.makeRDD(Seq("1,abc def", "2,ghi jkl"))
+    val rdd1: RDD[String] =
+      ss.sparkContext.makeRDD(Seq("1,abc def", "2,ghi jkl"))
 
     val rdd2: RDD[Try[Line1]] = rdd1.map(Line1.fromString)
 
@@ -96,26 +102,28 @@ object IntroSpark {
 }
 
 case class Clickstream(
-  action:    String,
-  campaign:  String,
-  cost:      Long,
-  domain:    String,
-  ip:        String,
-  session:   String,
-  timestamp: Long,
-  user:      String
+    action: String,
+    campaign: String,
+    cost: Long,
+    domain: String,
+    ip: String,
+    session: String,
+    timestamp: Long,
+    user: String
 )
 
 object IntroSpark2 {
 
   def main(args: Array[String]): Unit = {
-    val ss: SparkSession = SparkSession.builder().master("local[*]").appName("toto").getOrCreate()
+    val ss: SparkSession =
+      SparkSession.builder().master("local[*]").appName("toto").getOrCreate()
 
     ss.sparkContext.setLogLevel("WARN")
 
     import ss.implicits._
 
-    def dataDir(s: String) = s"/Users/jon/project/cloud9-docker/spark-notebook/data/$s"
+    def dataDir(s: String) =
+      s"/Users/jon/project/cloud9-docker/spark-notebook/data/$s"
 
     val df1: DataFrame = ss.read.json(dataDir("click-stream/clickstream.json"))
 
@@ -142,7 +150,7 @@ object IntroSpark2 {
 root
  |-- category: string (nullable = true)
  |-- domain: string (nullable = true)
- */
+     */
 
     val df2 = ss.read.json(dataDir("click-stream/domain-info.json"))
 
@@ -170,15 +178,16 @@ root
 
     type EndoDf = DataFrame ⇒ DataFrame
 
-    val endoTsToDate: EndoDf = {
-      df ⇒
-        {
-          if (df.schema.fields.collect({ case StructField("timestamp", LongType, _, _) ⇒ true }).nonEmpty) {
-            df.withColumn("timestamp", expr("myToDate(timestamp)"))
-          } else {
-            df
-          }
+    val endoTsToDate: EndoDf = { df ⇒
+      {
+        if (df.schema.fields
+              .collect({ case StructField("timestamp", LongType, _, _) ⇒ true })
+              .nonEmpty) {
+          df.withColumn("timestamp", expr("myToDate(timestamp)"))
+        } else {
+          df
         }
+      }
     }
 
     val just1: EndoDf = df ⇒ df.withColumn("just1", new Column(Literal(1)))
