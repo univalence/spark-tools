@@ -47,4 +47,42 @@ class ExecutorTest extends FunSuite {
     assert(ds.collect().toList == List(2, 3, 4))
   }
 
+  test("test default circuit breaker") {
+
+    val ds = ss.createDataset(1 to 19).coalesce(1)
+
+    RetryDs.retryDs(ds)(CircuitBreakerMutable.f)({case (a,_) => a})(1000)
+
+    println(CircuitBreakerMutable.calls)
+
+    val res = (1 to 10) ++ (1 to 10) ++ (11 to 19) ++ (11 to 19)
+
+    assert(CircuitBreakerMutable.calls == res)
+
+
+
+  }
+}
+
+object CircuitBreakerMutable{
+
+  @transient var calls:Seq[Int] = Vector.empty
+
+  @transient var shouldPassNext:Set[Int] = Set.empty
+
+
+  def f(i:Int):Try[Int] = {
+
+    calls = calls :+ i
+    val res = if(shouldPassNext(i)) {
+      Try(i)
+    } else {
+      shouldPassNext = shouldPassNext + i
+      Failure(new Exception("not available"))
+    }
+    res
+  }
+
+
+
 }

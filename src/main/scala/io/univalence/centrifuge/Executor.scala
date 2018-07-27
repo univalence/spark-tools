@@ -41,7 +41,7 @@ object RetryDs {
 
     type M = (Option[A], LocalExecutionStatus, B)
 
-    def newCircuitBreaker: Option[TaskCircuitBreaker] = circuitBreakerMaxFailure.map(n ⇒ TaskCircuitBreaker(n, Duration(1, TimeUnit.MINUTES)))
+    def newCircuitBreaker: Option[TaskCircuitBreaker] = circuitBreakerMaxFailure.map(n ⇒ TaskCircuitBreaker(n, Duration(1, TimeUnit.HOURS)))
 
     def aToM(a: A, endo: Task[C] ⇒ Task[C]): M = {
       import monix.execution.Scheduler.Implicits.global
@@ -68,7 +68,6 @@ object RetryDs {
           })
           newDs.persist()
           val es: ExecutionSummary = dsToEs(newDs)
-          ds.unpersist()
           (newDs, es)
         }.flatMap(x ⇒ loopTheLoop(x, attemptRemaining - 1))
       }
