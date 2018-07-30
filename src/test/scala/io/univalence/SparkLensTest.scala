@@ -36,8 +36,7 @@ class SparkLensTest extends FunSuite {
     }, { case (a: Int, d) ⇒ a + 1 }).as[Tata].first() == Tata(Toto("a", 2)))
   }
 
-  ignore(
-    "change null to Some(Nil) and not None because it is already used xddd") {
+  ignore("null to nil") {
 
     val df: DataFrame = ss.read.parquet("/home/phong/daily_gpp_20180705")
 
@@ -46,7 +45,6 @@ class SparkLensTest extends FunSuite {
       case _ ⇒ false
     }, (a, b) ⇒ if (a == null) Nil else a)
 
-    yoho.printSchema()
   }
 
 }
