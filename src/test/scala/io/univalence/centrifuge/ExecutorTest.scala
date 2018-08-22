@@ -89,7 +89,7 @@ class ExecutorTest extends FunSuite {
     val res = Await.result(t.runAsync, Duration.Inf)._1.collect().toList
 
     assert(res.forall({
-      case (a, true)  ⇒ a <= 10
+      case (a, true) ⇒ a <= 10
       case (a, false) ⇒ a > 10
     }))
 

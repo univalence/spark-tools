@@ -6,8 +6,6 @@ case class Ahoy(name: String, i: Int, l: String)
 
 object testBuilder {
 
-
-
   //@autoBuildResult
   def build(
       name: Result[String],

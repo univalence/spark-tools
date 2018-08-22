@@ -51,4 +51,12 @@ publishTo := Some(
     Opts.resolver.sonatypeStaging
 )
 
-scalafmtOnCompile in ThisBuild := true
+lazy val format = TaskKey[Unit]("scalafmt", "FMT Files")
+
+format := {
+  import sys.process._
+  import scala.language.postfixOps
+  Seq("./scalafmt", "--non-interactive", "--git", "true", "--quiet") !
+}
+
+compile in Compile <<= (compile in Compile).dependsOn(format)
