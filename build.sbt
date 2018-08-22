@@ -56,7 +56,8 @@ lazy val format = TaskKey[Unit]("scalafmt", "FMT Files")
 format := {
   import sys.process._
   import scala.language.postfixOps
-  Seq("./scalafmt", "--non-interactive", "--git", "true", "--quiet") !
+  val abs = baseDirectory.value.absolutePath
+  Seq(s"$abs/scalafmt", "--non-interactive", "--git", "true", "--quiet", abs) !
 }
 
 compile in Compile <<= (compile in Compile).dependsOn(format)
