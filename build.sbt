@@ -54,10 +54,14 @@ publishTo := Some(
 lazy val format = TaskKey[Unit]("scalafmt", "FMT Files")
 
 format := {
-  import sys.process._
-  import scala.language.postfixOps
-  val abs = baseDirectory.value.absolutePath
-  Seq(s"$abs/scalafmt", "--non-interactive", "--git", "true", "--quiet", abs) !
+  import sys.process.Process
+  Process("./scalafmt --non-interactive --git true", baseDirectory.value).!
 }
 
+/**TO FIX
+  *
+  * /Users/jon/Project/centrifuge/build.sbt:64: warning: `<<=` operator is deprecated. Use `key := { x.value }` or `key ~= (old => { newValue })`.
+  * See http://www.scala-sbt.org/0.13/docs/Migrating-from-sbt-012x.html
+  * compile in Compile <<= (compile in Compile).dependsOn(format)
+  */
 compile in Compile <<= (compile in Compile).dependsOn(format)
