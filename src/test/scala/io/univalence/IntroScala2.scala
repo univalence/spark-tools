@@ -58,7 +58,7 @@ object IntroScala2 {
 
   def main(args: Array[String]): Unit = {
 
-    println("abc,def,ghi,jkl,mno".split(",") |> juxt(_(4), _(3)))
+    //println(("abc,def,ghi,jkl,mno".split(",") |> juxt(_(4), _(3)))
 
   }
 
@@ -168,7 +168,7 @@ root
 
     MyUDF.register(ss)
 
-    df1.withColumn("timestamp", expr("toTs(toTs(timestamp))")).show(false)
+    //df1.withColumn("timestamp", expr("toTs(toTs(timestamp))")).show(false)
 
     df1.createTempView("clickstream")
 
@@ -194,7 +194,7 @@ root
 
     Seq(endoTsToDate, just1).reduce(_.andThen(_))
 
-    endoTsToDate(endoTsToDate(endoTsToDate(df1))).show(false)
+    //endoTsToDate(endoTsToDate(endoTsToDate(df1))).show(false)
 
   }
 

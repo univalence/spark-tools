@@ -52,7 +52,7 @@ package datalab.pj.validate {
       def read(s: String): RDD[(String, ByVisitor)] = ???
 
       //TODO : to print in JSON for clarity
-      println(compare(dest = read(to), orig = read(from)))
+      ////println(((compare(dest = read(to), orig = read(from)))
 
     }
 

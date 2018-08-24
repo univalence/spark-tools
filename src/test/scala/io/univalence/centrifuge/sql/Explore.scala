@@ -45,36 +45,36 @@ object Explore {
         "select non_empty_string(name) as person_name, to_age(age) as person_age from person")
       .includeAnnotations
 
-    println(df.schema.toString())
+    //println((df.schema.toString())
 
     System.exit(0)
 
-    df.toJSON.collect().foreach(println)
+    df.toJSON.collect() //.foreach(//println()
 
-    println(df.queryExecution.toString())
+    //println((df.queryExecution.toString())
 
     df.printSchema()
 
     df.includeSources
 
     System.exit(0)
-    println(df.queryExecution.analyzed.toJSON)
+    //println((df.queryExecution.analyzed.toJSON)
 
     val df2 = df
 
-    df2.show(false)
+    //df2.show(false)
 
     df2.printSchema()
     df2.createTempView("toto")
 
     //BLOG IDEA, AUTOMATICALY FLATTEN STRUCTURE IN SPARK
     ss.sql(
-        "select col.msg, col.isError, col.count, age,name from  (select explode(annotations) as col, age, name from toto) t")
-      .show(false)
+      "select col.msg, col.isError, col.count, age,name from  (select explode(annotations) as col, age, name from toto) t")
+    //.show(false)
 
     ss.sql("select non_empty_string(name) as person_name from person")
       .includeAnnotations
-      .show(false)
+    //.show(false)
   }
 
 }

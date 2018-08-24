@@ -16,7 +16,7 @@ object Hello {
   def main(args: Array[String]) {
     import scalaz.std.option._
 
-    println(build(name = Option("ahoy"), i = Option(-1)))
+    //println((build(name = Option("ahoy"), i = Option(-1)))
 
   }
 }

@@ -75,7 +75,7 @@ class AnnotationTest extends FunSuite with BeforeAndAfterAll {
     )
 
     ss.sql("select name, checkAge(age) as age, age as ageRaw from personRaw")
-      .show(false)
+    //.show(false)
 
     /*
 +-----+----+------+
@@ -88,7 +88,7 @@ class AnnotationTest extends FunSuite with BeforeAndAfterAll {
      */
 
     /*
-    ss.sql("select name, checkAge(age) as age from personRaw").as[Person].collect().foreach(println)
+    ss.sql("select name, checkAge(age) as age from personRaw").as[Person].collect().foreach(//println()
     Caused by: java.lang.NullPointerException: Null value appeared in non-nullable field:
       - field (class: "scala.Int", name: "age")
     - root class: "io.univalence.centrifuge.sql.Person"
@@ -97,8 +97,8 @@ class AnnotationTest extends FunSuite with BeforeAndAfterAll {
 
     ss.sql("select name, checkAge(age) as age from personRaw")
       .as[BetterPerson]
-      .collect()
-      .foreach(println)
+    //.collect()
+    //.foreach(//println()
     /*
 BetterPerson(Joe,Some(14))
 BetterPerson(Timmy,Some(8))
@@ -107,7 +107,7 @@ BetterPerson(,None)
 
     ss.sql("select name, checkAge(age) as age from personRaw")
       .includeAnnotations
-      .show(false)
+    //.show(false)
 
     /*
 +-----+----+--------------------------------------------+
@@ -139,10 +139,10 @@ BetterPerson(,None)
 
     val select = onePersonDf.select("*")
 
-    println(select.queryExecution.toString())
+    //println((select.queryExecution.toString())
     select.queryExecution.logical.expressions.foreach(x ⇒ {
-      println(x)
-      println(x.prettyName)
+      //println((x)
+      //println((x.prettyName)
     })
 
   }
@@ -313,11 +313,11 @@ BetterPerson(,None)
     val df = ss.sql(
       "select *, concat(e.name,a.name) as supername from entity_validated e left join a_validated a on e.a_id = a.id")
 
-    println(df.queryExecution.toString())
+    //println((df.queryExecution.toString())
 
-    println(df.queryExecution.analyzed.toJSON)
+    //println((df.queryExecution.analyzed.toJSON)
 
-    df.includeAnnotations.show(false)
+    //df.includeAnnotations.show(false)
   }
 
   test("test function chain with option") {
@@ -361,7 +361,7 @@ BetterPerson(,None)
     ss.sql(
         "select name as person_name, to_age(age) as person_age, age as age_raw from person")
       .includeAnnotations
-      .show(false)
+    // .show(false)
 
   }
 

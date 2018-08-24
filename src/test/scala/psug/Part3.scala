@@ -67,7 +67,7 @@ object Test {
   val y: Option[Yolo] = build('i ->> Option(1) :: HNil)
 
   def main(args: Array[String]) {
-    println(y)
+    //println((y)
   }
 
 }

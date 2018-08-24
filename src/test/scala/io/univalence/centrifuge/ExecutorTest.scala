@@ -69,7 +69,7 @@ class ExecutorTest extends FunSuite {
       1000,
       circuitBreakerMaxFailure = 10)
 
-    println(CircuitBreakerMutable.calls)
+    ////println(((CircuitBreakerMutable.calls)
 
     val res = (1 to 10) ++ (1 to 10) ++ (11 to 19) ++ (11 to 19)
 

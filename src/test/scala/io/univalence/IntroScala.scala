@@ -146,9 +146,9 @@ object IntroScala {
     val r: (String, Int, Int) = compare(gs)(withInput(fs)(10))
 
     val rs = (0 to 11).map(withInput(fs))
-    println(rs)
+    ////println(((rs)
 
-    println(compareList(gs)(rs))
+    ////println(((compareList(gs)(rs))
 
   }
 

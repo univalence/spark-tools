@@ -25,8 +25,7 @@ class SparkLensTest extends FunSuite {
       lensRegExp(ss.createDataFrame(Seq(Toto("a", 1))))({
         case ("name", StringType) ⇒ true
         case _ ⇒ false
-      }, { case (a: String, d) ⇒ a.toUpperCase }).as[Toto].first() == Toto("A",
-                                                                           1))
+      }, { case (a: String, d) ⇒ a.toUpperCase }).as[Toto].first() == Toto("A", 1))
   }
 
   test("change Int") {

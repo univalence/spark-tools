@@ -86,7 +86,7 @@ object KpiAlgebraTest {
 
     val parallelize: RDD[(Int, Int)] = sc.parallelize((1 to 4).zipWithIndex)
 
-    println(
+    /*println(((
       KpiAlgebra.compare(
         left = parallelize,
         right = parallelize
@@ -96,7 +96,7 @@ object KpiAlgebraTest {
         flc = identity,
         frc = identity
       )
-    )
+    )*/
 
     // Delta(DeltaPart(0,0),DeltaPart(0,0),DeltaCommon(4,4,0,0,6,6))
 
@@ -106,7 +106,7 @@ object KpiAlgebraTest {
     import spire.implicits._
     import shapeless.contrib.spire._
 
-    println(KpiAlgebra.compare(p2, p2)(identity, identity, identity, identity))
+    ////println(((KpiAlgebra.compare(p2, p2)(identity, identity, identity, identity))
 
   }
 }

@@ -5,8 +5,8 @@ class StringUtilsTest extends FunSuite {
 
   test("letterPairs") {
     assert(StringUtils.letterPairs("abc").toSeq == Seq("ab", "bc"))
-    println("䣚".size)
-    println(StringUtils.letterPairs("䣚").toSeq)
+    //println(("䣚".size)
+    //println((StringUtils.letterPairs("䣚").toSeq)
   }
 
 }

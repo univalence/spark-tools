@@ -72,13 +72,13 @@ object Test2 {
 
     import Functor._
 
-    println(for (x ← IronSuit(1); y ← IronSuit("a")) yield (x + y))
+    //println((for (x ← IronSuit(1); y ← IronSuit("a")) yield (x + y))
 
-    println(IronSuit(1).apply2(IronSuit("a"))(_ + _))
+    //println((IronSuit(1).apply2(IronSuit("a"))(_ + _))
 
-    println(Option(1).map(_ + 1))
+    //println((Option(1).map(_ + 1))
 
-    println(Option(-1).flatMap(x ⇒ if (x < 0) None else Some("abc")))
+    //println((Option(-1).flatMap(x ⇒ if (x < 0) None else Some("abc")))
 
   }
 }
