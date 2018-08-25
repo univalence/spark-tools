@@ -17,5 +17,3 @@ Error:(__, __) signature not matching to build Hello, use :
            greet : Result[Boolean]):Result[Hello] = MacroMarker.generated_applicative
       @autoBuildResult
 ```
-
-

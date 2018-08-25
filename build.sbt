@@ -8,8 +8,6 @@ organization := "io.univalence"
 
 scalaVersion := "2.11.12"
 
-val sparkV = "2.1.1"
-
 resolvers ++= Seq(
   "sonatype-oss" at "http://oss.sonatype.org/content/repositories/snapshots",
   "OSS" at "http://oss.sonatype.org/content/repositories/releases",
@@ -22,13 +20,13 @@ resolvers ++= Seq(
 libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.2.5",
   "org.scalaz" %% "scalaz-core" % "7.1.4",
-  "org.spire-math" % "spire_2.11" % "0.13.0",
+  "org.spire-math" %% "spire" % "0.13.0",
   "org.typelevel" %% "shapeless-spire" % "0.6.1",
   "org.typelevel" %% "shapeless-scalaz" % "0.4",
   //  "io.univalence" %% "excelsius" % "0.1-SNAPSHOT",
-  "org.apache.spark" %% "spark-core" % sparkV % "compile",
-  "org.apache.spark" %% "spark-sql" % sparkV % "compile",
-  "org.apache.spark" %% "spark-mllib" % sparkV % "compile",
+  "org.apache.spark" %% "spark-core" % "2.1.1" % Provided,
+  "org.apache.spark" %% "spark-sql" % "2.1.1" % Provided,
+  "org.apache.spark" %% "spark-mllib" % "2.1.1" % Provided,
   "org.scalatest" %% "scalatest" % "3.0.3" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
   "io.monix" %% "monix" % "2.3.3",
@@ -58,10 +56,4 @@ format := {
   Process("./scalafmt --non-interactive --git true", baseDirectory.value).!
 }
 
-/**TO FIX
-  *
-  * /Users/jon/Project/centrifuge/build.sbt:64: warning: `<<=` operator is deprecated. Use `key := { x.value }` or `key ~= (old => { newValue })`.
-  * See http://www.scala-sbt.org/0.13/docs/Migrating-from-sbt-012x.html
-  * compile in Compile <<= (compile in Compile).dependsOn(format)
-  */
-compile in Compile <<= (compile in Compile).dependsOn(format)
+//compile in Compile := (compile in Compile).dependsOn(format).value
