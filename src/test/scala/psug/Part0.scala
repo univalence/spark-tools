@@ -40,16 +40,14 @@ case class IronSuit[T](value: T) {
 object Functor {
 
   implicit val ironSuitInstance: Monads[IronSuit] = new Monads[IronSuit] {
-    override def flatMap[A, B](ma: IronSuit[A])(
-        f: (A) ⇒ IronSuit[B]): IronSuit[B] = f(ma.value)
+    override def flatMap[A, B](ma: IronSuit[A])(f: (A) ⇒ IronSuit[B]): IronSuit[B] = f(ma.value)
 
     override def point[A](a: A): IronSuit[A] = IronSuit(a)
 
     override def map[A, B](fa: IronSuit[A])(f: (A) ⇒ B): IronSuit[B] =
       IronSuit(f(fa.value))
 
-    override def ap[A, B](ma: IronSuit[A],
-                          mb: IronSuit[(A) ⇒ B]): IronSuit[B] = {
+    override def ap[A, B](ma: IronSuit[A], mb: IronSuit[(A) ⇒ B]): IronSuit[B] = {
       point(mb.value(ma.value))
     }
 

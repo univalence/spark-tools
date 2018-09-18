@@ -32,8 +32,7 @@ object CaseClassApplicativeBuilder {
     def all: String = declaration + " = " + impl
   }
 
-  def generateDef(fieldNames: List[(String, String)],
-                  name: String): Generated = {
+  def generateDef(fieldNames: List[(String, String)], name: String): Generated = {
     val signature: String = "def build(" + fieldNames
       .map(
         { case (n, t) ⇒ s"$n : Result[$t]" }
@@ -90,8 +89,7 @@ object CleanTypeName {
   }
 }
 
-class AutoBuildConstruct[C <: whitebox.Context](val c: C)
-    extends CaseClassMacros {
+class AutoBuildConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacros {
 
   def autoBuildResultImpl(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
@@ -110,7 +108,7 @@ class AutoBuildConstruct[C <: whitebox.Context](val c: C)
 
     def stringToType(s: String): Type = {
       val dummyNme: String = c.fresh()
-      val parse = c.parse(s"{ type $dummyNme = " + s + " }")
+      val parse                         = c.parse(s"{ type $dummyNme = " + s + " }")
       val q"{ type $dummyNme2 = $tpt }" = c.typeCheck(parse)
       tpt.tpe.asInstanceOf[Type] // helping IntelliJ
     }
@@ -159,7 +157,6 @@ class AutoBuildConstruct[C <: whitebox.Context](val c: C)
 }
 
 object AutoBuildConstruct {
-  def autoBuildResultImpl(c: whitebox.Context)(
-      annottees: c.Expr[Any]*): c.Expr[Any] =
+  def autoBuildResultImpl(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] =
     new AutoBuildConstruct[c.type](c).autoBuildResultImpl(annottees: _*)
 }

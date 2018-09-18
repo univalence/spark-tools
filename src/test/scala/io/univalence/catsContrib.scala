@@ -12,8 +12,7 @@ object CatsContrib {
     override def pure[A](x: A): Result[A] = Result.pure(x)
 
     @tailrec
-    override def tailRecM[A, B](a: A)(
-        f: (A) ⇒ Result[Either[A, B]]): Result[B] = {
+    override def tailRecM[A, B](a: A)(f: (A) ⇒ Result[Either[A, B]]): Result[B] = {
       f(a) match {
         case r if r.isEmpty ⇒ r.asInstanceOf[Result[B]]
         case r @ Result(None, xs) ⇒ r.asInstanceOf[Result[B]]

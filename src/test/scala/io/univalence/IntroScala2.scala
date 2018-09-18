@@ -5,8 +5,8 @@ import java.sql.{Date, Timestamp}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
-import org.apache.spark.sql.types.{LongType, StructField, TimestampType}
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.sql.types.{LongType,                  StructField, TimestampType}
+import org.apache.spark.{SparkConf,                           SparkContext}
 
 import scala.util.{Success, Try}
 
@@ -31,7 +31,7 @@ object IntroScala2 {
         .mapValues(x ⇒ {
 
           val all = x.map(_._2)
-          val left: List[V] = all.collect({ case Left(v) ⇒ v })
+          val left:  List[V]  = all.collect({ case Left(v)  ⇒ v })
           val right: List[VV] = all.collect({ case Right(v) ⇒ v })
 
           (left, right) match {
@@ -102,14 +102,14 @@ object IntroSpark {
 }
 
 case class Clickstream(
-    action: String,
-    campaign: String,
-    cost: Long,
-    domain: String,
-    ip: String,
-    session: String,
+    action:    String,
+    campaign:  String,
+    cost:      Long,
+    domain:    String,
+    ip:        String,
+    session:   String,
     timestamp: Long,
-    user: String
+    user:      String
 )
 
 object IntroSpark2 {
@@ -157,8 +157,8 @@ root
     import org.apache.spark.sql.functions._
 
     val condition: Column = $"action" === "blocked"
-    val cond2: Column = df1("action") === "blocked"
-    val cond3: Column = expr("action = 'blocked'")
+    val cond2:     Column = df1("action") === "blocked"
+    val cond3:     Column = expr("action = 'blocked'")
 
     df1.join(df2, df1("domain") === df2("domain"), "outer")
 

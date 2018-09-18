@@ -23,25 +23,22 @@ object SparkLens {
     path
       .map({
         case PrefixName(name) ⇒ name
-        case PrefixArray ⇒ "[]"
+        case PrefixArray      ⇒ "[]"
       })
       .mkString("/")
 
-  def lensRegExp(df: DataFrame)(fieldSelect: (String, DataType) ⇒ Boolean,
+  def lensRegExp(df:                       DataFrame)(fieldSelect: (String, DataType) ⇒ Boolean,
                                 transform: (Any, DataType) ⇒ Any): DataFrame = {
     lens(df)({ case (p, dt) ⇒ fieldSelect(pathToStr(p), dt) }, transform)
   }
 
   type Jump = Seq[Option[Int]]
 
-  def lens(df: DataFrame)(fieldSelect: (Path, DataType) ⇒ Boolean,
-                          transform: (Any, DataType) ⇒ Any): DataFrame = {
+  def lens(df: DataFrame)(fieldSelect: (Path, DataType) ⇒ Boolean, transform: (Any, DataType) ⇒ Any): DataFrame = {
 
     val schema = df.schema
 
-    def matchJump(prefix: Jump = Vector.empty,
-                  path: Path = Nil,
-                  dataType: DataType): Seq[(Jump, DataType)] = {
+    def matchJump(prefix: Jump = Vector.empty, path: Path = Nil, dataType: DataType): Seq[(Jump, DataType)] = {
 
       val first: Option[(Jump, DataType)] =
         if (fieldSelect(path, dataType)) Some(prefix → dataType) else None
@@ -50,7 +47,7 @@ object SparkLens {
         case StructType(fields) ⇒
           fields.zipWithIndex.flatMap({
             case (s, i) ⇒
-              val j = prefix :+ Some(i)
+              val j       = prefix :+ Some(i)
               val newPath = path :+ PrefixName(s.name)
 
               matchJump(j, newPath, s.dataType)
@@ -80,12 +77,12 @@ object SparkLens {
 
   private def update(j: Jump, r: Any, f: Any ⇒ Any): Any = {
     j.toList match {
-      case Nil ⇒ f(r)
+      case Nil                  ⇒ f(r)
       case x :: xs if r == null ⇒ null
-      case None :: xs ⇒ r.asInstanceOf[Seq[Any]].map(x ⇒ update(xs, x, f))
+      case None :: xs           ⇒ r.asInstanceOf[Seq[Any]].map(x ⇒ update(xs, x, f))
       case Some(i) :: xs ⇒
         val row = r.asInstanceOf[Row]
-        val s = row.toSeq
+        val s   = row.toSeq
         new GenericRow(s.updated(i, update(xs, s(i), f)).toArray)
     }
   }

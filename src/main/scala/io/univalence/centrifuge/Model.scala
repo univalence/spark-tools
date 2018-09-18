@@ -3,7 +3,7 @@ package io.univalence.centrifuge
 import scala.util.{Failure, Success, Try}
 
 case class Result[+T](
-    value: Option[T],
+    value:       Option[T],
     annotations: Vector[Annotation]
 ) {
 
@@ -43,14 +43,12 @@ case class Result[+T](
   def filter(f: T ⇒ Boolean): Result[T] = Result(value.filter(f), annotations)
 
   def get: T =
-    value.getOrElse(
-      throw new Exception("empty result : " + annotations.mkString("|")))
+    value.getOrElse(throw new Exception("empty result : " + annotations.mkString("|")))
 
   def toTry: Try[T] = Try(get)
 
   def toEither: Either[Vector[Annotation], T] =
-    value.fold(Left(annotations).asInstanceOf[Either[Vector[Annotation], T]])(
-      Right(_))
+    value.fold(Left(annotations).asInstanceOf[Either[Vector[Annotation], T]])(Right(_))
 }
 
 object Result {
@@ -62,61 +60,54 @@ object Result {
     }
   }
 
-  def fromEither[L, R](either: Either[L, R])(
-      leftToString: L ⇒ String): Result[R] = {
+  def fromEither[L, R](either: Either[L, R])(leftToString: L ⇒ String): Result[R] = {
     either.fold(leftToString.andThen(fromError), pure)
   }
 
   def pure[T](t: T): Result[T] =
     Result(
-      value = Some(t),
+      value       = Some(t),
       annotations = Vector.empty
     )
 
   def fromError(error: String): Result[Nothing] =
     Result(
-      value = None,
+      value       = None,
       annotations = Vector(Annotation.fromString(msg = error, error = true))
     )
 
   def fromWarning[T](t: T, warning: String): Result[T] =
     Result(
-      value = Some(t),
+      value       = Some(t),
       annotations = Vector(Annotation.fromString(msg = warning, error = false))
     )
 }
 
 case class Annotation(
-    message: String,
-    onField: Option[String] = None,
+    message:    String,
+    onField:    Option[String] = None,
     fromFields: Vector[String] = Vector.empty,
-    isError: Boolean,
-    count: Long = 1L
+    isError:    Boolean,
+    count:      Long = 1L
 ) {
 
-  def this(message: String,
-           onField: Option[String],
-           fromFields: Seq[String],
-           isError: Boolean,
-           count: Long) = {
+  def this(message: String, onField: Option[String], fromFields: Seq[String], isError: Boolean, count: Long) = {
     this(message, onField, fromFields.toVector, isError, count)
   }
 }
 
 object Annotation {
   def fromString(
-      msg: String,
+      msg:   String,
       error: Boolean
   ): Annotation =
     Annotation(
       message = msg,
       isError = error,
-      count = 1L
+      count   = 1L
     )
 
   def missingField(fieldName: String): Annotation = {
-    Annotation(message = "MISSING_VALUE",
-               onField = Some(fieldName),
-               isError = true)
+    Annotation(message = "MISSING_VALUE", onField = Some(fieldName), isError = true)
   }
 }

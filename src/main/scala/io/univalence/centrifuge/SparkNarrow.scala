@@ -26,19 +26,16 @@ object Sparknarrow {
   def dataTypeToTypeName(dataType: DataType): String = {
     dataType.simpleString.capitalize match {
       case "Date" ⇒ "java.sql.Date"
-      case "Int" ⇒ "scala.Int"
-      case x ⇒ s"java.lang.$x"
+      case "Int"  ⇒ "scala.Int"
+      case x      ⇒ s"java.lang.$x"
     }
   }
 
-  def basicCC(schema: StructType,
-              pck: Option[String] = None,
-              name: String = "_Cc"): SCC = {
+  def basicCC(schema: StructType, pck: Option[String] = None, name: String = "_Cc"): SCC = {
     SCC(
       names = pck.toSeq ++ List(name),
       schema.map(strucField ⇒ {
-        strucField.name → SOption(
-          SClass(dataTypeToTypeName(strucField.dataType)))
+        strucField.name → SOption(SClass(dataTypeToTypeName(strucField.dataType)))
       })
     )
   }

@@ -18,7 +18,7 @@ object StringSpecification extends Properties("String") {
 
   property("compareStrings2") = forAll { (a: String, b: String) ⇒
     (a != b) ==> (StringUtils.compareStrings(a, b) < 1 && utils.StringUtils
-      .compareStrings(a, b) >= 0)
+      .compareStrings(a,                        b) >= 0)
   }
 
 }

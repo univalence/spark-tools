@@ -40,15 +40,13 @@ object IronSuit {
     new Applicative[IronSuit] {
       override def point[A](a: A): IronSuit[A] = IronSuit(a)
 
-      override def ap[A, B](m1: IronSuit[A])(
-          m2: IronSuit[(A) ⇒ B]): IronSuit[B] = IronSuit(m2.value(m1.value))
+      override def ap[A, B](m1: IronSuit[A])(m2: IronSuit[(A) ⇒ B]): IronSuit[B] = IronSuit(m2.value(m1.value))
     }
   implicit val applicativeAltInst: ApplicativeAlternative[IronSuit] =
     new ApplicativeAlternative[IronSuit] {
       override def point[A](a: A): IronSuit[A] = IronSuit(a)
 
-      override def zip[A, B](m1: IronSuit[A],
-                             m2: IronSuit[B]): IronSuit[(A, B)] =
+      override def zip[A, B](m1: IronSuit[A], m2: IronSuit[B]): IronSuit[(A, B)] =
         IronSuit((m1.value, m2.value))
 
       override def map[A, B](m1: IronSuit[A])(f: (A) ⇒ B): IronSuit[B] =

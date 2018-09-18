@@ -1,7 +1,7 @@
 package io.univalence.centrifuge
 
 import java.util.concurrent.TimeUnit
-import monix.eval.{Task, TaskCircuitBreaker}
+import monix.eval.{Task,              TaskCircuitBreaker}
 import org.apache.spark.sql.{Dataset, Encoder, SparkSession}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -10,18 +10,16 @@ import scala.util.{Failure, Success, Try}
 case class ExecutionSummary(nbFailure: Long)
 
 object RetryDs {
-  def retryDs[A, C, B](in: Dataset[A])(run: A ⇒ Try[C])(
-      integrate: (A, Try[C]) ⇒ B)(nbGlobalAttemptMax: Int,
-                                  circuitBreakerMaxFailure: Int = 10)(
+  def retryDs[A, C, B](in: Dataset[A])(run: A ⇒ Try[C])(integrate: (A, Try[C]) ⇒ B)(nbGlobalAttemptMax: Int,
+                                                                                    circuitBreakerMaxFailure: Int = 10)(
       implicit
       encoderA: Encoder[A],
       encoderB: Encoder[B],
-      encoderI: Encoder[(Option[A], LocalExecutionStatus, B)])
-    : (Dataset[B], ExecutionSummary) = {
+      encoderI: Encoder[(Option[A], LocalExecutionStatus, B)]): (Dataset[B], ExecutionSummary) = {
     import monix.execution.Scheduler.Implicits.global
     Await.result(
       retryDsWithTask(in)(a ⇒ Task(run(a).get))(integrate)(
-        nbGlobalAttemptMax = nbGlobalAttemptMax,
+        nbGlobalAttemptMax       = nbGlobalAttemptMax,
         circuitBreakerMaxFailure = Some(circuitBreakerMaxFailure)).runAsync,
       Duration.Inf
     )
@@ -30,8 +28,7 @@ object RetryDs {
   private def toExecutionStat(les: LocalExecutionStatus): ExecutionStat =
     if (les) 0 else 1
 
-  private def addExecutionState(es1: ExecutionStat,
-                                es2: ExecutionStat): ExecutionStat = es1 + es2
+  private def addExecutionState(es1: ExecutionStat, es2: ExecutionStat): ExecutionStat = es1 + es2
 
   private def initExecutionSummary(fes: ExecutionStat): ExecutionSummary =
     ExecutionSummary(fes)
@@ -46,20 +43,16 @@ object RetryDs {
   private type ExecutionStat = Long
 
   def retryDsWithTask[A, C, B](in: Dataset[A])(run: A ⇒ Task[C])(
-      integrate: (A, Try[C]) ⇒ B)(nbGlobalAttemptMax: Int,
-                                  circuitBreakerMaxFailure: Option[Int] =
-                                    Option(10))(
+      integrate: (A, Try[C]) ⇒ B)(nbGlobalAttemptMax: Int, circuitBreakerMaxFailure: Option[Int] = Option(10))(
       implicit
       encoderA: Encoder[A],
       encoderB: Encoder[B],
-      encoderI: Encoder[(Option[A], LocalExecutionStatus, B)])
-    : Task[(Dataset[B], ExecutionSummary)] = {
+      encoderI: Encoder[(Option[A], LocalExecutionStatus, B)]): Task[(Dataset[B], ExecutionSummary)] = {
 
     type M = (Option[A], LocalExecutionStatus, B)
 
     def newCircuitBreaker: Option[TaskCircuitBreaker] =
-      circuitBreakerMaxFailure.map(n ⇒
-        TaskCircuitBreaker(n, Duration(1, TimeUnit.HOURS)))
+      circuitBreakerMaxFailure.map(n ⇒ TaskCircuitBreaker(n, Duration(1, TimeUnit.HOURS)))
 
     def aToM(a: A, endo: Task[C] ⇒ Task[C]): M = {
       import monix.execution.Scheduler.Implicits.global
@@ -72,9 +65,8 @@ object RetryDs {
       }
     }
 
-    def loopTheLoop(
-        mAndEs: (Dataset[M], ExecutionSummary),
-        attemptRemaining: Int): Task[(Dataset[M], ExecutionSummary)] = {
+    def loopTheLoop(mAndEs:           (Dataset[M], ExecutionSummary),
+                    attemptRemaining: Int): Task[(Dataset[M], ExecutionSummary)] = {
       if (mAndEs._2.nbFailure == 0 || attemptRemaining <= 0)
         Task.pure(mAndEs)
       else {
@@ -85,8 +77,7 @@ object RetryDs {
               val circuitBreaker = newCircuitBreaker
               iterator.map({
                 case (Some(a), _, _) ⇒
-                  aToM(a,
-                       x ⇒ circuitBreaker.fold(x)(breaker ⇒ breaker.protect(x)))
+                  aToM(a, x ⇒ circuitBreaker.fold(x)(breaker ⇒ breaker.protect(x)))
                 case x ⇒ x
               })
             })
@@ -99,16 +90,14 @@ object RetryDs {
 
     def dsToEs(ds: Dataset[M]): ExecutionSummary = {
       import ds.sparkSession.implicits._
-      initExecutionSummary(
-        ds.map(_._2).rdd.map(toExecutionStat).reduce(addExecutionState))
+      initExecutionSummary(ds.map(_._2).rdd.map(toExecutionStat).reduce(addExecutionState))
     }
 
     Task({
       val init: Dataset[M] = {
         in.mapPartitions(iterator ⇒ {
           val circuitBreaker = newCircuitBreaker
-          iterator.map(x ⇒
-            aToM(x, t ⇒ circuitBreaker.fold(t)(breaker ⇒ breaker.protect(t))))
+          iterator.map(x ⇒ aToM(x, t ⇒ circuitBreaker.fold(t)(breaker ⇒ breaker.protect(t))))
         })
       }
 
