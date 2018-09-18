@@ -1,11 +1,8 @@
 scalacOptions ++= Seq("-Yrangepos", "-unchecked", "-deprecation")
 
-version := "0.1"
-
-name := "centrifuge"
-
+version      := "0.1"
+name         := "centrifuge"
 organization := "io.univalence"
-
 scalaVersion := "2.11.12"
 
 resolvers ++= Seq(
@@ -29,13 +26,9 @@ libraryDependencies ++= Seq(
   "org.typelevel"  %% "cats-laws"        % "1.0.0-MF"
 )
 
-def spark(name: String) = "org.apache.spark" %% "spark-$name" % "2.1.1" % Provided
+def spark(name: String*) = name.map(x ⇒ "org.apache.spark" %% "spark-$x" % "2.1.1" % Provided)
 
-libraryDependencies ++= Seq(
-  spark("core"),
-  spark("sql"),
-  spark("mllib")
-)
+libraryDependencies ++= spark("core", "sql", "mllib")
 
 libraryDependencies ++= Seq(
   "org.scalatest"  %% "scalatest"  % "3.0.3"  % Test,
