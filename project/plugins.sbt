@@ -1,3 +1,3 @@
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.3.5")
+addSbtPlugin("org.scoverage"    % "sbt-scoverage" % "1.5.1")
 
-addCompilerPlugin("io.tryp" %% "splain" % "0.2.4")
+addCompilerPlugin("io.tryp" % "splain" % "0.3.2" cross CrossVersion.patch)
