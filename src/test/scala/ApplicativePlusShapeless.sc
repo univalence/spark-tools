@@ -18,7 +18,7 @@ trait Applicative[M[_]] {
 case class Ahoy(name: String, y: Int)
 
 val oName: Option[String] = Option("hello") // None
-val oY: Option[String] = None
+val oY:    Option[String] = None
 
 object f extends Poly1 {
   implicit def kv[K, V, A[_]](implicit app: Applicative[A]): Case.Aux[
@@ -33,7 +33,7 @@ val b = Option('name ->> "hello") :: Option('y ->> 1) :: HNil
 def assertTypedEquals[A](expected: A, actual: A): Unit =
   assert(expected == actual)
 val kName = Witness.`'name`
-val kY = Witness.`'y`
+val kY    = Witness.`'y`
 type Res =
   Option[FieldType[kName.T, String]] :: Option[FieldType[kY.T, Int]] :: HNil
 implicit val optionAppInstance: Applicative[Option] = new Applicative[Option] {
@@ -72,10 +72,9 @@ trait Sequencer[L <: HList] {
 object Sequencer {
   type Aux[L <: HList, Out0] = Sequencer[L] { type Out = Out0 }
 
-  implicit def consSequencerAux[FH, FT <: HList, OutT](
-      implicit
-      st: Aux[FT, OutT],
-      ap: Apply2[FH, OutT]): Aux[FH :: FT, ap.Out] =
+  implicit def consSequencerAux[FH, FT <: HList, OutT](implicit
+                                                       st: Aux[FT,    OutT],
+                                                       ap: Apply2[FH, OutT]): Aux[FH :: FT, ap.Out] =
     new Sequencer[FH :: FT] {
       type Out = ap.Out
       def apply(in: FH :: FT): Out =
@@ -90,7 +89,7 @@ object Sequencer {
 }
 
 val sequenced = the[Sequencer[Res]].apply(b)
-val generic = the[LabelledGeneric[Ahoy]]
+val generic   = the[LabelledGeneric[Ahoy]]
 
 the[Applicative[Option]].map(sequenced)(generic.from)
 

@@ -6,19 +6,17 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 case class Person(name: String, age: Int)
 
-case class PersonWithAnnotations(name: String,
-                                 age: Int,
-                                 annotations: Seq[Annotation])
+case class PersonWithAnnotations(name: String, age: Int, annotations: Seq[Annotation])
 
 case class BetterPerson(name: String, age: Option[Int])
 
 object AnnotationTest {
   def to_age(i: Int): Result[Int] = {
     {} match {
-      case _ if i < 0 ⇒ Result.fromError("BELOW_ZERO")
-      case _ if i <= 13 ⇒ Result.fromWarning(i, "UNDER_13")
+      case _ if i < 0    ⇒ Result.fromError("BELOW_ZERO")
+      case _ if i <= 13  ⇒ Result.fromWarning(i, "UNDER_13")
       case _ if i >= 130 ⇒ Result.fromError("OVER_130")
-      case _ ⇒ Result.pure(i)
+      case _             ⇒ Result.pure(i)
     }
   }
 
@@ -26,7 +24,7 @@ object AnnotationTest {
     str match {
       //case None => Result.fromError("NULL_VALUE")
       case "" ⇒ Result.fromError("EMPTY_STRING")
-      case _ ⇒ Result.pure(str)
+      case _  ⇒ Result.pure(str)
     }
   }
 
@@ -45,17 +43,17 @@ class AnnotationTest extends FunSuite with BeforeAndAfterAll {
 
   import ss.implicits._
 
-  val joe = Person("Joe", 14)
-  val timmy = Person("Timmy", 8)
-  val invalid = Person("", -1)
+  val joe     = Person("Joe",   14)
+  val timmy   = Person("Timmy", 8)
+  val invalid = Person("",      -1)
 
   val onePersonDf = ss.sparkContext.makeRDD(Seq(joe)).toDF()
 
   test("quickstart") {
 
-    val joe = Person("Joe", 14)
-    val timmy = Person("Timmy", 8)
-    val invalid = Person("", -1)
+    val joe     = Person("Joe",   14)
+    val timmy   = Person("Timmy", 8)
+    val invalid = Person("",      -1)
 
     import io.univalence.centrifuge.implicits._
     import ss.implicits._
@@ -67,10 +65,10 @@ class AnnotationTest extends FunSuite with BeforeAndAfterAll {
     //register a transformation with data quality
     ss.registerTransformation[Int, Int](
       "checkAge", {
-        case i if i < 0 ⇒ Result.fromError("INVALID_AGE")
-        case i if i < 13 ⇒ Result.fromWarning(i, "UNDER_13")
+        case i if i < 0   ⇒ Result.fromError("INVALID_AGE")
+        case i if i < 13  ⇒ Result.fromWarning(i, "UNDER_13")
         case i if i > 140 ⇒ Result.fromError("OVER_140")
-        case i ⇒ Result.pure(i)
+        case i            ⇒ Result.pure(i)
       }
     )
 
@@ -105,8 +103,7 @@ BetterPerson(Timmy,Some(8))
 BetterPerson(,None)
      */
 
-    ss.sql("select name, checkAge(age) as age from personRaw")
-      .includeAnnotations
+    ss.sql("select name, checkAge(age) as age from personRaw").includeAnnotations
     //.show(false)
 
     /*
@@ -175,10 +172,10 @@ BetterPerson(,None)
     assert(
       p.get._2.toList == List(
         Annotation(
-          message = "UNDER_13",
-          isError = false,
-          count = 1,
-          onField = Some("age"),
+          message    = "UNDER_13",
+          isError    = false,
+          count      = 1,
+          onField    = Some("age"),
           fromFields = Vector("age")
         )
       ))
@@ -192,8 +189,7 @@ BetterPerson(,None)
       .createOrReplaceTempView("person")
 
     val p: Option[(Int, Seq[AnnotationSql])] = ss
-      .sql(
-        "select to_age(to_age(age) + to_age(age) - to_age(age)) as age from person")
+      .sql("select to_age(to_age(age) + to_age(age) - to_age(age)) as age from person")
       .includeAnnotations
       .as[(Int, Seq[AnnotationSql])]
       .collect()
@@ -203,16 +199,12 @@ BetterPerson(,None)
     assert(p.get._1 == 12)
     assert(
       p.get._2.toSet == Set(
-        AnnotationSql("UNDER_13",
-                      isError = false,
-                      count = 4,
-                      onField = "age",
-                      fromFields = Vector("age"))))
+        AnnotationSql("UNDER_13", isError = false, count = 4, onField = "age", fromFields = Vector("age"))))
   }
 
   test("multicol") {
 
-    ss.registerTransformation("to_age", AnnotationTest.to_age)
+    ss.registerTransformation("to_age",    AnnotationTest.to_age)
     ss.registerTransformation("non_empty", AnnotationTest.non_empty_string)
 
     ss.sparkContext
@@ -221,8 +213,7 @@ BetterPerson(,None)
       .createOrReplaceTempView("person")
 
     val res = ss
-      .sql(
-        "select to_age(age) as person_age, non_empty(name) as person_name from person")
+      .sql("select to_age(age) as person_age, non_empty(name) as person_name from person")
       .includeAnnotations
       .as[(Option[Int], Option[String], Seq[AnnotationSql])]
       .collect()
@@ -233,17 +224,17 @@ BetterPerson(,None)
     assert(
       res._3.toSet == Set(
         AnnotationSql(
-          msg = "BELOW_ZERO",
-          isError = true,
-          count = 1,
-          onField = "person_age",
+          msg        = "BELOW_ZERO",
+          isError    = true,
+          count      = 1,
+          onField    = "person_age",
           fromFields = Vector("age")
         ),
         AnnotationSql(
-          msg = "EMPTY_STRING",
-          isError = true,
-          count = 1,
-          onField = "person_name",
+          msg        = "EMPTY_STRING",
+          isError    = true,
+          count      = 1,
+          onField    = "person_name",
           fromFields = Vector("name")
         )
       ))
@@ -335,8 +326,7 @@ BetterPerson(,None)
       .createOrReplaceTempView("subtable")
 
     val df = ss
-      .sql(
-        "select * from (select non_empty(_1) as n1 from subtable where _2 == 1) t")
+      .sql("select * from (select non_empty(_1) as n1 from subtable where _2 == 1) t")
       .includeAnnotations
 
     val head = df.as[(String, Seq[AnnotationSql])].collect().head
@@ -351,16 +341,14 @@ BetterPerson(,None)
     ss.sparkContext
       .makeRDD(
         Seq(
-          Person("Joe", 12),
+          Person("Joe",    12),
           Person("Robert", -1),
-          Person("Jane", 21)
+          Person("Jane",   21)
         ))
       .toDS()
       .createOrReplaceTempView("person")
 
-    ss.sql(
-        "select name as person_name, to_age(age) as person_age, age as age_raw from person")
-      .includeAnnotations
+    ss.sql("select name as person_name, to_age(age) as person_age, age as age_raw from person").includeAnnotations
     // .show(false)
 
   }

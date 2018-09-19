@@ -28,14 +28,14 @@ import scala.reflect.runtime.universe.TypeTag
 package object centrifuge_sql {
 
   case class DeltaPart(
-      colName: String,
-      sumOnlyLeft: Option[Long],
-      sumOnlyRight: Option[Long],
-      sumBothRight: Option[Long],
-      sumBothLeft: Option[Long],
-      sumBothDelta: Option[Long],
+      colName:             String,
+      sumOnlyLeft:         Option[Long],
+      sumOnlyRight:        Option[Long],
+      sumBothRight:        Option[Long],
+      sumBothLeft:         Option[Long],
+      sumBothDelta:        Option[Long],
       sumBothDeltaSquared: Option[Long],
-      countNbExact: Option[Long]
+      countNbExact:        Option[Long]
   ) {
 
     def hasDifference: Boolean = {
@@ -51,9 +51,7 @@ package object centrifuge_sql {
 
   class QATools(val sparkSession: SparkSession) {
 
-    def registerTransformation[A: TypeTag, B: TypeTag](
-        name: String,
-        f: A ⇒ Result[B]): UserDefinedFunction = {
+    def registerTransformation[A: TypeTag, B: TypeTag](name: String, f: A ⇒ Result[B]): UserDefinedFunction = {
 
       val udf: UserDefinedFunction =
         sparkSession.udf.register("qa_raw_" + name, f)
@@ -62,9 +60,9 @@ package object centrifuge_sql {
         name,
         (s: Seq[Expression]) ⇒
           GetStructField(
-            child = udf.apply(s.map(Column.apply): _*).expr,
+            child   = udf.apply(s.map(Column.apply): _*).expr,
             ordinal = 0,
-            name = Some("value")
+            name    = Some("value")
         )
       )
 
@@ -77,20 +75,18 @@ package object centrifuge_sql {
 
     def cleanRow(a: Any): Seq[AnnotationSql] = {
 
-      def cleanInerRow(aa: Any,
-                       onField: String,
-                       fromFields: Seq[String]): Seq[AnnotationSql] = {
+      def cleanInerRow(aa: Any, onField: String, fromFields: Seq[String]): Seq[AnnotationSql] = {
         aa match {
           case m: Map[String, Any] ⇒
             m.toSeq.flatMap(x ⇒ cleanInerRow(x._2, onField, fromFields))
           case row: GenericRowWithSchema ⇒
             Seq(
               AnnotationSql(
-                msg = row.getAs[String](0),
-                onField = onField,
+                msg        = row.getAs[String](0),
+                onField    = onField,
                 fromFields = fromFields.toVector,
-                isError = row.getAs[Boolean](3),
-                count = row.getAs[Long](4)
+                isError    = row.getAs[Boolean](3),
+                count      = row.getAs[Long](4)
               ))
 
           case wa: mutable.WrappedArray[Any] ⇒
@@ -127,12 +123,10 @@ package object centrifuge_sql {
             .groupBy(x ⇒ x.toSeq.updated(x.fieldIndex("count"), 0))
             .values
             .map(x ⇒ {
-              new GenericRowWithSchema(
-                x.head.toSeq
-                  .updated(x.head.fieldIndex("count"),
-                           x.map(_.getAs[Long]("count")).sum)
-                  .toArray,
-                x.head.schema)
+              new GenericRowWithSchema(x.head.toSeq
+                                         .updated(x.head.fieldIndex("count"), x.map(_.getAs[Long]("count")).sum)
+                                         .toArray,
+                                       x.head.schema)
             })
             .toSeq
             .asInstanceOf[Seq[T]]
@@ -142,8 +136,7 @@ package object centrifuge_sql {
   }
 
   private def mergeAnnotations(s: Seq[Any]): Seq[AnnotationSql] = {
-    annotationsFusion(
-      s.asInstanceOf[Seq[Seq[Any]]].flatten.asInstanceOf[Seq[AnnotationSql]])
+    annotationsFusion(s.asInstanceOf[Seq[Seq[Any]]].flatten.asInstanceOf[Seq[AnnotationSql]])
   }
 
   case class QAUdfInPlan(tocol: String, udf: ScalaUDF, fromFields: Seq[String])
@@ -167,16 +160,14 @@ package object centrifuge_sql {
       scalaUdf.children.flatMap(findColChildDeep)
     }
 
-    private def recursivelyFindScalaUDF(exp: Expression,
-                                        tocol: String): Seq[QAUdfInPlan] = {
+    private def recursivelyFindScalaUDF(exp: Expression, tocol: String): Seq[QAUdfInPlan] = {
       exp match {
         case s: ScalaUDF ⇒ Seq(QAUdfInPlan(tocol, s, findColChild(s)))
         case _ ⇒ exp.children.flatMap(x ⇒ recursivelyFindScalaUDF(x, tocol))
       }
     }
 
-    private def recursivelyFindScalaUDF(
-        expressions: Seq[Expression]): Seq[QAUdfInPlan] = {
+    private def recursivelyFindScalaUDF(expressions: Seq[Expression]): Seq[QAUdfInPlan] = {
       expressions.flatMap({
         case Alias(child, name) ⇒ recursivelyFindScalaUDF(child, name)
         case x ⇒ println(x); Nil
@@ -206,7 +197,7 @@ package object centrifuge_sql {
       assert(dataFrame.columns.toSeq == df.columns.toSeq)
       import org.apache.spark.sql.functions._
 
-      val leftKey = dataFrame(dataFrame.columns.head)
+      val leftKey  = dataFrame(dataFrame.columns.head)
       val rightKey = df(dataFrame.columns.head)
       val j = dataFrame.join(
         df,
@@ -223,21 +214,20 @@ package object centrifuge_sql {
           })
           .toList
 
-      val onlyLeft: Column = leftKey.isNotNull.&&(rightKey.isNull)
+      val onlyLeft:  Column = leftKey.isNotNull.&&(rightKey.isNull)
       val onlyRight: Column = leftKey.isNull.&&(rightKey.isNotNull)
-      val both: Column = leftKey.isNotNull.&&(rightKey.isNotNull)
+      val both:      Column = leftKey.isNotNull.&&(rightKey.isNotNull)
 
       type KpiApplier = (Column, Column) ⇒ (String, Column)
 
       val kpis: Seq[KpiApplier] = Seq[KpiApplier](
-        (c1, _) ⇒ ("OnlyLeft", when(onlyLeft, c1)),
-        (_, c2) ⇒ ("OnlyRight", when(onlyRight, c2)),
-        (c1, _) ⇒ ("BothLeft", when(both, c1)),
-        (_, c2) ⇒ ("BothRight", when(both, c2)),
-        (c1, c2) ⇒ ("BothDelta", when(both, c1 - c2)),
-        (c1, c2) ⇒ ("BothDeltaSquared", when(both, (c1 - c2).multiply(c1 - c2))),
-        (c1, c2) ⇒
-          ("BothCountEqual", when(both && (c1 === c2), Column(Literal(1))))
+        (c1, _)  ⇒ ("OnlyLeft",         when(onlyLeft,            c1)),
+        (_,  c2) ⇒ ("OnlyRight",        when(onlyRight,           c2)),
+        (c1, _)  ⇒ ("BothLeft",         when(both,                c1)),
+        (_,  c2) ⇒ ("BothRight",        when(both,                c2)),
+        (c1, c2) ⇒ ("BothDelta",        when(both,                c1 - c2)),
+        (c1, c2) ⇒ ("BothDeltaSquared", when(both,                (c1 - c2).multiply(c1 - c2))),
+        (c1, c2) ⇒ ("BothCountEqual",   when(both && (c1 === c2), Column(Literal(1))))
       )
 
       val allCols: Seq[Column] = valueCouple.flatMap({
@@ -256,14 +246,14 @@ package object centrifuge_sql {
           Option(r.getAs[Long](fieldName + "____" + kpi))
 
         DeltaPart(
-          colName = fieldName,
-          sumOnlyLeft = e("OnlyLeft"),
-          sumOnlyRight = e("OnlyRight"),
-          sumBothRight = e("BothRight"),
-          sumBothLeft = e("BothLeft"),
-          sumBothDelta = e("BothDelta"),
+          colName             = fieldName,
+          sumOnlyLeft         = e("OnlyLeft"),
+          sumOnlyRight        = e("OnlyRight"),
+          sumBothRight        = e("BothRight"),
+          sumBothLeft         = e("BothLeft"),
+          sumBothDelta        = e("BothDelta"),
           sumBothDeltaSquared = e("BothDeltaSquared"),
-          countNbExact = e("BothCountEqual")
+          countNbExact        = e("BothCountEqual")
         )
       }
 
@@ -296,19 +286,11 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
       ArrayType(
         StructType(
           Seq(
-            StructField(name = "message",
-                        dataType = StringType,
-                        nullable = false),
-            StructField(name = "onField",
-                        dataType = StringType,
-                        nullable = true),
-            StructField(name = "fromFields",
-                        dataType = ArrayType(StringType, containsNull = false),
-                        nullable = false),
-            StructField(name = "isError",
-                        dataType = BooleanType,
-                        nullable = false),
-            StructField(name = "count", dataType = LongType, nullable = false)
+            StructField(name = "message",    dataType = StringType, nullable = false),
+            StructField(name = "onField",    dataType = StringType, nullable = true),
+            StructField(name = "fromFields", dataType = ArrayType(StringType, containsNull = false), nullable = false),
+            StructField(name = "isError",    dataType = BooleanType, nullable = false),
+            StructField(name = "count",      dataType = LongType, nullable = false)
           )),
         containsNull = false
       )
@@ -316,9 +298,8 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
     private val emptyAnnotation =
       Literal(ArrayData.toArrayData(Nil), annotationsDt)
 
-    private def recursiveNewPlan(
-        logicalPlan: LogicalPlan,
-        sparkSession: SparkSession): (LogicalPlan, Seq[Attribute]) = {
+    private def recursiveNewPlan(logicalPlan:  LogicalPlan,
+                                 sparkSession: SparkSession): (LogicalPlan, Seq[Attribute]) = {
 
       val res = logicalPlan match {
         case Project(projectList, child) ⇒
@@ -339,12 +320,12 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
           (Project(projectList :+ anncol, newChild), Seq(anncol.toAttribute))
 
         case Join(left, right, joinType, condition) ⇒
-          val plan1 = recursiveNewPlan(left, sparkSession)
+          val plan1 = recursiveNewPlan(left,  sparkSession)
           val plan2 = recursiveNewPlan(right, sparkSession)
           (Join(
-             left = plan1._1,
-             right = plan2._1,
-             joinType = joinType,
+             left      = plan1._1,
+             right     = plan2._1,
+             joinType  = joinType,
              condition = condition
            ),
            plan1._2 ++ plan2._2)
@@ -359,9 +340,7 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
             createCurrentLevel(aggregateExpressions, sparkSession)
 
           val annotationCol: NamedExpression =
-            Alias(mergeAnnotationUDF(
-                    Column(CreateArray(attributes :+ currentLevel))).expr,
-                  "annotations")()
+            Alias(mergeAnnotationUDF(Column(CreateArray(attributes :+ currentLevel))).expr, "annotations")()
 
           val collected = Alias(
             mergeAnnotationUDF(
@@ -370,30 +349,22 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
             "annotations"
           )()
 
-          (Aggregate(
-             groupingExpressions,
-             aggregateExpressions :+ collected,
-             Project(Seq(UnresolvedStar(None), annotationCol), newChild)),
+          (Aggregate(groupingExpressions,
+                     aggregateExpressions :+ collected,
+                     Project(Seq(UnresolvedStar(None), annotationCol), newChild)),
            Seq(collected.toAttribute))
 
         case x: ObjectConsumer ⇒
-          (Project(
-             Seq(UnresolvedStar(None), Alias(emptyAnnotation, "annotations")()),
-             x),
-           Nil)
+          (Project(Seq(UnresolvedStar(None), Alias(emptyAnnotation, "annotations")()), x), Nil)
         case x ⇒
-          (Project(
-             Seq(UnresolvedStar(None), Alias(emptyAnnotation, "annotations")()),
-             x),
-           Nil)
+          (Project(Seq(UnresolvedStar(None), Alias(emptyAnnotation, "annotations")()), x), Nil)
 
       }
       res
 
     }
 
-    private def createCurrentLevel(expressions: Seq[Expression],
-                                   sparkSession: SparkSession) = {
+    private def createCurrentLevel(expressions: Seq[Expression], sparkSession: SparkSession) = {
       val collect: Seq[QAUdfInPlan] = recursivelyFindScalaUDF(expressions)
       val anns: Expression = if (collect.isEmpty) {
         emptyAnnotation
@@ -430,8 +401,7 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
       val ndf = new Dataset[Row](
         sqlContext = sparkSession.sqlContext,
         newPlan,
-        RowEncoder(
-          sparkSession.sessionState.executePlan(newPlan).analyzed.schema)
+        RowEncoder(sparkSession.sessionState.executePlan(newPlan).analyzed.schema)
       )
 
       ndf

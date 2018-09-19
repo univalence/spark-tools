@@ -10,54 +10,48 @@ import scala.reflect.ClassTag
 
 case class DeltaPart[T: AdditiveMonoid](
     count: Long,
-    part: T
+    part:  T
 )
 
 case class DeltaCommon[T: AdditiveMonoid](
-    count: Long,
+    count:     Long,
     countZero: Long,
-    diff: T,
-    error: T,
-    left: T,
-    right: T
+    diff:      T,
+    error:     T,
+    left:      T,
+    right:     T
 )
 
 case class Delta[L: AdditiveMonoid, R: AdditiveMonoid, C: AdditiveMonoid](
-    left: DeltaPart[L],
-    right: DeltaPart[R],
+    left:   DeltaPart[L],
+    right:  DeltaPart[R],
     common: DeltaCommon[C]
 )
 
 object KpiAlgebra {
 
-  def computeCommon[LRC: AdditiveAbGroup: MultiplicativeSemigroup](
-      left: LRC,
-      right: LRC): DeltaCommon[LRC] = {
-    val diff = left - right
+  def computeCommon[LRC: AdditiveAbGroup: MultiplicativeSemigroup](left: LRC, right: LRC): DeltaCommon[LRC] = {
+    val diff  = left - right
     val error = diff * diff
-    DeltaCommon(count = 1,
+    DeltaCommon(count     = 1,
                 countZero = if (diff == Monoid.additive[LRC].id) 1 else 0,
-                diff = diff,
-                error = error,
-                left = left,
-                right = right)
+                diff      = diff,
+                error     = error,
+                left      = left,
+                right     = right)
   }
 
-  def monoid[LM: AdditiveMonoid, RM: AdditiveMonoid, LRC: AdditiveMonoid]
-    : Monoid[Delta[LM, RM, LRC]] =
+  def monoid[LM: AdditiveMonoid, RM: AdditiveMonoid, LRC: AdditiveMonoid]: Monoid[Delta[LM, RM, LRC]] =
     Monoid.additive[Delta[LM, RM, LRC]]
 
-  def compare[K: ClassTag,
-              L: ClassTag,
-              R: ClassTag,
-              LM: AdditiveMonoid: ClassTag,
-              RM: AdditiveMonoid: ClassTag,
+  def compare[K:   ClassTag,
+              L:   ClassTag,
+              R:   ClassTag,
+              LM:  AdditiveMonoid: ClassTag,
+              RM:  AdditiveMonoid: ClassTag,
               LRC: AdditiveAbGroup: MultiplicativeSemigroup: ClassTag](
-      left: RDD[(K, L)],
-      right: RDD[(K, R)])(flm: L ⇒ LM,
-                          frm: R ⇒ RM,
-                          flc: L ⇒ LRC,
-                          frc: R ⇒ LRC): Delta[LM, RM, LRC] = {
+      left:  RDD[(K, L)],
+      right: RDD[(K, R)])(flm: L ⇒ LM, frm: R ⇒ RM, flc: L ⇒ LRC, frc: R ⇒ LRC): Delta[LM, RM, LRC] = {
 
     val map: RDD[Delta[LM, RM, LRC]] = left
       .fullOuterJoin(right)
@@ -81,8 +75,7 @@ case class KpiLeaf(l1: Long, l2: Long, l3: Long)
 object KpiAlgebraTest {
 
   def main(args: Array[String]) {
-    val sc = new SparkContext(
-      new SparkConf().setMaster("local[*]").setAppName("smoketest"))
+    val sc = new SparkContext(new SparkConf().setMaster("local[*]").setAppName("smoketest"))
 
     val parallelize: RDD[(Int, Int)] = sc.parallelize((1 to 4).zipWithIndex)
 

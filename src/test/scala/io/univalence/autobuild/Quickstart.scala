@@ -17,15 +17,15 @@ class Quickstart extends FunSuite {
     }
      */
 
-    val name = "Edgar Allan Poe"
-    val pureStrResult = Result.pure(name)
+    val name           = "Edgar Allan Poe"
+    val pureStrResult  = Result.pure(name)
     val pureBoolResult = Result.pure(true)
 
     val errorAnnotation =
       Annotation.fromString(msg = "errorAnnotation", error = true)
     val regularAnnotation =
       Annotation.fromString(msg = "regularAnnotation", error = false)
-    val errorStrResult = Result(None, Vector(errorAnnotation))
+    val errorStrResult  = Result(None, Vector(errorAnnotation))
     val errorBoolResult = Result(None, Vector(errorAnnotation))
     val regularStrResult =
       Result(Some("regularStrResult"), Vector(regularAnnotation))
@@ -34,7 +34,7 @@ class Quickstart extends FunSuite {
     object Hello {
       @autoBuildResult
       def build(
-          name: Result[String],
+          name:  Result[String],
           greet: Result[Boolean]
       ): Result[Hello] = MacroMarker.generated_applicative
 

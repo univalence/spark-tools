@@ -58,7 +58,7 @@ class SparknarrowTest extends FunSuite {
     val yo = StructType(
       Seq(
         StructField("name", StringType),
-        StructField("tel", ArrayType(StringType))
+        StructField("tel",  ArrayType(StringType))
       ))
 
     yo.printTreeString()

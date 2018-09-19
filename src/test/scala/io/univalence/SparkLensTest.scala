@@ -1,7 +1,7 @@
 package io.univalence
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame,       SparkSession}
 import org.apache.spark.sql.types.{ArrayType, StringType}
 import io.univalence.SparkLens._
 import org.scalatest.FunSuite
@@ -21,12 +21,10 @@ class SparkLensTest extends FunSuite {
   import ss.implicits._
 
   test("testLensRegExp change string") {
-    assert(
-      lensRegExp(ss.createDataFrame(Seq(Toto("a", 1))))({
-        case ("name", StringType) ⇒ true
-        case _ ⇒ false
-      }, { case (a: String, d) ⇒ a.toUpperCase }).as[Toto].first() == Toto("A",
-                                                                           1))
+    assert(lensRegExp(ss.createDataFrame(Seq(Toto("a", 1))))({
+      case ("name", StringType) ⇒ true
+      case _ ⇒ false
+    }, { case (a: String, d) ⇒ a.toUpperCase }).as[Toto].first() == Toto("A", 1))
   }
 
   test("change Int") {

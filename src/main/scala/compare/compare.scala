@@ -14,8 +14,7 @@ object StringUtils {
     def frequencies[T](s1: Seq[T]): Map[T, Int] =
       s1.groupBy(identity).mapValues(_.size)
 
-    def joinMap[K, V](m1: Map[K, V],
-                      m2: Map[K, V]): Map[K, (Option[V], Option[V])] = {
+    def joinMap[K, V](m1: Map[K, V], m2: Map[K, V]): Map[K, (Option[V], Option[V])] = {
       //todo : optimize
       (m1.keySet ++ m2.keySet).toSeq.map(k ⇒ k → (m1.get(k), m2.get(k))).toMap
     }

@@ -1,7 +1,7 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
-import org.apache.spark.sql.types.{LongType, TimestampType}
+import org.apache.spark.sql.types.{LongType,                  TimestampType}
 
 object MyUDF {
 

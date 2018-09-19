@@ -25,7 +25,7 @@ final class TaskLimiter(period: TimeUnit, limit: Int) {
     Task.deferAction { ec ⇒
       val now = ec.currentTimeMillis()
       state.transformAndExtract(_.request(now)) match {
-        case None ⇒ task
+        case None        ⇒ task
         case Some(delay) ⇒
           // Recursive call, retrying request after delay
           request(task).delayExecution(delay)
@@ -45,15 +45,12 @@ object TaskLimiter {
   type Timestamp = Long
 
   /** Internal state of [[TaskLimiter]]. */
-  final case class State(window: Long,
-                         period: TimeUnit,
-                         requested: Int,
-                         limit: Int) {
+  final case class State(window: Long, period: TimeUnit, requested: Int, limit: Int) {
     private def periodMillis =
       TimeUnit.MILLISECONDS.convert(1, period)
 
     def request(now: Timestamp): (Option[FiniteDuration], State) = {
-      val periodMillis = this.periodMillis
+      val periodMillis  = this.periodMillis
       val currentWindow = now / periodMillis
 
       if (currentWindow != window)
@@ -62,7 +59,7 @@ object TaskLimiter {
         (None, copy(requested = requested + 1))
       else {
         val nextTS = (currentWindow + 1) * periodMillis
-        val sleep = nextTS - now
+        val sleep  = nextTS - now
         (Some(sleep.millis), this)
       }
     }

@@ -29,8 +29,7 @@ class ExecutorTest extends FunSuite {
 
     assert(
       RetryDs
-        .retryDs(ds)(run = x ⇒ Try(1))({ case (a, Success(1)) ⇒ a })(
-          nbGlobalAttemptMax = 1000)
+        .retryDs(ds)(run = x ⇒ Try(1))({ case (a, Success(1)) ⇒ a })(nbGlobalAttemptMax = 1000)
         ._1
         .collect()
         .toSeq == totoes)
@@ -60,14 +59,11 @@ class ExecutorTest extends FunSuite {
     assert(ds.collect().toList == List(2, 3, 4))
   }
 
-  test(
-    "circuit breaker should the stop calling the task for current partition after 10 executions in error") {
+  test("circuit breaker should the stop calling the task for current partition after 10 executions in error") {
 
     val ds = ss.createDataset(1 to 19).coalesce(1)
 
-    RetryDs.retryDs(ds)(CircuitBreakerMutable.f)({ case (a, _) ⇒ a })(
-      1000,
-      circuitBreakerMaxFailure = 10)
+    RetryDs.retryDs(ds)(CircuitBreakerMutable.f)({ case (a, _) ⇒ a })(1000, circuitBreakerMaxFailure = 10)
 
     ////println(((CircuitBreakerMutable.calls)
 
@@ -81,15 +77,14 @@ class ExecutorTest extends FunSuite {
 
     val ds = ss.createDataset(List(1, 2, 5, 10, 100, 200, 500, 1000))
 
-    val t = RetryDs.retryDsWithTask(ds)(x ⇒
-      Task(Thread.sleep(x)).timeout(Duration(10, TimeUnit.MILLISECONDS)))(
-      (x, y) ⇒ (x, y.isSuccess))(2, None)
+    val t = RetryDs.retryDsWithTask(ds)(x ⇒ Task(Thread.sleep(x)).timeout(Duration(10, TimeUnit.MILLISECONDS)))((x, y) ⇒
+      (x, y.isSuccess))(2, None)
 
     import monix.execution.Scheduler.Implicits.global
     val res = Await.result(t.runAsync, Duration.Inf)._1.collect().toList
 
     assert(res.forall({
-      case (a, true) ⇒ a <= 10
+      case (a, true)  ⇒ a <= 10
       case (a, false) ⇒ a > 10
     }))
 

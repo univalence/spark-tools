@@ -32,9 +32,7 @@ object CompareValue {
       dist(j)(i) =
         if (s2(j - 1) == s1(i - 1)) dist(j - 1)(i - 1)
         else
-          minimum(dist(j - 1)(i) + 1,
-                  dist(j)(i - 1) + 1,
-                  dist(j - 1)(i - 1) + 1)
+          minimum(dist(j - 1)(i) + 1, dist(j)(i - 1) + 1, dist(j - 1)(i - 1) + 1)
     dist(s2.length)(s1.length)
   }
 
@@ -70,8 +68,7 @@ object IntroScala {
 
   withInput(f)(3)
 
-  def compare[A, B, C](f: A ⇒ B)(rs: (B, A))(
-      implicit compareValue: CompareValue.Aux[B, C]): (B, A, C) = {
+  def compare[A, B, C](f: A ⇒ B)(rs: (B, A))(implicit compareValue: CompareValue.Aux[B, C]): (B, A, C) = {
     val r = f(rs._2)
     (r, rs._2, compareValue.compare(r, rs._1))
   }
@@ -79,7 +76,7 @@ object IntroScala {
   def compareList[A, B, C](f: A ⇒ B)(rss: Seq[(B, A)])(
       implicit
       compareValue: CompareValue.Aux[B, C],
-      monoid: Monoid[C]
+      monoid:       Monoid[C]
   ): (Seq[(B, A)], C) = {
 
     val r: Seq[(B, A, C)] = rss.map(rs ⇒ compare(f)(rs))
@@ -106,7 +103,7 @@ object IntroScala {
   }
 
   case object MyNil extends MyList[Nothing] {
-    override def map[B](f: (Nothing) ⇒ B): MyList[B] = this
+    override def map[B](f:    (Nothing) ⇒ B):       MyList[B]       = this
     override def filter(pred: (Nothing) ⇒ Boolean): MyList[Nothing] = this
 
     override def fold[C](zero: () ⇒ C)(f: (Nothing, C) ⇒ C): C = zero()

@@ -8,10 +8,10 @@ object Explore {
 
   def to_age(i: Int): Result[Int] = {
     {} match {
-      case _ if i < 0 ⇒ Result.fromError("BELOW_ZERO")
-      case _ if i <= 13 ⇒ Result.fromWarning(i, "UNDER_13")
+      case _ if i < 0    ⇒ Result.fromError("BELOW_ZERO")
+      case _ if i <= 13  ⇒ Result.fromWarning(i, "UNDER_13")
       case _ if i >= 130 ⇒ Result.fromError("OVER_130")
-      case _ ⇒ Result.pure(i)
+      case _             ⇒ Result.pure(i)
     }
   }
 
@@ -19,7 +19,7 @@ object Explore {
     str match {
       //case None => Result.fromError("NULL_VALUE")
       case "" ⇒ Result.fromError("EMPTY_STRING")
-      case _ ⇒ Result.pure(str)
+      case _  ⇒ Result.pure(str)
     }
   }
 
@@ -30,7 +30,7 @@ object Explore {
     val ss =
       SparkSession.builder().appName("test").master("local[*]").getOrCreate()
 
-    ss.registerTransformation("to_age", to_age)
+    ss.registerTransformation("to_age",           to_age)
     ss.registerTransformation("non_empty_string", non_empty_string)
 
     import ss.sqlContext.implicits._
@@ -41,8 +41,7 @@ object Explore {
       .createTempView("person")
 
     val df = ss
-      .sql(
-        "select non_empty_string(name) as person_name, to_age(age) as person_age from person")
+      .sql("select non_empty_string(name) as person_name, to_age(age) as person_age from person")
       .includeAnnotations
 
     //println((df.schema.toString())
@@ -72,8 +71,7 @@ object Explore {
       "select col.msg, col.isError, col.count, age,name from  (select explode(annotations) as col, age, name from toto) t")
     //.show(false)
 
-    ss.sql("select non_empty_string(name) as person_name from person")
-      .includeAnnotations
+    ss.sql("select non_empty_string(name) as person_name from person").includeAnnotations
     //.show(false)
   }
 
