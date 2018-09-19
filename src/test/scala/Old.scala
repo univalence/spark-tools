@@ -1,7 +1,5 @@
 import io.univalence.centrifuge.Result
 
-/** Created by jon on 22/10/15.
-  */
 case class Ahoy(name: String, i: Int, l: String)
 
 object testBuilder {
