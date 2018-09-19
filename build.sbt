@@ -26,7 +26,7 @@ libraryDependencies ++= Seq(
   "org.typelevel"  %% "cats-laws"        % "1.0.0-MF"
 )
 
-def spark(names: String*) = names.map(name ⇒ s"org.apache.spark" %% "spark-$name" % "2.1.1" % Provided)
+def spark(names: String*) = names.map(name ⇒ "org.apache.spark" %% s"spark-$name" % "2.1.1" % Provided)
 
 libraryDependencies ++= spark("core", "sql", "mllib")
 
