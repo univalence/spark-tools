@@ -8,9 +8,9 @@ case class Result[+T](
 ) {
 
   def addPathPart(s: String): Result[T] =
-    mapAnnotations(x ⇒ x.copy(onField = x.onField.map(s + _).orElse(Some(s))))
+    mapAnnotations(x => x.copy(onField = x.onField.map(s + _).orElse(Some(s))))
 
-  def mapAnnotations(f: Annotation ⇒ Annotation): Result[T] =
+  def mapAnnotations(f: Annotation => Annotation): Result[T] =
     Result(value, annotations.map(f))
 
   def prependAnnotations(xs: Vector[AnnotationSql]): Result[T] =
@@ -22,25 +22,25 @@ case class Result[+T](
 
   def hasAnnotations: Boolean = annotations.nonEmpty
 
-  def map[U](f: T ⇒ U): Result[U] = Result(value.map(f), annotations)
+  def map[U](f: T => U): Result[U] = Result(value.map(f), annotations)
 
-  def map2[U, V](result: Result[U])(f: (T, U) ⇒ V): Result[V] = {
+  def map2[U, V](result: Result[U])(f: (T, U) => V): Result[V] = {
     Result((value, result.value) match {
-      case (Some(t), Some(u)) ⇒ Some(f(t, u))
-      case _ ⇒ None
+      case (Some(t), Some(u)) => Some(f(t, u))
+      case _ => None
     }, annotations ++ result.annotations)
   }
 
-  def flatMap[U](f: T ⇒ Result[U]): Result[U] = {
+  def flatMap[U](f: T => Result[U]): Result[U] = {
     value match {
-      case None ⇒ this.asInstanceOf[Result[U]]
-      case Some(v) ⇒
+      case None => this.asInstanceOf[Result[U]]
+      case Some(v) =>
         val r = f(v)
         r.copy(annotations = annotations ++ r.annotations)
     }
   }
 
-  def filter(f: T ⇒ Boolean): Result[T] = Result(value.filter(f), annotations)
+  def filter(f: T => Boolean): Result[T] = Result(value.filter(f), annotations)
 
   def get: T =
     value.getOrElse(throw new Exception("empty result : " + annotations.mkString("|")))
@@ -53,14 +53,14 @@ case class Result[+T](
 
 object Result {
 
-  def fromTry[T](tr: Try[T])(expToString: Throwable ⇒ String): Result[T] = {
+  def fromTry[T](tr: Try[T])(expToString: Throwable => String): Result[T] = {
     tr match {
-      case Success(t) ⇒ pure(t)
-      case Failure(e) ⇒ fromError(expToString(e))
+      case Success(t) => pure(t)
+      case Failure(e) => fromError(expToString(e))
     }
   }
 
-  def fromEither[L, R](either: Either[L, R])(leftToString: L ⇒ String): Result[R] = {
+  def fromEither[L, R](either: Either[L, R])(leftToString: L => String): Result[R] = {
     either.fold(leftToString.andThen(fromError), pure)
   }
 

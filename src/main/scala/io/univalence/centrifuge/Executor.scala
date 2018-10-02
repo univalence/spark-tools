@@ -10,7 +10,7 @@ import scala.util.{Failure, Success, Try}
 case class ExecutionSummary(nbFailure: Long)
 
 object RetryDs {
-  def retryDs[A, C, B](in: Dataset[A])(run: A ⇒ Try[C])(integrate: (A, Try[C]) ⇒ B)(nbGlobalAttemptMax: Int,
+  def retryDs[A, C, B](in: Dataset[A])(run: A => Try[C])(integrate: (A, Try[C]) => B)(nbGlobalAttemptMax: Int,
                                                                                     circuitBreakerMaxFailure: Int = 10)(
       implicit
       encoderA: Encoder[A],
@@ -18,7 +18,7 @@ object RetryDs {
       encoderI: Encoder[(Option[A], LocalExecutionStatus, B)]): (Dataset[B], ExecutionSummary) = {
     import monix.execution.Scheduler.Implicits.global
     Await.result(
-      retryDsWithTask(in)(a ⇒ Task(run(a).get))(integrate)(
+      retryDsWithTask(in)(a => Task(run(a).get))(integrate)(
         nbGlobalAttemptMax       = nbGlobalAttemptMax,
         circuitBreakerMaxFailure = Some(circuitBreakerMaxFailure)).runAsync,
       Duration.Inf
@@ -42,8 +42,8 @@ object RetryDs {
 
   private type ExecutionStat = Long
 
-  def retryDsWithTask[A, C, B](in: Dataset[A])(run: A ⇒ Task[C])(
-      integrate: (A, Try[C]) ⇒ B)(nbGlobalAttemptMax: Int, circuitBreakerMaxFailure: Option[Int] = Option(10))(
+  def retryDsWithTask[A, C, B](in: Dataset[A])(run: A => Task[C])(
+      integrate: (A, Try[C]) => B)(nbGlobalAttemptMax: Int, circuitBreakerMaxFailure: Option[Int] = Option(10))(
       implicit
       encoderA: Encoder[A],
       encoderB: Encoder[B],
@@ -52,16 +52,16 @@ object RetryDs {
     type M = (Option[A], LocalExecutionStatus, B)
 
     def newCircuitBreaker: Option[TaskCircuitBreaker] =
-      circuitBreakerMaxFailure.map(n ⇒ TaskCircuitBreaker(n, Duration(1, TimeUnit.HOURS)))
+      circuitBreakerMaxFailure.map(n => TaskCircuitBreaker(n, Duration(1, TimeUnit.HOURS)))
 
-    def aToM(a: A, endo: Task[C] ⇒ Task[C]): M = {
+    def aToM(a: A, endo: Task[C] => Task[C]): M = {
       import monix.execution.Scheduler.Implicits.global
       val tried: Try[C] = Try(Await.result(endo(run(a)).runAsync, Duration.Inf))
 
       tried match {
-        case Failure(e) ⇒
+        case Failure(e) =>
           (Some(a), localExecutionFromError(e), integrate(a, tried))
-        case Success(_) ⇒ (None, successExecution, integrate(a, tried))
+        case Success(_) => (None, successExecution, integrate(a, tried))
       }
     }
 
@@ -73,18 +73,18 @@ object RetryDs {
         Task {
           val (ds, _) = mAndEs
           val newDs: Dataset[(Option[A], LocalExecutionStatus, B)] =
-            ds.mapPartitions(iterator ⇒ {
+            ds.mapPartitions(iterator => {
               val circuitBreaker = newCircuitBreaker
               iterator.map({
-                case (Some(a), _, _) ⇒
-                  aToM(a, x ⇒ circuitBreaker.fold(x)(breaker ⇒ breaker.protect(x)))
-                case x ⇒ x
+                case (Some(a), _, _) =>
+                  aToM(a, x => circuitBreaker.fold(x)(breaker => breaker.protect(x)))
+                case x => x
               })
             })
           newDs.persist()
           val es: ExecutionSummary = dsToEs(newDs)
           (newDs, es)
-        }.flatMap(x ⇒ loopTheLoop(x, attemptRemaining - 1))
+        }.flatMap(x => loopTheLoop(x, attemptRemaining - 1))
       }
     }
 
@@ -95,16 +95,16 @@ object RetryDs {
 
     Task({
       val init: Dataset[M] = {
-        in.mapPartitions(iterator ⇒ {
+        in.mapPartitions(iterator => {
           val circuitBreaker = newCircuitBreaker
-          iterator.map(x ⇒ aToM(x, t ⇒ circuitBreaker.fold(t)(breaker ⇒ breaker.protect(t))))
+          iterator.map(x => aToM(x, t => circuitBreaker.fold(t)(breaker => breaker.protect(t))))
         })
       }
 
       init.persist()
       (init, dsToEs(init))
-    }).flatMap(x ⇒ loopTheLoop(x, nbGlobalAttemptMax - 1))
-      .map({ case (a, b) ⇒ (a.map(_._3), b) })
+    }).flatMap(x => loopTheLoop(x, nbGlobalAttemptMax - 1))
+      .map({ case (a, b) => (a.map(_._3), b) })
 
   }
 }

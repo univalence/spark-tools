@@ -6,23 +6,23 @@ import org.scalacheck.Properties
 
 object ModelScalaCheck extends Properties("String") {
 
-  property("isNotPure") = forAll { (a: String) ⇒
+  property("isNotPure") = forAll { (a: String) =>
     Result(Some(a),     Vector(Annotation("msg", Some("oF"), Vector("fF"), false, 1))).isPure == false
     Result(None,        Vector(Annotation(a,     Some("oF"), Vector("fF"), false, 1))).isPure == false
     Result(Some(a),     Vector(Annotation(a,     Some("oF"), Vector("fF"), false, 1))).isPure == false
     Result(Some("msg"), Vector(Annotation(a,     Some("oF"), Vector("fF"), false, 1))).isPure == false
   }
-  property("isPure") = forAll { (a: String) ⇒
+  property("isPure") = forAll { (a: String) =>
     Result(Some(a), Vector()).isPure == true
   }
-  property("filter") = forAll { (a: String) ⇒
+  property("filter") = forAll { (a: String) =>
     Result(Some(a), Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1)))
       .filter(_.contains(a)) == Result(
       Some(a),
       Vector(Annotation(a, Some("oF"), Vector("fF"), false, 1))
     )
   }
-  property("map") = forAll { (a: String) ⇒
+  property("map") = forAll { (a: String) =>
     Result(Some(a), Vector(Annotation("msg", Some("oF"), Vector("fF"), false, 1)))
       .map(_.toString) == Result(
       Some(a),

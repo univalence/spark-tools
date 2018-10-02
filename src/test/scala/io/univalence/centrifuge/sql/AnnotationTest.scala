@@ -13,18 +13,18 @@ case class BetterPerson(name: String, age: Option[Int])
 object AnnotationTest {
   def to_age(i: Int): Result[Int] = {
     {} match {
-      case _ if i < 0    ⇒ Result.fromError("BELOW_ZERO")
-      case _ if i <= 13  ⇒ Result.fromWarning(i, "UNDER_13")
-      case _ if i >= 130 ⇒ Result.fromError("OVER_130")
-      case _             ⇒ Result.pure(i)
+      case _ if i < 0    => Result.fromError("BELOW_ZERO")
+      case _ if i <= 13  => Result.fromWarning(i, "UNDER_13")
+      case _ if i >= 130 => Result.fromError("OVER_130")
+      case _             => Result.pure(i)
     }
   }
 
   def non_empty_string(str: String): Result[String] = {
     str match {
       //case None => Result.fromError("NULL_VALUE")
-      case "" ⇒ Result.fromError("EMPTY_STRING")
-      case _  ⇒ Result.pure(str)
+      case "" => Result.fromError("EMPTY_STRING")
+      case _  => Result.pure(str)
     }
   }
 
@@ -65,10 +65,10 @@ class AnnotationTest extends FunSuite with BeforeAndAfterAll {
     //register a transformation with data quality
     ss.registerTransformation[Int, Int](
       "checkAge", {
-        case i if i < 0   ⇒ Result.fromError("INVALID_AGE")
-        case i if i < 13  ⇒ Result.fromWarning(i, "UNDER_13")
-        case i if i > 140 ⇒ Result.fromError("OVER_140")
-        case i            ⇒ Result.pure(i)
+        case i if i < 0   => Result.fromError("INVALID_AGE")
+        case i if i < 13  => Result.fromWarning(i, "UNDER_13")
+        case i if i > 140 => Result.fromError("OVER_140")
+        case i            => Result.pure(i)
       }
     )
 
@@ -137,7 +137,7 @@ BetterPerson(,None)
     val select = onePersonDf.select("*")
 
     //println((select.queryExecution.toString())
-    select.queryExecution.logical.expressions.foreach(x ⇒ {
+    select.queryExecution.logical.expressions.foreach(x => {
       //println((x)
       //println((x.prettyName)
     })
@@ -251,7 +251,7 @@ BetterPerson(,None)
     ss.registerTransformation("non_empty", AnnotationTest.non_empty_string)
 
     ss.sparkContext
-      .makeRDD(Seq("" → "", "" → "a", "" → "b"))
+      .makeRDD(Seq("" -> "", "" -> "a", "" -> "b"))
       .toDF()
       .createOrReplaceTempView("togroup")
 

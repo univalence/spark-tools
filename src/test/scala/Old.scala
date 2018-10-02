@@ -17,9 +17,9 @@ object testBuilder {
 
     Result(
       value = (_1.value, _2.value, _3.value) match {
-        case (Some(s1), Some(s2), Some(s3)) ⇒
+        case (Some(s1), Some(s2), Some(s3)) =>
           Some(Ahoy(name = s1, i = s2, l = s3))
-        case _ ⇒ None
+        case _ => None
       },
       annotations = _1.annotations ++ _2.annotations ++ _3.annotations
     )

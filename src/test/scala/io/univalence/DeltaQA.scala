@@ -51,22 +51,22 @@ object KpiAlgebra {
               RM:  AdditiveMonoid: ClassTag,
               LRC: AdditiveAbGroup: MultiplicativeSemigroup: ClassTag](
       left:  RDD[(K, L)],
-      right: RDD[(K, R)])(flm: L ⇒ LM, frm: R ⇒ RM, flc: L ⇒ LRC, frc: R ⇒ LRC): Delta[LM, RM, LRC] = {
+      right: RDD[(K, R)])(flm: L => LM, frm: R => RM, flc: L => LRC, frc: R => LRC): Delta[LM, RM, LRC] = {
 
     val map: RDD[Delta[LM, RM, LRC]] = left
       .fullOuterJoin(right)
       .map({
-        case (_, (Some(l), None)) ⇒
+        case (_, (Some(l), None)) =>
           monoid[LM, RM, LRC].id
             .copy(left = DeltaPart(count = 1, part = flm(l)))
-        case (_, (None, Some(r))) ⇒
+        case (_, (None, Some(r))) =>
           monoid[LM, RM, LRC].id
             .copy(right = DeltaPart(count = 1, part = frm(r)))
-        case (_, (Some(l), Some(r))) ⇒
+        case (_, (Some(l), Some(r))) =>
           monoid[LM, RM, LRC].id.copy(common = computeCommon(flc(l), frc(r)))
       })
 
-    map.reduce((x, y) ⇒ monoid[LM, RM, LRC].op(x, y))
+    map.reduce((x, y) => monoid[LM, RM, LRC].op(x, y))
   }
 }
 
@@ -94,7 +94,7 @@ object KpiAlgebraTest {
     // Delta(DeltaPart(0,0),DeltaPart(0,0),DeltaCommon(4,4,0,0,6,6))
 
     val p2: RDD[(Int, KpiLeaf)] =
-      sc.parallelize((1 to 4)).map(_ → KpiLeaf(1, 2, 3))
+      sc.parallelize((1 to 4)).map(_ -> KpiLeaf(1, 2, 3))
 
     import spire.implicits._
     import shapeless.contrib.spire._

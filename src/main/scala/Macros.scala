@@ -35,18 +35,18 @@ object CaseClassApplicativeBuilder {
   def generateDef(fieldNames: List[(String, String)], name: String): Generated = {
     val signature: String = "def build(" + fieldNames
       .map(
-        { case (n, t) ⇒ s"$n : Result[$t]" }
+        { case (n, t) => s"$n : Result[$t]" }
       )
       .mkString(",\n") + "):Result[" + name + "]"
 
     val map: List[(String, Int, String)] =
-      fieldNames.zipWithIndex.map(t ⇒ (t._1._1, t._2 + 1, t._1._2))
+      fieldNames.zipWithIndex.map(t => (t._1._1, t._2 + 1, t._1._2))
     val vals: String = map
-      .map({ case (n, i, _) ⇒ s"""val _$i = $n.addPathPart("$n")""" })
+      .map({ case (n, i, _) => s"""val _$i = $n.addPathPart("$n")""" })
       .mkString("\n")
 
     val allResults: String = "List(" + map
-      .map({ case (n, i, _) ⇒ "_" + i })
+      .map({ case (n, i, _) => "_" + i })
       .mkString(",") + ")"
 
     Generated(
@@ -54,16 +54,16 @@ object CaseClassApplicativeBuilder {
       s"""{
     $vals
     val allResults:Vector[Result[Any]] = Vector(${map
-        .map({ case (_, i, _) ⇒ "_" + i })
+        .map({ case (_, i, _) => "_" + i })
         .mkString(",")})
     val allAnnotations = allResults.flatMap(_.annotations)
     if(allResults.forall(_.value.isDefined)) {
       Result(Some($name(${map
-        .map({ case (n, i, _) ⇒ s"$n = _$i.value.get" })
+        .map({ case (n, i, _) => s"$n = _$i.value.get" })
         .mkString(",\n")})),allAnnotations)
     } else {
        val missingFields = allResults.zip(List(${map
-        .map({ case (n, _, t) ⇒ "(\"" + n + "\",\"" + t + "\")" })
+        .map({ case (n, _, t) => "(\"" + n + "\",\"" + t + "\")" })
         .mkString(",")})).filter(!_._1.value.isDefined).map(_._2)
        import io.univalence.centrifuge.Annotation
        val missingFieldsAnnotations = missingFields.map(f => Annotation.missingField(f._1))
@@ -96,7 +96,7 @@ class AutoBuildConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacro
 
     val inputs = annottees.map(_.tree).toList
     val annottee: DefDef = inputs match {
-      case (param: DefDef) :: Nil ⇒ param
+      case (param: DefDef) :: Nil => param
     }
 
     def extractA(t: Tree): Name = {
@@ -115,10 +115,10 @@ class AutoBuildConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacro
 
     annottee match {
 
-      case q"..$defMods def $name[..$tparams](...$paramss): $rTpe = $implBlock" ⇒ {
+      case q"..$defMods def $name[..$tparams](...$paramss): $rTpe = $implBlock" => {
 
         rTpe match {
-          case tq"Result[$t]" ⇒ {
+          case tq"Result[$t]" => {
             val typeToBuild = stringToType(t.toString)
 
             val of: List[(TermName, Type)] = fieldsOf(typeToBuild)
@@ -127,16 +127,16 @@ class AutoBuildConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacro
               .getOrElse(Nil)
               .asInstanceOf[List[ValDef]]
               .map({
-                case ValDef(_, vname, vtpt, _) ⇒ {
+                case ValDef(_, vname, vtpt, _) => {
                   val inType = vtpt match {
-                    case tq"Result[$paramInType]" ⇒ paramInType
+                    case tq"Result[$paramInType]" => paramInType
                   }
-                  vname → stringToType(inType.toString)
+                  vname -> stringToType(inType.toString)
                 }
               })
 
             val generateDef = CaseClassApplicativeBuilder.generateDef(
-              of.map(t ⇒ t._1.encoded → CleanTypeName.clean(t._2.toString)),
+              of.map(t => t._1.encoded -> CleanTypeName.clean(t._2.toString)),
               CleanTypeName.clean(typeToBuild.toString))
 
             if (of.toMap != argSpec.toMap) {

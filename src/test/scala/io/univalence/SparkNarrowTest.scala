@@ -30,7 +30,7 @@ class SparknarrowTest extends FunSuite {
 
   def checkDefinition(scalaCode: String): Unit = {
     import scala.tools.reflect.ToolBox
-    import scala.reflect.runtime.{universe ⇒ ru}
+    import scala.reflect.runtime.{universe => ru}
     import ru._
 
     val cl = this.getClass.getClassLoader

@@ -26,7 +26,7 @@ libraryDependencies ++= Seq(
   "org.typelevel"  %% "cats-laws"        % "1.0.0-MF"
 )
 
-def spark(names: String*) = names.map(name ⇒ "org.apache.spark" %% s"spark-$name" % "2.1.1" % Provided)
+def spark(names: String*) = names.map(name => "org.apache.spark" %% s"spark-$name" % "2.1.1" % Provided)
 
 libraryDependencies ++= spark("core", "sql", "mllib")
 
@@ -34,6 +34,9 @@ libraryDependencies ++= Seq(
   "org.scalatest"  %% "scalatest"  % "3.0.3"  % Test,
   "org.scalacheck" %% "scalacheck" % "1.14.0" % Test
 )
+
+scalafmtOnCompile in ThisBuild     := true
+scalafmtTestOnCompile in ThisBuild := true
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
@@ -44,10 +47,10 @@ publishTo := Some(
     Opts.resolver.sonatypeStaging
 )
 
-//scalafmt without the plugin
-lazy val format = TaskKey[Unit]("scalafmt", "FMT Files")
-
-format := {
-  import sys.process.Process
-  Process("./scalafmt --non-interactive --git true", baseDirectory.value).!
-}
+////scalafmt without the plugin
+//lazy val format = TaskKey[Unit]("scalafmt", "FMT Files")
+//
+//format := {
+//  import sys.process.Process
+//  Process("./scalafmt --non-interactive --git true", baseDirectory.value).!
+//}

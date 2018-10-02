@@ -60,12 +60,12 @@ package datalab.pj.validate {
 
       val zero = Monoid.additive[DeltaDataset].id
 
-      val processJoin: ((Option[ByVisitor], Option[ByVisitor])) ⇒ DeltaDataset = {
-        case (None,        Some(origH)) ⇒ zero.copy(orig = Traffic(1, origH))
-        case (Some(destH), None) ⇒ zero.copy(dest = Traffic(1, destH))
-        case (Some(destH), Some(origH)) ⇒
+      val processJoin: ((Option[ByVisitor], Option[ByVisitor])) => DeltaDataset = {
+        case (None,        Some(origH)) => zero.copy(orig = Traffic(1, origH))
+        case (Some(destH), None) => zero.copy(dest = Traffic(1, destH))
+        case (Some(destH), Some(origH)) =>
           zero.copy(both = DeltaDataset.change(destH, origH))
-        case _ ⇒ zero // TO PLEASE THE COMPILER
+        case _ => zero // TO PLEASE THE COMPILER
       }
 
       dest
@@ -142,7 +142,7 @@ package datalab.pj.validate {
         nbClicLR      = lrs.flatMap(_.clics).size,
         nbClicFDMinLR = lrs.flatMap(_.fd).flatMap(_.clics).size,
         nbClicFDO     = fdSeos.flatMap(_.clics).size,
-        nbRechercheWithNonContinousBloc = visiteur.recherches.count(r ⇒ {
+        nbRechercheWithNonContinousBloc = visiteur.recherches.count(r => {
           //TODO : faire la vérification seulement sur PagesJaunes
           // (les recherches sur Pages Blanches ne sont pas continues)
           val positions = r.lrs.flatMap(_.blocPosition).distinct

@@ -22,41 +22,41 @@ object SparkLens {
   def pathToStr(path: Path): String =
     path
       .map({
-        case PrefixName(name) ⇒ name
-        case PrefixArray      ⇒ "[]"
+        case PrefixName(name) => name
+        case PrefixArray      => "[]"
       })
       .mkString("/")
 
-  def lensRegExp(df:                       DataFrame)(fieldSelect: (String, DataType) ⇒ Boolean,
-                                transform: (Any, DataType) ⇒ Any): DataFrame = {
-    lens(df)({ case (p, dt) ⇒ fieldSelect(pathToStr(p), dt) }, transform)
+  def lensRegExp(df:                       DataFrame)(fieldSelect: (String, DataType) => Boolean,
+                                transform: (Any, DataType) => Any): DataFrame = {
+    lens(df)({ case (p, dt) => fieldSelect(pathToStr(p), dt) }, transform)
   }
 
   type Jump = Seq[Option[Int]]
 
-  def lens(df: DataFrame)(fieldSelect: (Path, DataType) ⇒ Boolean, transform: (Any, DataType) ⇒ Any): DataFrame = {
+  def lens(df: DataFrame)(fieldSelect: (Path, DataType) => Boolean, transform: (Any, DataType) => Any): DataFrame = {
 
     val schema = df.schema
 
     def matchJump(prefix: Jump = Vector.empty, path: Path = Nil, dataType: DataType): Seq[(Jump, DataType)] = {
 
       val first: Option[(Jump, DataType)] =
-        if (fieldSelect(path, dataType)) Some(prefix → dataType) else None
+        if (fieldSelect(path, dataType)) Some(prefix -> dataType) else None
 
       val recur: Seq[(Jump, DataType)] = dataType match {
-        case StructType(fields) ⇒
+        case StructType(fields) =>
           fields.zipWithIndex.flatMap({
-            case (s, i) ⇒
+            case (s, i) =>
               val j       = prefix :+ Some(i)
               val newPath = path :+ PrefixName(s.name)
 
               matchJump(j, newPath, s.dataType)
           })
 
-        case ArrayType(dt, _) ⇒
+        case ArrayType(dt, _) =>
           val j = prefix :+ None
           matchJump(j, path :+ PrefixArray, dt)
-        case _ ⇒ Vector.empty
+        case _ => Vector.empty
       }
       first.toSeq ++ recur
     }
@@ -64,10 +64,10 @@ object SparkLens {
     val toTx: Seq[(Jump, DataType)] =
       matchJump(Vector.empty, Vector.empty, schema)
 
-    val res: RDD[Row] = df.rdd.map { gen ⇒
+    val res: RDD[Row] = df.rdd.map { gen =>
       toTx.foldLeft(gen)({
-        case (r, (j, dt)) ⇒
-          update(j, r, a ⇒ transform(a, dt)).asInstanceOf[Row]
+        case (r, (j, dt)) =>
+          update(j, r, a => transform(a, dt)).asInstanceOf[Row]
       })
     }
 
@@ -75,12 +75,12 @@ object SparkLens {
 
   }
 
-  private def update(j: Jump, r: Any, f: Any ⇒ Any): Any = {
+  private def update(j: Jump, r: Any, f: Any => Any): Any = {
     j.toList match {
-      case Nil                  ⇒ f(r)
-      case x :: xs if r == null ⇒ null
-      case None :: xs           ⇒ r.asInstanceOf[Seq[Any]].map(x ⇒ update(xs, x, f))
-      case Some(i) :: xs ⇒
+      case Nil                  => f(r)
+      case x :: xs if r == null => null
+      case None :: xs           => r.asInstanceOf[Seq[Any]].map(x => update(xs, x, f))
+      case Some(i) :: xs =>
         val row = r.asInstanceOf[Row]
         val s   = row.toSeq
         new GenericRow(s.updated(i, update(xs, s(i), f)).toArray)

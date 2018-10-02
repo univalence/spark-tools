@@ -22,17 +22,17 @@ object Explore {
 
   def to_age(i: Int): Result[Int] = {
     {} match {
-      case _ if i < 0    ⇒ Result.fromError("BELOW_ZERO")
-      case _ if i <= 13  ⇒ Result.fromWarning(i, "UNDER_13")
-      case _ if i >= 130 ⇒ Result.fromError("OVER_130")
-      case _             ⇒ Result.pure(i)
+      case _ if i < 0    => Result.fromError("BELOW_ZERO")
+      case _ if i <= 13  => Result.fromWarning(i, "UNDER_13")
+      case _ if i >= 130 => Result.fromError("OVER_130")
+      case _             => Result.pure(i)
     }
   }
 
   def non_empty_string(str: String): Result[String] = {
     str match {
-      case "" ⇒ Result.fromError("EMPTY_STRING")
-      case _  ⇒ Result.pure(str)
+      case "" => Result.fromError("EMPTY_STRING")
+      case _  => Result.pure(str)
     }
   }
 
@@ -48,8 +48,8 @@ object Explore {
 
   def reduce_annotations(seq: Seq[GenericRowWithSchema]): Seq[GenericRowWithSchema] = {
     seq
-      .groupBy(x ⇒ (x.getAs[Any]("msg"), x.getAs[Any]("origin"), x.getAs[Any]("isError")))
-      .map(t ⇒ {
+      .groupBy(x => (x.getAs[Any]("msg"), x.getAs[Any]("origin"), x.getAs[Any]("isError")))
+      .map(t => {
         val toArray = t._2.head.toSeq.toArray
         toArray.update(t._2.head.fieldIndex("count"), t._2.map(_.getAs[Long]("count")).sum)
         new GenericRowWithSchema(toArray, t._2.head.schema)
@@ -98,11 +98,11 @@ object Explore {
     println("-----")
 
     val collect: Seq[Option[Expression]] = plan.expressions.collect({
-      case Alias(child, colname) ⇒ {
+      case Alias(child, colname) => {
         child match {
-          case s @ ScalaUDF(f, dt, children, inputTypes, Some(name)) if name == "non_empty_string" ⇒
+          case s @ ScalaUDF(f, dt, children, inputTypes, Some(name)) if name == "non_empty_string" =>
             Some(s)
-          case _ ⇒ None
+          case _ => None
         }
       }
     })
@@ -110,7 +110,7 @@ object Explore {
     val head:   Expression      = collect.flatten.head
     val anncol: NamedExpression = Alias(head, "annotations")()
     val newPlan = plan match {
-      case Project(projectList, child) ⇒
+      case Project(projectList, child) =>
         Project(anncol :: projectList.toList, child)
     }
 
