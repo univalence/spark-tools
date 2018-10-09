@@ -22,8 +22,8 @@ libraryDependencies ++= Seq(
   "org.typelevel"  %% "shapeless-scalaz" % "0.4",
   "org.scala-lang" % "scala-reflect"     % scalaVersion.value,
   "io.monix"       %% "monix"            % "2.3.3",
-  "org.typelevel"  %% "cats-core"        % "1.0.0-MF",
-  "org.typelevel"  %% "cats-laws"        % "1.0.0-MF"
+  "org.typelevel"  %% "cats-core"        % "1.0.0",
+  "org.typelevel"  %% "cats-laws"        % "1.0.0"
 )
 
 def spark(names: String*) = names.map(name => "org.apache.spark" %% s"spark-$name" % "2.1.1" % Provided)
