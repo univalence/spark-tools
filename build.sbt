@@ -1,9 +1,46 @@
-scalacOptions ++= Seq("-Yrangepos", "-unchecked", "-deprecation")
+name    := "centrifuge"
+version := "0.1"
 
-version      := "0.1"
-name         := "centrifuge"
-organization := "io.univalence"
+organization         := "io.univalence"
+organizationName     := "Univalence"
+organizationHomepage := Some(url("http://univalence.io/"))
+
+developers := List(
+  Developer(
+    id    = "jwinandy",
+    name  = "Jonathan Winandy",
+    email = "jonathan@univalence.io",
+    url   = url("https://github.com/ahoy-jon")
+  ),
+  Developer(
+    id    = "phong",
+    name  = "Philippe Hong",
+    email = "philippe@univalence.io",
+    url   = url("https://github.com/hwki77")
+  ),
+  Developer(
+    id    = "fsarradin",
+    name  = "François Sarradin",
+    email = "francois@univalence.io",
+    url   = url("https://github.com/fsarradin")
+  ),
+  Developer(
+    id    = "bernit77",
+    name  = "Bernarith Men",
+    email = "bernarith@univalence.io",
+    url   = url("https://github.com/bernit77")
+  )
+)
+
+scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/UNIVALENCE/centrifuge"),
+    "scm:git:https://github.com/UNIVALENCE/centrifuge.git",
+    "scm:git:git@github.com:UNIVALENCE/centrifuge.git"
+  ))
+
 scalaVersion := "2.11.12"
+scalacOptions ++= Seq("-Yrangepos", "-unchecked", "-deprecation")
 
 resolvers ++= Seq(
   "sonatype-oss"      at "http://oss.sonatype.org/content/repositories/snapshots",
@@ -40,12 +77,9 @@ scalafmtTestOnCompile in ThisBuild := true
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
-publishTo := Some(
-  if (isSnapshot.value)
-    Opts.resolver.sonatypeSnapshots
-  else
-    Opts.resolver.sonatypeStaging
-)
+// -- Settings meant for deployment on oss.sonatype.org
+publishTo := sonatypePublishTo.value
+useGpg    := true
 
 ////scalafmt without the plugin
 //lazy val format = TaskKey[Unit]("scalafmt", "FMT Files")
