@@ -1,5 +1,5 @@
 name        := "centrifuge"
-version     := "0.1"
+version     := "0.2-SNAPSHOT"
 description := "Centrifuge is for data quality"
 homepage    := Some(url("https://github.com/UNIVALENCE/centrifuge"))
 licenses    := Seq("The Apache License, Version 2.0" → url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
