@@ -6,10 +6,10 @@ import org.apache.spark.sql.Row
 import org.scalatest.FunSuiteLike
 import org.scalatest.Matchers
 
-class hofunctionsTest extends FunSuiteLike with SparkTestLike with Matchers {
+class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
 
   import spark.implicits._
-  import hofunctions.implicits._
+  import io.univalence.plumbus.functions._
 
   val dataset: DataFrame =
     spark
@@ -58,7 +58,7 @@ class hofunctionsTest extends FunSuiteLike with SparkTestLike with Matchers {
       dataframeToMap(
         r =>
           r.getAs[String]("id")
-            -> hofunctions.serializeAndCleanValue(r.getAs[Seq[Person]]("persons")))(resultdf)
+            -> functions.serializeAndCleanValue(r.getAs[Seq[Person]]("persons")))(resultdf)
 
     result("1") shouldBe empty
     result("2") should contain only Person("Daryll", 10)
@@ -81,7 +81,7 @@ class hofunctionsTest extends FunSuiteLike with SparkTestLike with Matchers {
       dataframeToMap(
         r =>
           r.getAs[String]("id")
-            -> hofunctions.serializeAndCleanValue(r.getAs[Seq[Person]]("album")))(resultdf)
+            -> functions.serializeAndCleanValue(r.getAs[Seq[Person]]("album")))(resultdf)
 
     result("1") shouldBe empty
     result("2") should contain inOrderOnly (Person("Daryll", 10), Person("Younger Daryll", 5))
