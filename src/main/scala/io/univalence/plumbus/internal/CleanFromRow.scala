@@ -18,11 +18,11 @@ object CleanFromRow {
     }
 
   // Instances to associate clean operation to basic types
-  implicit val double: Typeclass[Double] = instance
+  implicit val double: Typeclass[Double]   = instance
   implicit val boolean: Typeclass[Boolean] = instance
-  implicit val strCFR: Typeclass[String] = instance
-  implicit val intCFR: Typeclass[Int] = instance
-  implicit val longCFR: Typeclass[Long] = instance
+  implicit val strCFR: Typeclass[String]   = instance
+  implicit val intCFR: Typeclass[Int]      = instance
+  implicit val longCFR: Typeclass[Long]    = instance
   // add other typeclass instances for basic types...
 
   // Instance for Option type
@@ -33,8 +33,7 @@ object CleanFromRow {
 
       override def clean(a: Any): Option[T] =
         a match {
-          case ox: Option[_]
-              if ox.forall(x => rc.isAssignableFrom(x.getClass)) =>
+          case ox: Option[_] if ox.forall(x => rc.isAssignableFrom(x.getClass)) =>
             ox.asInstanceOf[Option[T]]
           case null => None
           case x    => Option(implicitly[Typeclass[T]].clean(x))
@@ -42,7 +41,7 @@ object CleanFromRow {
     }
 
   // Instance for Seq type
-  implicit def seq[T: Typeclass: Manifest]: Typeclass[Seq[T]] = {
+  implicit def seq[T: Typeclass: Manifest]: Typeclass[Seq[T]] =
     new Typeclass[Seq[T]] {
       // this helps to avoid type erasure warning
       private val rc = implicitly[Manifest[T]].runtimeClass
@@ -50,13 +49,11 @@ object CleanFromRow {
       override def clean(a: Any): Seq[T] =
         a match {
           case Nil => Nil
-          case xs: Seq[_]
-              if xs.forall(x => rc.isAssignableFrom(x.getClass)) =>
+          case xs: Seq[_] if xs.forall(x => rc.isAssignableFrom(x.getClass)) =>
             xs.asInstanceOf[Seq[T]]
           case x: Seq[_] => x.map(implicitly[Typeclass[T]].clean)
         }
     }
-  }
 
   // Instance generator for case classes
   def combine[T: ClassTag](ctx: CaseClass[CleanFromRow, T]): Typeclass[T] =

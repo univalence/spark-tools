@@ -28,9 +28,21 @@ class hofunctionsTest extends FunSuiteLike with SparkTestLike with Matchers {
       )
       .toDF("id", "family")
 
+  test("should |> over untyped id in a a dataframe") {
+    val res = dataset.select($"id" |> ((id: String) => id.toInt)).as[Int].collect()
+
+    assert(res sameElements Array(1, 2))
+  }
+
+  test("should |> over typed id in a a dataframe") {
+    val res = dataset.select($"id".as[String] |> (_.toInt)).as[Int].collect()
+
+    assert(res sameElements Array(1, 2))
+  }
+
   test("should map over a Seq of Person in a dataframe") {
     val resultdf =
-      dataset.select($"id", $"family".map((p: Person) => p.name).as("names"))
+      dataset.select($"id", $"family".as[Seq[Person]].map(_.name).as("names"))
 
     val result =
       dataframeToMap(r => r.getAs[String]("id") -> r.getAs[Seq[String]]("names"))(resultdf)
@@ -40,7 +52,7 @@ class hofunctionsTest extends FunSuiteLike with SparkTestLike with Matchers {
   }
 
   test("should filter over a Seq of Person in a dataframe") {
-    val resultdf = dataset.select($"id", $"family".filter((p: Person) => p.age < 18).as("persons"))
+    val resultdf = dataset.select($"id", $"family".as[Seq[Person]].filter(_.age < 18).as("persons"))
 
     val result =
       dataframeToMap(
@@ -56,8 +68,9 @@ class hofunctionsTest extends FunSuiteLike with SparkTestLike with Matchers {
     val resultdf =
       dataset.select($"id",
                      $"family"
+                       .as[Seq[Person]]
                        .flatMap(
-                         (p: Person) =>
+                         p =>
                            if (p.age > 18)
                              Seq()
                            else
