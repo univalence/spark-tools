@@ -8,41 +8,9 @@ import scala.reflect.runtime.universe.TypeTag
 
 object hofunctions {
 
-  /*
-  trait NotTypedColumn[C]
-
-  object NotTypedColumn {
-    implicit def notc[C <: org.apache.spark.sql.Column]: NotTypedColumn[C] = new NotTypedColumn[C] {}
-
-    //two definition to make sure the compiler is not able to decide between the two.
-    implicit def notc1[A, B]: NotTypedColumn[org.apache.spark.sql.TypedColumn[A, B]] = ???
-    implicit def notc2[A, B]: NotTypedColumn[org.apache.spark.sql.TypedColumn[A, B]] = ???
-  }
-   */
-
   object implicits {
 
-    implicit class RicherColumn[C <: Column](column: C) { //(implicit notTypedColumn: NotTypedColumn[C]) {
-      /*
-      def map[A: CleanFromRow: TypeTag, B: TypeTag](f: A => B): Column = {
-        val f0 = udf[Seq[B], Seq[A]](serializeAndClean(s => s.map(f)))
-
-        f0(column)
-      }
-
-      def filter[A: CleanFromRow: TypeTag](p: A => Boolean): Column = {
-        val p0 = udf[Seq[A], Seq[A]](serializeAndClean(s => s.filter(p)))
-
-        p0(column)
-      }
-
-      def flatMap[A: CleanFromRow: TypeTag, B: TypeTag](f: A => Seq[B]): Column = {
-        val f0 = udf[Seq[B], Seq[A]](serializeAndClean(s => s.flatMap(f)))
-
-        f0(column)
-      }
-       */
-
+    implicit class RicherColumn[C <: Column](column: C) {
       def |>[A: CleanFromRow: TypeTag, B: TypeTag: Encoder](f: A => B): TypedColumn[Any, B] = {
         val f0 = udf[B, A](a => f(serializeAndCleanValue(a)))
         f0(column).as[B]
