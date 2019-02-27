@@ -29,15 +29,15 @@ class hofunctionsTest extends FunSuiteLike with SparkTestLike with Matchers {
       .toDF("id", "family")
 
   test("should |> over untyped id in a a dataframe") {
-    val res = dataset.select($"id" |> ((id: String) => id.toInt)).as[Int].collect()
+    val res = dataset.select($"id" |> ((id: String) => id.toInt))
 
-    assert(res sameElements Array(1, 2))
+    assert(res.as[Int].collect() sameElements Array(1, 2))
   }
 
   test("should |> over typed id in a a dataframe") {
-    val res = dataset.select($"id".as[String] |> (_.toInt)).as[Int].collect()
+    val res = dataset.select($"id".as[String] |> (_.toInt))
 
-    assert(res sameElements Array(1, 2))
+    assert(res.as[Int].collect() sameElements Array(1, 2))
   }
 
   test("should map over a Seq of Person in a dataframe") {
