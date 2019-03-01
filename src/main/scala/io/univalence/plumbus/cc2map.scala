@@ -112,12 +112,7 @@ object cc2map {
     def combine[T](ctx: CaseClass[Typeclass, T]): FromMap[T] =
       new FromMap[T] {
         override def fromMap(map: Map[String, Any]): Try[T] =
-          ctx.constructMonadic(param => { param.typeclass.fromMap(map.filterKeys(_ == param.label)) })(
-            new Monadic[Try] {
-              override def point[A](value: A): Try[A]                           = Try(value)
-              override def flatMap[A, B](from: Try[A], fn: A => Try[B]): Try[B] = from.flatMap(fn)
-              override def map[A, B](from: Try[A], fn: A => B): Try[B]          = from.map(fn)
-            })
+          ctx.constructMonadic(param => { param.typeclass.fromMap(map.filterKeys(_ == param.label)) })
       }
 
     implicit def gen[T]: FromMap[T] = macro Magnolia.gen[T]
