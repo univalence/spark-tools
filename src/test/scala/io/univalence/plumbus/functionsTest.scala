@@ -87,9 +87,56 @@ class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
     result("2") should contain inOrderOnly (Person("Daryll", 10), Person("Younger Daryll", 5))
   }
 
+  test("should merge identical columns") {
+    val person = PersonWithId(id = "1", name = "toto", age = 13)
+
+    val df1 = spark.createDataset(Seq(person))
+    val df2 = df1
+
+    val frame = df1.join(df2, df1("id") === df2("id"))
+
+    val resultdf = coalesceColwithSameName(frame)
+    val result =
+      dataframeToMap(
+        r =>
+          r.getAs[String]("id") -> ((
+                                      r.getAs[String]("name"),
+                                      r.getAs[Int]("age")
+                                    )))(resultdf)
+
+    result("1") should be(("toto", 13))
+  }
+
+  test("should rename columns") {
+    val person = PersonWithId(id = "1", name = "toto", age = 13)
+
+    val df1 = spark.createDataset(Seq(person))
+    val df2 = df1
+
+    val frame = df1.join(df2, df1("id") === df2("id"))
+
+    val resultdf = renameColumnsWithSameName(frame)
+    resultdf.columns should have size (6)
+    resultdf.columns should contain inOrderOnly ("id_0", "name_0", "age_0", "id_1", "name_1", "age_1")
+
+    val result =
+      dataframeToMap(
+        r =>
+          r.getAs[String]("id_0") -> ((
+                                        r.getAs[String]("name_0"),
+                                        r.getAs[Int]("age_0"),
+                                        r.getAs[String]("id_1"),
+                                        r.getAs[String]("name_1"),
+                                        r.getAs[Int]("age_1")
+                                      )))(resultdf)
+
+    result("1") should be(("toto", 13, "1", "toto", 13))
+  }
+
   private def dataframeToMap[A, B](f: Row => (A, B))(df: DataFrame): Map[A, B] =
     df.collect().map(f).toMap
 
 }
 
 case class Person(name: String, age: Int)
+case class PersonWithId(id: String, name: String, age: Int)
