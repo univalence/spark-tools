@@ -10,8 +10,8 @@ import scala.util.{Failure, Success, Try}
 case class ExecutionSummary(nbFailure: Long)
 
 object RetryDs {
-  def retryDs[A, C, B](in: Dataset[A])(run: A => Try[C])(integrate: (A, Try[C]) => B)(nbGlobalAttemptMax: Int,
-                                                                                    circuitBreakerMaxFailure: Int = 10)(
+  def retryDs[A, C, B](in: Dataset[A])(run: A => Try[C])(
+      integrate: (A, Try[C]) => B)(nbGlobalAttemptMax: Int, circuitBreakerMaxFailure: Int = 10)(
       implicit
       encoderA: Encoder[A],
       encoderB: Encoder[B],

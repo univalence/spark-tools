@@ -221,9 +221,9 @@ package object centrifuge_sql {
       type KpiApplier = (Column, Column) => (String, Column)
 
       val kpis: Seq[KpiApplier] = Seq[KpiApplier](
-        (c1, _)  => ("OnlyLeft",         when(onlyLeft,            c1)),
+        (c1, _) => ("OnlyLeft",          when(onlyLeft,            c1)),
         (_,  c2) => ("OnlyRight",        when(onlyRight,           c2)),
-        (c1, _)  => ("BothLeft",         when(both,                c1)),
+        (c1, _) => ("BothLeft",          when(both,                c1)),
         (_,  c2) => ("BothRight",        when(both,                c2)),
         (c1, c2) => ("BothDelta",        when(both,                c1 - c2)),
         (c1, c2) => ("BothDeltaSquared", when(both,                (c1 - c2).multiply(c1 - c2))),

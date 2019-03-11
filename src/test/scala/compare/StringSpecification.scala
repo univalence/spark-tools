@@ -6,8 +6,7 @@ import org.scalacheck.Prop._
 
 object StringSpecification extends Properties("StringUtils") {
 
-  private val asciiLetter: Gen[Char] =
-    Gen.asciiPrintableChar.retryUntil(_.isLetter, 1000)
+  private val asciiLetter: Gen[Char] = Gen.oneOf((0 to 127).map(_.toChar).filter(_.isLetterOrDigit))
 
   private val asciiLetterString: Gen[String] =
     Gen.listOf(asciiLetter).map(_.mkString)

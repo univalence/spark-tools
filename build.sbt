@@ -73,7 +73,7 @@ libraryDependencies ++= spark("core", "sql", "mllib")
 
 libraryDependencies ++= Seq(
   "org.scalatest"  %% "scalatest"  % "3.0.3"  % Test,
-  "org.scalacheck" %% "scalacheck" % "1.14.0" % Test
+  "org.scalacheck" %% "scalacheck" % "1.13.5" % Test
 )
 
 scalafmtOnCompile in ThisBuild     := true

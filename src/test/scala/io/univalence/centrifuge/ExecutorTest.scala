@@ -77,8 +77,9 @@ class ExecutorTest extends FunSuite {
 
     val ds = ss.createDataset(List(1, 2, 5, 10, 100, 200, 500, 1000))
 
-    val t = RetryDs.retryDsWithTask(ds)(x => Task(Thread.sleep(x)).timeout(Duration(10, TimeUnit.MILLISECONDS)))((x, y) =>
-      (x, y.isSuccess))(2, None)
+    val t =
+      RetryDs.retryDsWithTask(ds)(x => Task(Thread.sleep(x)).timeout(Duration(10, TimeUnit.MILLISECONDS)))((x, y) =>
+        (x, y.isSuccess))(2, None)
 
     import monix.execution.Scheduler.Implicits.global
     val res = Await.result(t.runAsync, Duration.Inf)._1.collect().toList
