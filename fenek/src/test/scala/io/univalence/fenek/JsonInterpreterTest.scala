@@ -107,7 +107,7 @@ class JsonInterpreterTest extends FunSuite {
 
   implicit def jsonConversionToStringInTheContextOfThisFile(str: String): JObject = {
     import org.json4s.native.JsonMethods._
-    parse(str).asInstanceOf[JObject]
+    parse(str, useBigDecimalForDouble = true).asInstanceOf[JObject]
   }
 
   test("casewhen bug #2") {
