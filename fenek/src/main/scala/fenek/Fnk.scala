@@ -1,17 +1,17 @@
-package fenek
+package io.univalence.fenek
 
-import fenek.Fnk.Expr.Ops.Field
-import fenek.Fnk.Expr.CaseWhenExpr
-import fenek.Fnk.Expr.CaseWhenExprTyped
-import fenek.Fnk.Expr.CaseWhenExprUnTyped
-import fenek.Fnk.Expr.Ops
-import fenek.Fnk.Expr.StructField
-import fenek.Fnk.TypedExpr.Lit
-import fenek.Fnk.TypedExpr.Map2
-import fenek.Fnk.TypedExpr.TypeCasted
-import fenek.Fnk.Encoder
-import fenek.Fnk.Expr
-import fenek.Fnk.TypedExpr
+import io.univalence.fenek.Fnk.Expr.Ops.Field
+import io.univalence.fenek.Fnk.Expr.CaseWhenExpr
+import io.univalence.fenek.Fnk.Expr.CaseWhenExprTyped
+import io.univalence.fenek.Fnk.Expr.CaseWhenExprUnTyped
+import io.univalence.fenek.Fnk.Expr.Ops
+import io.univalence.fenek.Fnk.Expr.StructField
+import io.univalence.fenek.Fnk.TypedExpr.Lit
+import io.univalence.fenek.Fnk.TypedExpr.Map2
+import io.univalence.fenek.Fnk.TypedExpr.TypeCasted
+import io.univalence.fenek.Fnk.Encoder
+import io.univalence.fenek.Fnk.Expr
+import io.univalence.fenek.Fnk.TypedExpr
 import org.joda.time.Days
 import org.joda.time.Months
 import org.json4s.JsonAST._
@@ -114,12 +114,14 @@ object Fnk {
 
   object Null extends Expr
 
-  //TODO : Else is not an expression
   object Else
-  //TODO : Nothing is not an expression
-  //object Nothing extends Expr
 
   case class Struct(fields: Seq[StructField]) extends Expr
+
+  object Struct extends Dynamic {
+    def applyDynamicNamed(method: String)(call: (String, Expr)*): Struct =
+      Struct(call.map((Expr.StructField.apply _).tupled))
+  }
 
   object Expr extends LowPriority {
 
@@ -190,11 +192,13 @@ object Fnk {
   object Encoder {
     type SimpleEncoder[T] = Encoder[T]
 
-    implicit case object Str  extends SimpleEncoder[String]
-    implicit case object Int  extends SimpleEncoder[Int]
-    implicit case object Bool extends SimpleEncoder[Boolean]
-
+    implicit case object Str        extends SimpleEncoder[String]
+    implicit case object Int        extends SimpleEncoder[Int]
+    implicit case object Bool       extends SimpleEncoder[Boolean]
+    implicit case object BigDecimal extends SimpleEncoder[BigDecimal]
+    implicit case object Double     extends SimpleEncoder[Double]
     //implicit def opt[T: Encoder]: Encoder[Option[T]] = ???
+
   }
 
   object interval {
@@ -278,11 +282,6 @@ object Fnk {
     def selectDynamic(fieldName: String): Expr = Expr.Ops.Field(fieldName)
 
     def apply(fieldName: String): Expr = selectDynamic(fieldName)
-  }
-
-  object struct extends Dynamic {
-    def applyDynamicNamed(method: String)(call: (String, Expr)*): Struct =
-      Struct(call.map((Expr.StructField.apply _).tupled))
   }
 
 }
@@ -484,13 +483,12 @@ object StaticAnalysis {
   ): B = ???
 
   def main(args: Array[String]): Unit = {
+
     import Fnk._
 
-    val ab: TypedExpr[Int]#Map2Builder[Int] =
-      >.a.as[Int] <*> >.b.as[Int]
+    val ab: TypedExpr[Int]#Map2Builder[Int] = >.a.as[Int] <*> >.b.as[Int]
 
-    val x =
-      >.a caseWhen (1 -> (ab |> (_ + _)) | 2 -> (ab |> (_ - _)) | Else -> 3)
+    val x = >.a caseWhen (1 -> (ab |> (_ + _)) | 2 -> (ab |> (_ - _)) | Else -> 3)
 
     staticAnalysis(x).foreach({
       case PosExpr(level, index, expr) => println(index.formatted("%03d ") + ("  " * level) + expr)
