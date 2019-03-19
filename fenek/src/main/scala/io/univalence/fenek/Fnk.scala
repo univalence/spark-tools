@@ -23,6 +23,7 @@ import scala.util.Success
 import scala.util.Try
 
 object Fnk {
+  type Struct = Expr.Struct
 
   implicit def t2ToExp[A: Encoder, B: Encoder](t: (A, B)): CaseWhenExprTyped[B] =
     CaseWhenExprTyped(lit(t._1) -> lit(t._2) :: Nil, None)
@@ -116,16 +117,16 @@ object Fnk {
 
   object Else
 
-  case class Struct(fields: Seq[StructField]) extends Expr
-
-  object Struct extends Dynamic {
-    def applyDynamicNamed(method: String)(call: (String, Expr)*): Struct =
-      Struct(call.map((Expr.StructField.apply _).tupled))
+  object struct extends Dynamic {
+    def applyDynamicNamed(method: String)(call: (String, Expr)*): Expr.Struct =
+      Expr.Struct(call.map((Expr.StructField.apply _).tupled))
   }
 
   object Expr extends LowPriority {
+    case class Struct(fields: Seq[StructField]) extends Expr
 
     sealed trait CaseWhenExpr {
+
       def pairs: Seq[(Expr, Expr)]
       def orElse: Option[Expr]
     }
