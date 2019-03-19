@@ -1,22 +1,27 @@
 
-val defaultVersion =
-  new {
-    val json4s = "3.2.11"
-  }
-
 
 name := "fenek"
-version := "0.1-SNAPSHOT"
-crossScalaVersions := List("2.11.12", "2.12.8")
-libraryDependencies ++= Seq(
-  "joda-time" % "joda-time" % "2.10",
-  
-  "org.json4s" %% "json4s-native" % defaultVersion.json4s,
-  //"org.json4s" %% "json4s-jackson" % defaultVersion.json4s,
-  //"org.json4s" %% "json4s-core" % defaultVersion.json4s,
-  
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test")
 
+version := "0.1-SNAPSHOT"
+
+crossScalaVersions := List("2.11.12", "2.12.8")
+
+scalaVersion := crossScalaVersions.value.head
+
+libraryDependencies += "joda-time" % "joda-time" % "2.10"
+
+libraryDependencies += "org.json4s" %% "json4s-native" % "3.2.11"
+
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+
+libraryDependencies += {
+  val sparkVersion: String = CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, 11)) => "2.0.0"
+    case _ => "2.4.0"
+  }
+  
+  "org.apache.spark" %% "spark-core" % sparkVersion % "provided"
+}
 
 scalafmtOnCompile := true
 
