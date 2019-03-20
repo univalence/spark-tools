@@ -77,7 +77,7 @@ libraryDependencies ++= Seq(
 )
 
 scalafmtOnCompile in ThisBuild     := true
-scalafmtTestOnCompile in ThisBuild := true
+//scalafmtTestOnCompile in ThisBuild := true
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
