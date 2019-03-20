@@ -21,7 +21,7 @@ object StringUtils {
     val inter =
       joinMap(frequencies(pairs1), frequencies(pairs2)).values.map {
         case (Some(l), Some(r)) => Math.min(l, r)
-        case _ => 0
+        case _                  => 0
       }.sum
 
     inter.toDouble * 2 / union

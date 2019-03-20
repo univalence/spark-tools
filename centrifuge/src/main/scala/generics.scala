@@ -49,7 +49,6 @@ trait LowPriorityFieldsNonRecur {
       override def fieldnames: List[(String, String)] =
         (key.value.name, tv.name) :: tailEncode.value.fieldnames
     }
-  }
 }
 
 object FieldsNonRecur extends LowPriorityFieldsNonRecur {

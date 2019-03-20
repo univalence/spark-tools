@@ -1,25 +1,15 @@
 package io.univalence.fenek
 
-import io.univalence.fenek.Fnk.Expr.Ops.Field
 import io.univalence.fenek.Fnk.Expr.CaseWhenExpr
 import io.univalence.fenek.Fnk.Expr.CaseWhenExprTyped
 import io.univalence.fenek.Fnk.Expr.CaseWhenExprUnTyped
-import io.univalence.fenek.Fnk.Expr.Ops
 import io.univalence.fenek.Fnk.Expr.StructField
-import io.univalence.fenek.Fnk.TypedExpr.Lit
-import io.univalence.fenek.Fnk.TypedExpr.Map2
-import io.univalence.fenek.Fnk.TypedExpr.TypeCasted
-import io.univalence.fenek.Fnk.Encoder
 import io.univalence.fenek.Fnk.Expr
 import io.univalence.fenek.Fnk.TypedExpr
-import org.joda.time.Days
-import org.joda.time.Months
 import org.json4s.JsonAST._
 
 import scala.language.dynamics
 import scala.language.implicitConversions
-import scala.util.Failure
-import scala.util.Success
 import scala.util.Try
 
 object Fnk {
@@ -30,19 +20,19 @@ object Fnk {
 
   implicit def t2toExp2[A: Encoder](t: (A, Expr)): CaseWhenExpr = CaseWhenExprUnTyped(lit(t._1) -> t._2 :: Nil, None)
 
-  implicit def elseToExp1[B: Encoder](t: (Else.type, B)): CaseWhenExprTyped[B]   = CaseWhenExprTyped(Nil, Some(t._2))
-  implicit def elseToExp2[X](t: (Else.type, TypedExpr[X])): CaseWhenExprTyped[X] = CaseWhenExprTyped(Nil, Some(t._2))
-  implicit def elseToExp3(t: (Else.type, Expr)): CaseWhenExpr                    = CaseWhenExprUnTyped(Nil, Some(t._2))
+  implicit def elseToExp1[B: Encoder](t: (Else.type, B)): CaseWhenExprTyped[B]            = CaseWhenExprTyped(Nil,   Some(t._2))
+  implicit def elseToExp2[X](t: (Else.type,          TypedExpr[X])): CaseWhenExprTyped[X] = CaseWhenExprTyped(Nil,   Some(t._2))
+  implicit def elseToExp3(t: (Else.type,             Expr)): CaseWhenExpr                 = CaseWhenExprUnTyped(Nil, Some(t._2))
 
   implicit class t2Ops[A: Encoder, B: Encoder](t: (A, B)) {
     val expr: (TypedExpr[A], TypedExpr[B]) = (lit(t._1), lit(t._2))
 
     def |(caseWhenExprTyped: CaseWhenExprTyped[B]): CaseWhenExprTyped[B] = CaseWhenExpr.add(caseWhenExprTyped, expr)
-    def |(caseWhenExpr: CaseWhenExpr): CaseWhenExpr                      = CaseWhenExpr.add(caseWhenExpr, expr)
+    def |(caseWhenExpr: CaseWhenExpr): CaseWhenExpr                      = CaseWhenExpr.add(caseWhenExpr,      expr)
   }
 
   implicit class t2Ops2[A: Encoder](t: (A, Expr)) {
-    val expr: (TypedExpr[A], Expr) = (lit(t._1), t._2)
+    val expr: (TypedExpr[A],               Expr) = (lit(t._1), t._2)
 
     def |(caseWhenExpr: CaseWhenExpr): CaseWhenExpr = CaseWhenExpr.add(caseWhenExpr, expr)
   }
@@ -147,7 +137,7 @@ object Fnk {
       def setDefault(caseWhenExprTyped: CaseWhenExpr, value: Expr): CaseWhenExpr =
         caseWhenExprTyped match {
           case CaseWhenExprUnTyped(pairs, _) => CaseWhenExprUnTyped(pairs, Some(value))
-          case CaseWhenExprTyped(pairs, _)   => CaseWhenExprUnTyped(pairs, Some(value))
+          case CaseWhenExprTyped(pairs,   _) => CaseWhenExprUnTyped(pairs, Some(value))
         }
 
       def add[B](caseWhenExprTyped: CaseWhenExprTyped[B], expr: (Expr, TypedExpr[B])): CaseWhenExprTyped[B] =
@@ -156,7 +146,7 @@ object Fnk {
       def add(caseWhen: CaseWhenExpr, expr: (Expr, Expr)): CaseWhenExpr =
         caseWhen match {
           case CaseWhenExprUnTyped(pairs, orElse) => CaseWhenExprUnTyped(expr +: pairs, orElse)
-          case CaseWhenExprTyped(pairs, orElse)   => CaseWhenExprUnTyped(expr +: pairs, orElse)
+          case CaseWhenExprTyped(pairs,   orElse) => CaseWhenExprUnTyped(expr +: pairs, orElse)
         }
 
     }

@@ -1,6 +1,5 @@
 package io.univalence.typedpath
 
-
 import eu.timepit.refined._
 import shapeless.Witness
 import shapeless.tag.@@
@@ -14,10 +13,7 @@ object Path {
 
   def createName(string: String): Either[String, String @@ Name] = refineT[Name](string)
 
-
-  def create(string:String):Try[Path] = {
-    ???
-  }
+  def create(string: String): Try[Path] = ???
 }
 
 case object Root extends Path
@@ -30,7 +26,7 @@ object Field {
   def apply(name: String, parent: Path): Try[Field] = {
     import scala.util._
     Path.createName(name) match {
-      case Left(a) => Failure(new Exception(a))
+      case Left(a)            => Failure(new Exception(a))
       case Right(refinedName) => Success(new Field(refinedName, parent))
     }
   }

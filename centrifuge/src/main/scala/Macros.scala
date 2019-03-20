@@ -2,7 +2,8 @@ package io.univalence.autobuild
 
 import shapeless.CaseClassMacros
 
-import scala.annotation.{StaticAnnotation, compileTimeOnly}
+import scala.annotation.StaticAnnotation
+import scala.annotation.compileTimeOnly
 import scala.language.existentials
 import scala.language.experimental.macros
 import scala.reflect.macros._
@@ -83,10 +84,9 @@ class autoBuildResult extends StaticAnnotation {
 }
 
 object CleanTypeName {
-  def clean(s: String): String = {
+  def clean(s: String): String =
     s.replaceAll("([a-zA-Z@0-9]+\\.)+([a-zA-Z@0-9]+)", "$2")
       .replaceAll("@@\\[([a-zA-Z0-9]+) *, *([a-zA-Z0-9]+)\\]", "$1 @@ $2")
-  }
 }
 
 class AutoBuildConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacros {
@@ -107,7 +107,7 @@ class AutoBuildConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacro
     //to try for position : https://github.com/kevinwright/macroflection/blob/master/kernel/src/main/scala/net/thecoda/macroflection/Validation.scala#L75
 
     def stringToType(s: String): Type = {
-      val dummyNme: String = c.fresh()
+      val dummyNme: String              = c.fresh()
       val parse                         = c.parse(s"{ type $dummyNme = " + s + " }")
       val q"{ type $dummyNme2 = $tpt }" = c.typeCheck(parse)
       tpt.tpe.asInstanceOf[Type] // helping IntelliJ

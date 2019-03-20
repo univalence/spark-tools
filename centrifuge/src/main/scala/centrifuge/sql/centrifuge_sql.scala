@@ -1,22 +1,21 @@
 package org.apache.spark.sql
 
-import io.univalence.centrifuge.{Annotation, AnnotationSql, Result}
+import io.univalence.centrifuge.AnnotationSql
+import io.univalence.centrifuge.Result
 import org.apache.spark.sql.catalyst.analysis.UnresolvedStar
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.aggregate.CollectList
-import org.apache.spark.sql.catalyst.expressions.{
-  Alias,
-  Attribute,
-  AttributeReference,
-  CreateArray,
-  CreateStruct,
-  Expression,
-  GenericRowWithSchema,
-  GetStructField,
-  Literal,
-  NamedExpression,
-  ScalaUDF
-}
+import org.apache.spark.sql.catalyst.expressions.Alias
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.expressions.AttributeReference
+import org.apache.spark.sql.catalyst.expressions.CreateArray
+import org.apache.spark.sql.catalyst.expressions.CreateStruct
+import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
+import org.apache.spark.sql.catalyst.expressions.GetStructField
+import org.apache.spark.sql.catalyst.expressions.Literal
+import org.apache.spark.sql.catalyst.expressions.NamedExpression
+import org.apache.spark.sql.catalyst.expressions.ScalaUDF
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.util.ArrayData
 import org.apache.spark.sql.expressions.UserDefinedFunction
@@ -38,13 +37,12 @@ package object centrifuge_sql {
       countNbExact:        Option[Long]
   ) {
 
-    def hasDifference: Boolean = {
+    def hasDifference: Boolean =
       Seq(
         sumOnlyLeft.isDefined,
         sumOnlyRight.isDefined,
         !sumBothDeltaSquared.contains(0)
       ).exists(identity)
-    }
   }
 
   case class Delta(counts: DeltaPart, cols: Seq[DeltaPart])
@@ -75,7 +73,7 @@ package object centrifuge_sql {
 
     def cleanRow(a: Any): Seq[AnnotationSql] = {
 
-      def cleanInerRow(aa: Any, onField: String, fromFields: Seq[String]): Seq[AnnotationSql] = {
+      def cleanInerRow(aa: Any, onField: String, fromFields: Seq[String]): Seq[AnnotationSql] =
         aa match {
           case m: Map[String, Any] =>
             m.toSeq.flatMap(x => cleanInerRow(x._2, onField, fromFields))
@@ -93,7 +91,6 @@ package object centrifuge_sql {
             wa.flatMap(x => cleanInerRow(x, onField, fromFields))
           case _ => println(aa.getClass + " : " + aa); Nil
         }
-      }
 
       a match {
         case e: GenericRowWithSchema =>
@@ -104,7 +101,7 @@ package object centrifuge_sql {
     annotationsFusion(s.flatMap(cleanRow))
   }
 
-  private def annotationsFusion[T](s: Seq[T]): Seq[T] = {
+  private def annotationsFusion[T](s: Seq[T]): Seq[T] =
     if (s.isEmpty) {
       s
     } else
@@ -133,17 +130,14 @@ package object centrifuge_sql {
         case _ => ???
       }
 
-  }
-
-  private def mergeAnnotations(s: Seq[Any]): Seq[AnnotationSql] = {
+  private def mergeAnnotations(s: Seq[Any]): Seq[AnnotationSql] =
     annotationsFusion(s.asInstanceOf[Seq[Seq[Any]]].flatten.asInstanceOf[Seq[AnnotationSql]])
-  }
 
   case class QAUdfInPlan(tocol: String, udf: ScalaUDF, fromFields: Seq[String])
 
   class QADF(val dataFrame: DataFrame) {
 
-    private def findColChildDeep(exp: Expression): Seq[String] = {
+    private def findColChildDeep(exp: Expression): Seq[String] =
       exp match {
         case AttributeReference(name, _, _, _) => Seq(name)
         case _ =>
@@ -154,26 +148,21 @@ package object centrifuge_sql {
           }
       }
 
-    }
-
-    private def findColChild(scalaUdf: ScalaUDF): Seq[String] = {
+    private def findColChild(scalaUdf: ScalaUDF): Seq[String] =
       scalaUdf.children.flatMap(findColChildDeep)
-    }
 
-    private def recursivelyFindScalaUDF(exp: Expression, tocol: String): Seq[QAUdfInPlan] = {
+    private def recursivelyFindScalaUDF(exp: Expression, tocol: String): Seq[QAUdfInPlan] =
       exp match {
         case s: ScalaUDF => Seq(QAUdfInPlan(tocol, s, findColChild(s)))
-        case _ => exp.children.flatMap(x => recursivelyFindScalaUDF(x, tocol))
+        case _           => exp.children.flatMap(x => recursivelyFindScalaUDF(x, tocol))
       }
-    }
 
-    private def recursivelyFindScalaUDF(expressions: Seq[Expression]): Seq[QAUdfInPlan] = {
+    private def recursivelyFindScalaUDF(expressions: Seq[Expression]): Seq[QAUdfInPlan] =
       expressions.flatMap({
         case Alias(child, name) => recursivelyFindScalaUDF(child, name)
-        case x => println(x); Nil
+        case x                  => println(x); Nil
 
       })
-    }
 
     def includeSources: DataFrame = {
 
@@ -186,11 +175,9 @@ package object centrifuge_sql {
       ???
     }
 
-    def includeRejectFlags: DataFrame = {
-
+    def includeRejectFlags: DataFrame =
       //ajout des champs pour avec un boolean qui dit s'il y a un champ en erreur, et un autre pour dire s'il y a des warnings
       ???
-    }
 
     def deltaWith(df: DataFrame): Delta = {
 

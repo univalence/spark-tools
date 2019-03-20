@@ -1,6 +1,8 @@
 package io.univalence.centrifuge
 
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 case class Result[+T](
     value:       Option[T],
@@ -24,21 +26,19 @@ case class Result[+T](
 
   def map[U](f: T => U): Result[U] = Result(value.map(f), annotations)
 
-  def map2[U, V](result: Result[U])(f: (T, U) => V): Result[V] = {
+  def map2[U, V](result: Result[U])(f: (T, U) => V): Result[V] =
     Result((value, result.value) match {
       case (Some(t), Some(u)) => Some(f(t, u))
-      case _ => None
+      case _                  => None
     }, annotations ++ result.annotations)
-  }
 
-  def flatMap[U](f: T => Result[U]): Result[U] = {
+  def flatMap[U](f: T => Result[U]): Result[U] =
     value match {
       case None => this.asInstanceOf[Result[U]]
       case Some(v) =>
         val r = f(v)
         r.copy(annotations = annotations ++ r.annotations)
     }
-  }
 
   def filter(f: T => Boolean): Result[T] = Result(value.filter(f), annotations)
 
@@ -53,16 +53,14 @@ case class Result[+T](
 
 object Result {
 
-  def fromTry[T](tr: Try[T])(expToString: Throwable => String): Result[T] = {
+  def fromTry[T](tr: Try[T])(expToString: Throwable => String): Result[T] =
     tr match {
       case Success(t) => pure(t)
       case Failure(e) => fromError(expToString(e))
     }
-  }
 
-  def fromEither[L, R](either: Either[L, R])(leftToString: L => String): Result[R] = {
+  def fromEither[L, R](either: Either[L, R])(leftToString: L => String): Result[R] =
     either.fold(leftToString.andThen(fromError), pure)
-  }
 
   def pure[T](t: T): Result[T] =
     Result(
@@ -107,7 +105,6 @@ object Annotation {
       count   = 1L
     )
 
-  def missingField(fieldName: String): Annotation = {
+  def missingField(fieldName: String): Annotation =
     Annotation(message = "MISSING_VALUE", onField = Some(fieldName), isError = true)
-  }
 }

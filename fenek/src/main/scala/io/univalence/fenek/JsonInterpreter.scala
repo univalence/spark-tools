@@ -93,17 +93,17 @@ object JsonInterpreter {
 
         case TypedExpr.CaseWhen(source, cases) => Fnk.Expr.Ops.CaseWhen(source, cases)
 
-        case Left(source, n) => source.as[String] <*> n |> (_ take _)
+        case Left(source,      n) => source.as[String] <*> n |> (_ take _)
         case DateAdd(interval, n, source) =>
           interval <*> n <*> source.as[String] |> {
-            case ("day", days, LocalDate(start))     => start.plusDays(days).toString
+            case ("day",   days,   LocalDate(start)) => start.plusDays(days).toString
             case ("month", months, LocalDate(start)) => start.plusMonths(months).toString
-            case ("year", years, LocalDate(start))   => start.plusYears(years).toString
+            case ("year",  years,  LocalDate(start)) => start.plusYears(years).toString
           }
 
         case DateDiff(datepart, startdate, enddate) =>
           datepart <*> startdate.as[String] <*> enddate.as[String] |> {
-            case ("day", LocalDate(start), LocalDate(end))   => Days.daysBetween(start, end).getDays
+            case ("day",   LocalDate(start), LocalDate(end)) => Days.daysBetween(start,     end).getDays
             case ("month", LocalDate(start), LocalDate(end)) => Months.monthsBetween(start, end).getMonths
           }
 
@@ -115,7 +115,7 @@ object JsonInterpreter {
 
     implicit def tryToResult[T](t: Try[T]): Result[T] = t match {
       case Success(v) => Result(Some(v), Nil)
-      case Failure(e) => Result(None, CaughtException(e, Nil) :: Nil)
+      case Failure(e) => Result(None,    CaughtException(e, Nil) :: Nil)
     }
 
     def rawJson(source: Expr, f: JValue => JValue): JValue => Result[JValue] = {
@@ -244,7 +244,7 @@ object JsonInterpreter {
         case Field(name) =>
           jobj =>
             jobj \\ name match {
-              case JObject(Nil) => Result(None, MissingField(name) :: Nil)
+              case JObject(Nil) => Result(None,    MissingField(name) :: Nil)
               case x            => Result(Some(x), Nil)
             }
 

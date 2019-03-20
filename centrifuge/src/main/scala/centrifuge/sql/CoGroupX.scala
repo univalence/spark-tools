@@ -1,10 +1,12 @@
 package centrifuge.sql
 
-import org.apache.spark.rdd.{CoGroupedRDD, RDD}
+import org.apache.spark.rdd.CoGroupedRDD
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.{HashPartitioner, Partitioner}
+import org.apache.spark.HashPartitioner
+import org.apache.spark.Partitioner
 import shapeless._
-import shapeless.ops.hlist.{ToTraversable, Tupler}
+import shapeless.ops.hlist.Tupler
 import shapeless.ops.traversable.FromTraversable
 
 import scala.language.higherKinds
@@ -72,9 +74,8 @@ object CoGroupN {
       fromTraversable: FromTraversable[ABC]): CoGroupN.Aux[K, H1 :: HRest, (K, R)] = new CoGroupN[K, H1 :: HRest] {
     type Res = (K, R)
 
-    override def arrayToRes(k: K, array: Array[Iterable[_]]): Res = {
+    override def arrayToRes(k: K, array: Array[Iterable[_]]): Res =
       (k, tupler.apply(fromTraversable(array.map(_.toSeq)).get))
-    }
 
     override def toSeq(h: ::[H1, HRest]): List[RDD[(K, _)]] =
       checkCoGroup.toSeq(h)
@@ -89,11 +90,9 @@ object CoGroupN {
       ctRes: ClassTag[Res],
       //ToTraversable.Aux[H,List,RDD[(K,_)]] don't work
       coGroupAble: CoGroupN.Aux[K, H, Res]
-  ): RDD[Res] = {
-
+  ): RDD[Res] =
     new CoGroupedRDD(coGroupAble.toSeq(h), part)
       .map((coGroupAble.arrayToRes _).tupled)
-  }
 
 }
 

@@ -1,11 +1,15 @@
 package io.univalence.centrifuge
 
 import java.util.concurrent.TimeUnit
-import monix.eval.{Task,              TaskCircuitBreaker}
-import org.apache.spark.sql.{Dataset, Encoder, SparkSession}
+import monix.eval.Task
+import monix.eval.TaskCircuitBreaker
+import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.Encoder
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 case class ExecutionSummary(nbFailure: Long)
 
@@ -66,7 +70,7 @@ object RetryDs {
     }
 
     def loopTheLoop(mAndEs:           (Dataset[M], ExecutionSummary),
-                    attemptRemaining: Int): Task[(Dataset[M], ExecutionSummary)] = {
+                    attemptRemaining: Int): Task[(Dataset[M], ExecutionSummary)] =
       if (mAndEs._2.nbFailure == 0 || attemptRemaining <= 0)
         Task.pure(mAndEs)
       else {
@@ -86,7 +90,6 @@ object RetryDs {
           (newDs, es)
         }.flatMap(x => loopTheLoop(x, attemptRemaining - 1))
       }
-    }
 
     def dsToEs(ds: Dataset[M]): ExecutionSummary = {
       import ds.sparkSession.implicits._

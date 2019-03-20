@@ -1,6 +1,7 @@
 package io.univalence
 
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
+import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.centrifuge_sql._
 
 package object centrifuge {

@@ -1,18 +1,14 @@
 package org.apache.spark.sql
 
-import io.univalence.centrifuge.{Annotation, Result}
+import io.univalence.centrifuge.Annotation
+import io.univalence.centrifuge.Result
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.expressions.{
-  Alias,
-  Expression,
-  GenericRow,
-  GenericRowWithSchema,
-  NamedExpression,
-  ScalaUDF
-}
+import org.apache.spark.sql.catalyst.expressions.Alias
+import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
+import org.apache.spark.sql.catalyst.expressions.NamedExpression
+import org.apache.spark.sql.catalyst.expressions.ScalaUDF
 import org.apache.spark.sql.catalyst.plans.logical.Project
-import org.apache.spark.{SparkConf, SparkContext}
 
 case class Person(name: String, age: Int)
 
@@ -20,21 +16,18 @@ case class Address(personName: String, street: String, postcode: String, city: S
 
 object Explore {
 
-  def to_age(i: Int): Result[Int] = {
-    {} match {
-      case _ if i < 0    => Result.fromError("BELOW_ZERO")
-      case _ if i <= 13  => Result.fromWarning(i, "UNDER_13")
-      case _ if i >= 130 => Result.fromError("OVER_130")
-      case _             => Result.pure(i)
-    }
+  def to_age(i: Int): Result[Int] = {} match {
+    case _ if i < 0    => Result.fromError("BELOW_ZERO")
+    case _ if i <= 13  => Result.fromWarning(i, "UNDER_13")
+    case _ if i >= 130 => Result.fromError("OVER_130")
+    case _             => Result.pure(i)
   }
 
-  def non_empty_string(str: String): Result[String] = {
+  def non_empty_string(str: String): Result[String] =
     str match {
       case "" => Result.fromError("EMPTY_STRING")
       case _  => Result.pure(str)
     }
-  }
 
   def add_annotations(seq1: Seq[Annotation], seq2: Seq[Annotation]): Seq[Annotation] = seq1 ++ seq2
 
@@ -46,7 +39,7 @@ object Explore {
         .asInstanceOf[Seq[GenericRowWithSchema]])
       .asInstanceOf[Seq[T]]
 
-  def reduce_annotations(seq: Seq[GenericRowWithSchema]): Seq[GenericRowWithSchema] = {
+  def reduce_annotations(seq: Seq[GenericRowWithSchema]): Seq[GenericRowWithSchema] =
     seq
       .groupBy(x => (x.getAs[Any]("msg"), x.getAs[Any]("origin"), x.getAs[Any]("isError")))
       .map(t => {
@@ -55,7 +48,6 @@ object Explore {
         new GenericRowWithSchema(toArray, t._2.head.schema)
       })
       .toSeq
-  }
 
   def main(args: Array[String]): Unit = {
 

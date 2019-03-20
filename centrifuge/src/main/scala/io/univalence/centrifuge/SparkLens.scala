@@ -1,7 +1,8 @@
 package io.univalence
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.types._
 
@@ -27,10 +28,9 @@ object SparkLens {
       })
       .mkString("/")
 
-  def lensRegExp(df:                       DataFrame)(fieldSelect: (String, DataType) => Boolean,
-                                transform: (Any, DataType) => Any): DataFrame = {
+  def lensRegExp(df: DataFrame)(fieldSelect: (String, DataType) => Boolean,
+                                transform: (Any, DataType) => Any): DataFrame =
     lens(df)({ case (p, dt) => fieldSelect(pathToStr(p), dt) }, transform)
-  }
 
   type Jump = Seq[Option[Int]]
 
@@ -75,7 +75,7 @@ object SparkLens {
 
   }
 
-  private def update(j: Jump, r: Any, f: Any => Any): Any = {
+  private def update(j: Jump, r: Any, f: Any => Any): Any =
     j.toList match {
       case Nil                  => f(r)
       case x :: xs if r == null => null
@@ -85,7 +85,6 @@ object SparkLens {
         val s   = row.toSeq
         new GenericRow(s.updated(i, update(xs, s(i), f)).toArray)
     }
-  }
 
 }
 
