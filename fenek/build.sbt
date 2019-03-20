@@ -1,5 +1,7 @@
 
 
+organization := "io.univalence"
+
 name := "fenek"
 
 version := "0.1-SNAPSHOT"
