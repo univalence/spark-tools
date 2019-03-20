@@ -28,11 +28,13 @@ object CompareValue {
     val dist = Array.tabulate(s2.length + 1, s1.length + 1) { (j, i) =>
       if (j == 0) i else if (i == 0) j else 0
     }
-    for (j <- 1 to s2.length; i <- 1 to s1.length)
-      dist(j)(i) =
-        if (s2(j - 1) == s1(i - 1)) dist(j - 1)(i - 1)
-        else
-          minimum(dist(j - 1)(i) + 1, dist(j)(i - 1) + 1, dist(j - 1)(i - 1) + 1)
+    for {
+      j <- 1 to s2.length
+      i <- 1 to s1.length
+    } dist(j)(i) =
+      if (s2(j - 1) == s1(i - 1)) dist(j - 1)(i - 1)
+      else
+        minimum(dist(j - 1)(i) + 1, dist(j)(i - 1) + 1, dist(j - 1)(i - 1) + 1)
     dist(s2.length)(s1.length)
   }
 
@@ -74,9 +76,9 @@ object IntroScala {
   }
 
   def compareList[A, B, C](f: A => B)(rss: Seq[(B, A)])(
-      implicit
-      compareValue: CompareValue.Aux[B, C],
-      monoid:       Monoid[C]
+    implicit
+    compareValue: CompareValue.Aux[B, C],
+    monoid:       Monoid[C]
   ): (Seq[(B, A)], C) = {
 
     val r: Seq[(B, A, C)] = rss.map(rs => compare(f)(rs))
@@ -116,11 +118,10 @@ object IntroScala {
   case class MyCons[+T](head: T, tail: MyList[T]) extends MyList[T] {
     override def map[B](f: (T) => B): MyList[B] = MyCons(f(head), tail.map(f))
 
-    override def filter(pred: (T) => Boolean): MyList[T] = {
+    override def filter(pred: (T) => Boolean): MyList[T] =
       if (pred(head)) {
         MyCons(head, tail.filter(pred))
       } else tail.filter(pred)
-    }
 
     override def fold[C](zero: () => C)(f: (T, C) => C): C =
       f(head, tail.fold(zero)(f))

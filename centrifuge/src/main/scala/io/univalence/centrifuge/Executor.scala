@@ -14,17 +14,19 @@ import scala.util.Try
 case class ExecutionSummary(nbFailure: Long)
 
 object RetryDs {
-  def retryDs[A, C, B](in: Dataset[A])(run: A => Try[C])(
-      integrate: (A, Try[C]) => B)(nbGlobalAttemptMax: Int, circuitBreakerMaxFailure: Int = 10)(
-      implicit
-      encoderA: Encoder[A],
-      encoderB: Encoder[B],
-      encoderI: Encoder[(Option[A], LocalExecutionStatus, B)]): (Dataset[B], ExecutionSummary) = {
+  def retryDs[A, C, B](in:    Dataset[A])(run: A => Try[C])(integrate: (A, Try[C]) => B)(
+    nbGlobalAttemptMax:       Int,
+    circuitBreakerMaxFailure: Int = 10
+  )(implicit
+    encoderA: Encoder[A],
+    encoderB: Encoder[B],
+    encoderI: Encoder[(Option[A], LocalExecutionStatus, B)]): (Dataset[B], ExecutionSummary) = {
     import monix.execution.Scheduler.Implicits.global
     Await.result(
       retryDsWithTask(in)(a => Task(run(a).get))(integrate)(
         nbGlobalAttemptMax       = nbGlobalAttemptMax,
-        circuitBreakerMaxFailure = Some(circuitBreakerMaxFailure)).runAsync,
+        circuitBreakerMaxFailure = Some(circuitBreakerMaxFailure)
+      ).runAsync,
       Duration.Inf
     )
   }
@@ -46,12 +48,13 @@ object RetryDs {
 
   private type ExecutionStat = Long
 
-  def retryDsWithTask[A, C, B](in: Dataset[A])(run: A => Task[C])(
-      integrate: (A, Try[C]) => B)(nbGlobalAttemptMax: Int, circuitBreakerMaxFailure: Option[Int] = Option(10))(
-      implicit
-      encoderA: Encoder[A],
-      encoderB: Encoder[B],
-      encoderI: Encoder[(Option[A], LocalExecutionStatus, B)]): Task[(Dataset[B], ExecutionSummary)] = {
+  def retryDsWithTask[A, C, B](in: Dataset[A])(run: A => Task[C])(integrate: (A, Try[C]) => B)(
+    nbGlobalAttemptMax:            Int,
+    circuitBreakerMaxFailure:      Option[Int] = Option(10)
+  )(implicit
+    encoderA: Encoder[A],
+    encoderB: Encoder[B],
+    encoderI: Encoder[(Option[A], LocalExecutionStatus, B)]): Task[(Dataset[B], ExecutionSummary)] = {
 
     type M = (Option[A], LocalExecutionStatus, B)
 

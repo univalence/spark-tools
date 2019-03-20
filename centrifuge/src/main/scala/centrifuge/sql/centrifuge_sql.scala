@@ -27,14 +27,14 @@ import scala.reflect.runtime.universe.TypeTag
 package object centrifuge_sql {
 
   case class DeltaPart(
-      colName:             String,
-      sumOnlyLeft:         Option[Long],
-      sumOnlyRight:        Option[Long],
-      sumBothRight:        Option[Long],
-      sumBothLeft:         Option[Long],
-      sumBothDelta:        Option[Long],
-      sumBothDeltaSquared: Option[Long],
-      countNbExact:        Option[Long]
+    colName:             String,
+    sumOnlyLeft:         Option[Long],
+    sumOnlyRight:        Option[Long],
+    sumBothRight:        Option[Long],
+    sumBothLeft:         Option[Long],
+    sumBothDelta:        Option[Long],
+    sumBothDeltaSquared: Option[Long],
+    countNbExact:        Option[Long]
   ) {
 
     def hasDifference: Boolean =
@@ -85,7 +85,8 @@ package object centrifuge_sql {
                 fromFields = fromFields.toVector,
                 isError    = row.getAs[Boolean](3),
                 count      = row.getAs[Long](4)
-              ))
+              )
+            )
 
           case wa: mutable.WrappedArray[Any] =>
             wa.flatMap(x => cleanInerRow(x, onField, fromFields))
@@ -154,7 +155,7 @@ package object centrifuge_sql {
     private def recursivelyFindScalaUDF(exp: Expression, tocol: String): Seq[QAUdfInPlan] =
       exp match {
         case s: ScalaUDF => Seq(QAUdfInPlan(tocol, s, findColChild(s)))
-        case _           => exp.children.flatMap(x => recursivelyFindScalaUDF(x, tocol))
+        case _ => exp.children.flatMap(x => recursivelyFindScalaUDF(x, tocol))
       }
 
     private def recursivelyFindScalaUDF(expressions: Seq[Expression]): Seq[QAUdfInPlan] =
@@ -208,13 +209,13 @@ package object centrifuge_sql {
       type KpiApplier = (Column, Column) => (String, Column)
 
       val kpis: Seq[KpiApplier] = Seq[KpiApplier](
-        (c1, _) => ("OnlyLeft",          when(onlyLeft,            c1)),
-        (_,  c2) => ("OnlyRight",        when(onlyRight,           c2)),
-        (c1, _) => ("BothLeft",          when(both,                c1)),
-        (_,  c2) => ("BothRight",        when(both,                c2)),
-        (c1, c2) => ("BothDelta",        when(both,                c1 - c2)),
-        (c1, c2) => ("BothDeltaSquared", when(both,                (c1 - c2).multiply(c1 - c2))),
-        (c1, c2) => ("BothCountEqual",   when(both && (c1 === c2), Column(Literal(1))))
+        (c1, _) => ("OnlyLeft", when(onlyLeft, c1)),
+        (_, c2) => ("OnlyRight", when(onlyRight, c2)),
+        (c1, _) => ("BothLeft", when(both, c1)),
+        (_, c2) => ("BothRight", when(both, c2)),
+        (c1, c2) => ("BothDelta", when(both, c1 - c2)),
+        (c1, c2) => ("BothDeltaSquared", when(both, (c1 - c2).multiply(c1 - c2))),
+        (c1, c2) => ("BothCountEqual", when(both && (c1 === c2), Column(Literal(1))))
       )
 
       val allCols: Seq[Column] = valueCouple.flatMap({
@@ -273,12 +274,13 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
       ArrayType(
         StructType(
           Seq(
-            StructField(name = "message",    dataType = StringType, nullable = false),
-            StructField(name = "onField",    dataType = StringType, nullable = true),
+            StructField(name = "message", dataType    = StringType, nullable = false),
+            StructField(name = "onField", dataType    = StringType, nullable = true),
             StructField(name = "fromFields", dataType = ArrayType(StringType, containsNull = false), nullable = false),
-            StructField(name = "isError",    dataType = BooleanType, nullable = false),
-            StructField(name = "count",      dataType = LongType, nullable = false)
-          )),
+            StructField(name = "isError", dataType    = BooleanType, nullable = false),
+            StructField(name = "count", dataType      = LongType, nullable = false)
+          )
+        ),
         containsNull = false
       )
 
@@ -307,7 +309,7 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
           (Project(projectList :+ anncol, newChild), Seq(anncol.toAttribute))
 
         case Join(left, right, joinType, condition) =>
-          val plan1 = recursiveNewPlan(left,  sparkSession)
+          val plan1 = recursiveNewPlan(left, sparkSession)
           val plan2 = recursiveNewPlan(right, sparkSession)
           (Join(
              left      = plan1._1,
@@ -331,8 +333,11 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
 
           val collected = Alias(
             mergeAnnotationUDF(
-              Column(CollectList(annotationCol.toAttribute)
-                .toAggregateExpression(false))).expr,
+              Column(
+                CollectList(annotationCol.toAttribute)
+                  .toAggregateExpression(false)
+              )
+            ).expr,
             "annotations"
           )()
 
@@ -368,7 +373,9 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
                   Literal(d.tocol),
                   GetStructField(d.udf, 1, Some("annotations")),
                   CreateArray(d.fromFields.distinct.sorted.map(x => Literal(x)))
-                )))
+                )
+            )
+          )
         )
 
         val cleaned: Column = cleanAnnotationUDF(Column(array))

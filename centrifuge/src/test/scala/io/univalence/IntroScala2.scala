@@ -1,14 +1,20 @@
 package io.univalence
 
-import java.sql.{Date, Timestamp}
+import java.sql.Date
+import java.sql.Timestamp
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
-import org.apache.spark.sql.types.{LongType,                  StructField, TimestampType}
-import org.apache.spark.{SparkConf,                           SparkContext}
+import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.Literal
+import org.apache.spark.sql.types.LongType
+import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.types.TimestampType
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
 
-import scala.util.{Success, Try}
+import scala.util.Success
+import scala.util.Try
 
 object IntroScala2 {
 
@@ -20,9 +26,8 @@ object IntroScala2 {
 
   implicit class PairList[K, V](lkv: List[(K, V)]) {
 
-    def groupByKey: List[(K, List[V])] = {
+    def groupByKey: List[(K, List[V])] =
       lkv.groupBy(_._1).mapValues(_.map(_._2)).toList
-    }
 
     def join[VV](ll: List[(K, VV)]): List[(K, (V, VV))] = {
       val l = lkv.map({ case (k, v) => (k, Left(v)) }) ++
@@ -68,12 +73,11 @@ case class Line1(id: Int, vals: Seq[String])
 
 object Line1 {
 
-  def fromString(s: String): Try[Line1] = {
+  def fromString(s: String): Try[Line1] =
     Try {
       val Array(id, vals) = s.split(",")
       Line1(id.toInt, vals.split(" "))
     }
-  }
 }
 
 object IntroSpark {
@@ -102,14 +106,14 @@ object IntroSpark {
 }
 
 case class Clickstream(
-    action:    String,
-    campaign:  String,
-    cost:      Long,
-    domain:    String,
-    ip:        String,
-    session:   String,
-    timestamp: Long,
-    user:      String
+  action:    String,
+  campaign:  String,
+  cost:      Long,
+  domain:    String,
+  ip:        String,
+  session:   String,
+  timestamp: Long,
+  user:      String
 )
 
 object IntroSpark2 {

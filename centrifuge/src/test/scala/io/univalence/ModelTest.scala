@@ -3,17 +3,19 @@ package io.univalence.centrifuge
 import cats.instances.all._
 import cats.laws.discipline.MonadTests
 import io.univalence._
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
 import org.scalatest.FunSuite
 
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
 
 class ModelTest extends FunSuite {
-  val testAnnotation            = Annotation("msg",   Some("oF"), Vector("fF"), false, 1)
+  val testAnnotation            = Annotation("msg", Some("oF"), Vector("fF"), false, 1)
   val testResult                = Result(Some("msg"), Vector(testAnnotation))
   val testResultEmptyAnnotation = Result(Some("msg"), Vector())
-  val testResultEmptyValue      = Result(None,        Vector(testAnnotation))
-  val testResultBothEmpty       = Result(None,        Vector())
+  val testResultEmptyValue      = Result(None, Vector(testAnnotation))
+  val testResultBothEmpty       = Result(None, Vector())
 
   test("isPure") {
     assert(!testResult.isPure)
@@ -28,9 +30,8 @@ class ModelTest extends FunSuite {
 
   implicit def arbitraryResult[T](implicit
                                   oA:   Arbitrary[Option[T]],
-                                  aAnn: Arbitrary[Vector[Annotation]]): Arbitrary[Result[T]] = {
+                                  aAnn: Arbitrary[Vector[Annotation]]): Arbitrary[Result[T]] =
     Arbitrary(Gen.resultOf[Option[T], Vector[Annotation], Result[T]](Result.apply))
-  }
 
   test("Monad laws") {
     MonadTests[Result].stackUnsafeMonad[Int, Int, Int].all.check()
@@ -113,7 +114,8 @@ class ModelTest extends FunSuite {
   test("fromEither") {
     assert(
       Result
-        .fromEither(testResult.toEither)(_.toString) == testResultEmptyAnnotation)
+        .fromEither(testResult.toEither)(_.toString) == testResultEmptyAnnotation
+    )
     assert(Result.fromEither(testResultEmptyAnnotation.toEither)(_.toString) == testResultEmptyAnnotation)
     assert(
       Result.fromEither(testResultBothEmpty.toEither)(_.toString) == Result(None,
@@ -124,7 +126,9 @@ class ModelTest extends FunSuite {
                                                                                 Vector(),
                                                                                 isError = true,
                                                                                 1
-                                                                              ))))
+                                                                              )
+                                                                            ))
+    )
     //assert(Result.fromEither(testResultEmptyValue.toEither)(_.toString) == Result(None,Vector(Annotation(Vector(Annotation(msg,Some(oF),Vector(fF),false,1)),None,Vector(),true,1))))
   }
 }

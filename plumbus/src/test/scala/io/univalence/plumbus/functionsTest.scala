@@ -58,7 +58,8 @@ class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
       dataframeToMap(
         r =>
           r.getAs[String]("id")
-            -> functions.serializeAndCleanValue(r.getAs[Seq[Person]]("persons")))(resultdf)
+            -> functions.serializeAndCleanValue(r.getAs[Seq[Person]]("persons"))
+      )(resultdf)
 
     result("1") shouldBe empty
     result("2") should contain only Person("Daryll", 10)
@@ -74,14 +75,16 @@ class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
                            if (p.age > 18)
                              Seq()
                            else
-                             Seq(p, Person("Younger " + p.name, p.age - 5)))
+                             Seq(p, Person("Younger " + p.name, p.age - 5))
+                       )
                        .as("album"))
 
     val result =
       dataframeToMap(
         r =>
           r.getAs[String]("id")
-            -> functions.serializeAndCleanValue(r.getAs[Seq[Person]]("album")))(resultdf)
+            -> functions.serializeAndCleanValue(r.getAs[Seq[Person]]("album"))
+      )(resultdf)
 
     result("1") shouldBe empty
     result("2") should contain inOrderOnly (Person("Daryll", 10), Person("Younger Daryll", 5))
@@ -102,7 +105,8 @@ class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
           r.getAs[String]("id") -> ((
                                       r.getAs[String]("name"),
                                       r.getAs[Int]("age")
-                                    )))(resultdf)
+                                    ))
+      )(resultdf)
 
     result("1") should be(("toto", 13))
   }
@@ -128,7 +132,8 @@ class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
                                         r.getAs[String]("id_1"),
                                         r.getAs[String]("name_1"),
                                         r.getAs[Int]("age_1")
-                                      )))(resultdf)
+                                      ))
+      )(resultdf)
 
     result("1") should be(("toto", 13, "1", "toto", 13))
   }
@@ -138,5 +143,5 @@ class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
 
 }
 
-case class Person(name: String, age: Int)
+case class Person(name:     String, age:  Int)
 case class PersonWithId(id: String, name: String, age: Int)

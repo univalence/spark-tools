@@ -2,12 +2,12 @@ lazy val plumbus =
   (project in file("."))
     .settings(metaSettings, scalaSettings)
     .settings(
-      name := "plumbus",
-      version := "0.0.1-SNAPSHOT",
+      name        := "plumbus",
+      version     := "0.0.1-SNAPSHOT",
       description := "Collection of tools for Scala Spark",
-      startYear := Some(2019),
-      licenses := Seq("The Apache License, Version 2.0" → url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
-      homepage := Some(url("https://github.com/UNIVALENCE/spark-plumbus"))
+      startYear   := Some(2019),
+      licenses    := Seq("The Apache License, Version 2.0" → url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+      homepage    := Some(url("https://github.com/UNIVALENCE/spark-plumbus"))
     )
     .settings(
       libraryDependencies ++= Seq(
@@ -21,8 +21,8 @@ lazy val plumbus =
     )
     .settings(
       scalafmtOnCompile := true,
-      publishTo := sonatypePublishTo.value,
-      useGpg := true
+      publishTo         := sonatypePublishTo.value,
+      useGpg            := true
     )
 
 lazy val scalaSettings =
@@ -71,21 +71,21 @@ lazy val scalaSettings =
 
 lazy val metaSettings =
   Def.settings(
-    organization := "io.univalence",
-    organizationName := "Univalence",
+    organization         := "io.univalence",
+    organizationName     := "Univalence",
     organizationHomepage := Some(url("http://univalence.io/")),
     developers := List(
       Developer(
-        id = "jwinandy",
-        name = "Jonathan Winandy",
+        id    = "jwinandy",
+        name  = "Jonathan Winandy",
         email = "jonathan@univalence.io",
-        url = url("https://github.com/ahoy-jon")
+        url   = url("https://github.com/ahoy-jon")
       ),
       Developer(
-        id = "fsarradin",
-        name = "François Sarradin",
+        id    = "fsarradin",
+        name  = "François Sarradin",
         email = "francois@univalence.io",
-        url = url("https://github.com/fsarradin")
+        url   = url("https://github.com/fsarradin")
       )
     ),
     scmInfo := Some(
@@ -93,5 +93,6 @@ lazy val metaSettings =
         url("https://github.com/UNIVALENCE/spark-plumbus"),
         "scm:git:https://github.com/UNIVALENCE/spark-plumbus.git",
         "scm:git:git@github.com:UNIVALENCE/spark-plumbus.git"
-      ))
+      )
+    )
   )

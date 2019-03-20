@@ -5,8 +5,8 @@ import scala.util.Success
 import scala.util.Try
 
 case class Result[+T](
-    value:       Option[T],
-    annotations: Vector[Annotation]
+  value:       Option[T],
+  annotations: Vector[Annotation]
 ) {
 
   def addPathPart(s: String): Result[T] =
@@ -82,11 +82,11 @@ object Result {
 }
 
 case class Annotation(
-    message:    String,
-    onField:    Option[String] = None,
-    fromFields: Vector[String] = Vector.empty,
-    isError:    Boolean,
-    count:      Long = 1L
+  message:    String,
+  onField:    Option[String] = None,
+  fromFields: Vector[String] = Vector.empty,
+  isError:    Boolean,
+  count:      Long = 1L
 ) {
 
   def this(message: String, onField: Option[String], fromFields: Seq[String], isError: Boolean, count: Long) = {
@@ -96,8 +96,8 @@ case class Annotation(
 
 object Annotation {
   def fromString(
-      msg:   String,
-      error: Boolean
+    msg:   String,
+    error: Boolean
   ): Annotation =
     Annotation(
       message = msg,

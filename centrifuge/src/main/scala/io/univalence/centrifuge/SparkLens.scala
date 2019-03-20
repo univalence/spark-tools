@@ -28,7 +28,7 @@ object SparkLens {
       })
       .mkString("/")
 
-  def lensRegExp(df: DataFrame)(fieldSelect: (String, DataType) => Boolean,
+  def lensRegExp(df:                       DataFrame)(fieldSelect: (String, DataType) => Boolean,
                                 transform: (Any, DataType) => Any): DataFrame =
     lens(df)({ case (p, dt) => fieldSelect(pathToStr(p), dt) }, transform)
 

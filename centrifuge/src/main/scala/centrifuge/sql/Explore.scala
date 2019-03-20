@@ -36,8 +36,8 @@ object Explore {
       seq
         .filter(_ != null)
         .flatten
-        .asInstanceOf[Seq[GenericRowWithSchema]])
-      .asInstanceOf[Seq[T]]
+        .asInstanceOf[Seq[GenericRowWithSchema]]
+    ).asInstanceOf[Seq[T]]
 
   def reduce_annotations(seq: Seq[GenericRowWithSchema]): Seq[GenericRowWithSchema] =
     seq
@@ -63,9 +63,10 @@ object Explore {
     sc.makeRDD(
         Seq(
           Person("john", -1),
-          Person("",     13),
+          Person("", 13),
           Person("toto", 12)
-        ))
+        )
+      )
       .toDF()
       .createOrReplaceTempView("person")
 
@@ -73,9 +74,9 @@ object Explore {
       .toDF()
       .createTempView("address")
 
-    sQLContext.udf.register("to_age",           to_age _)
+    sQLContext.udf.register("to_age", to_age _)
     sQLContext.udf.register("non_empty_string", non_empty_string _)
-    sQLContext.udf.register("add_annotations",  add_annotations _)
+    sQLContext.udf.register("add_annotations", add_annotations _)
     sQLContext.udf
       .register("flatten_annotations", flatten_annotations[Annotation] _)
 
@@ -132,7 +133,8 @@ from (select to_age(age) as age, non_empty_string(name) as name from person) tmp
 
     sQLContext
       .sql(
-        "select AVG(age) as age_avg, flatten_annotations(collect_list(annotations)) as annotations from validated_person")
+        "select AVG(age) as age_avg, flatten_annotations(collect_list(annotations)) as annotations from validated_person"
+      )
       .show(false)
 
     sQLContext
@@ -150,7 +152,8 @@ from (select to_age(age) as age, non_empty_string(name) as name from person) tmp
 
     sQLContext
       .sql(
-        """select age,name,personName,street,postcode,city,flatten_annotations(array(vp.annotations,ad.annotations)) as annotations from validated_person as vp LEFT JOIN validated_address as ad ON vp.name = ad.personName""")
+        """select age,name,personName,street,postcode,city,flatten_annotations(array(vp.annotations,ad.annotations)) as annotations from validated_person as vp LEFT JOIN validated_address as ad ON vp.name = ad.personName"""
+      )
       .show(false)
 
     //person.age

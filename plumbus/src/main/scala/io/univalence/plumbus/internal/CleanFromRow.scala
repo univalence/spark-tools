@@ -18,10 +18,10 @@ object CleanFromRow {
     }
 
   // Instances to associate clean operation to basic types
-  implicit val double: Typeclass[Double]   = instance
+  implicit val double:  Typeclass[Double]  = instance
   implicit val boolean: Typeclass[Boolean] = instance
-  implicit val strCFR: Typeclass[String]   = instance
-  implicit val intCFR: Typeclass[Int]      = instance
+  implicit val strCFR:  Typeclass[String]  = instance
+  implicit val intCFR:  Typeclass[Int]     = instance
   implicit val longCFR: Typeclass[Long]    = instance
   // add other typeclass instances for basic types...
 

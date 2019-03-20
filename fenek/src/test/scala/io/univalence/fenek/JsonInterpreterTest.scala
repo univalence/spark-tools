@@ -37,11 +37,11 @@ class JsonInterpreterTest extends FunSuite {
 
       def anyToJValue(any: Any): JValue =
         any match {
-          case s: String      => JString(s)
-          case a: JValue      => a
-          case i: Int         => JInt(i)
-          case b: Boolean     => JBool(b)
-          case d: Double      => JDouble(d)
+          case s:  String     => JString(s)
+          case a:  JValue     => a
+          case i:  Int        => JInt(i)
+          case b:  Boolean    => JBool(b)
+          case d:  Double     => JDouble(d)
           case de: BigDecimal => JDecimal(de)
         }
 
@@ -121,7 +121,7 @@ class JsonInterpreterTest extends FunSuite {
     val expr1 = >.gppTypeProduit.caseWhen("KTTR" -> >.ktStartCommitmentDate | Else -> dateparution)
     val expr2 = >.ktInvoicingType.caseWhen(
       "STANDARD" -> est_annulé.caseWhen(true -> dateparution | false -> >.ktStartCommitmentDate) |
-        Else     -> expr1
+        Else -> expr1
     )
     val da_deb_periode = >.gppTypeProduit
       .caseWhen("KTREMB" -> daValidVente | "KTREGU" -> daValidVente) orElse
@@ -131,8 +131,8 @@ class JsonInterpreterTest extends FunSuite {
 
     tx.setInput(ktInvoicingType = "MONTHLY", gppTypeProduit = "TOTO")
       .setExpected(
-        expr1 = dateparution,
-        expr2 = dateparution,
+        expr1          = dateparution,
+        expr2          = dateparution,
         da_deb_periode = dateparution
       )
       .check()
@@ -159,7 +159,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("<*> & |> avec int operation not working") {
     val factIterationNumber: TypedExpr[Int] = 13
-    val data12: TypedExpr[Int]              = 12
+    val data12:              TypedExpr[Int] = 12
 
     val isTR: TypedExpr[Boolean] =
       (lit(13) <*> lit(12) |> (_ % _) caseWhen (Else -> false | 1 -> true)).as[Boolean]
@@ -180,8 +180,8 @@ class JsonInterpreterTest extends FunSuite {
 
   test("<*> & |> avec int operation not working 2") {
     val factIterationNumber: TypedExpr[Int] = >.iterationinvoicenumber.as[Int]
-    val data12: TypedExpr[Int]              = 12
-    val TR                                  = (factIterationNumber <*> data12 |> (_ % _) caseWhen (Else -> false | 1 -> true)).as[Boolean]
+    val data12:              TypedExpr[Int] = 12
+    val TR = (factIterationNumber <*> data12 |> (_ % _) caseWhen (Else -> false | 1 -> true)).as[Boolean]
 
     val tx = struct(expr = TR)
     val s: StructChecker = tx

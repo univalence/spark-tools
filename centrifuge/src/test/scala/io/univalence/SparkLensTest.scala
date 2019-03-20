@@ -1,8 +1,10 @@
 package io.univalence
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.{DataFrame,       SparkSession}
-import org.apache.spark.sql.types.{ArrayType, StringType}
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.types.ArrayType
+import org.apache.spark.sql.types.StringType
 import io.univalence.SparkLens._
 import org.scalatest.FunSuite
 
@@ -23,14 +25,14 @@ class SparkLensTest extends FunSuite {
   test("testLensRegExp change string") {
     assert(lensRegExp(ss.createDataFrame(Seq(Toto("a", 1))))({
       case ("name", StringType) => true
-      case _ => false
+      case _                    => false
     }, { case (a: String, d) => a.toUpperCase }).as[Toto].first() == Toto("A", 1))
   }
 
   test("change Int") {
     assert(lensRegExp(ss.createDataFrame(Seq(Tata(Toto("a", 1)))))({
       case ("toto/age", _) => true
-      case _ => false
+      case _               => false
     }, { case (a: Int, d) => a + 1 }).as[Tata].first() == Tata(Toto("a", 2)))
   }
 
@@ -40,7 +42,7 @@ class SparkLensTest extends FunSuite {
 
     val yoho: DataFrame = lensRegExp(df)({
       case (_, ArrayType(_, _)) => true
-      case _ => false
+      case _                    => false
     }, (a, b) => if (a == null) Nil else a)
 
   }

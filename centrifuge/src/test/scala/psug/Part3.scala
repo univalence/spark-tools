@@ -25,7 +25,7 @@ object Builder {
   def build2[A[_], In, Out](in: A[In])(implicit f: Functor[A], gen: LabelledGeneric.Aux[Out, In]): A[Out] =
     f.map(in)(gen.from)
 
-  def build[In <: HList, In1 <: HList, Out1, A[_], In2, Out2](in: In)(implicit
+  def build[In <: HList, In1 <: HList, Out1, A[_], In2, Out2](in:                In)(implicit
                                                                       map:       Mapper.Aux[transFormField.type, In, In1],
                                                                       sequencer: Sequencer.Aux[In1, Out1],
                                                                       un:        Unpack1[Out1, A, In2],
@@ -47,7 +47,8 @@ object Test {
   assertTypedEquals[FieldType[namek, Option[String]] :: HNil](ex :: HNil)
 
   assertTypedEquals[Option[FieldType[namek, String]] :: HNil](
-    Builder.transFormField.apply('name ->> Option("hello")) :: HNil)
+    Builder.transFormField.apply('name ->> Option("hello")) :: HNil
+  )
 
   case class Ahoy(name: String, y: Int)
 

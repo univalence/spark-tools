@@ -34,7 +34,7 @@ object JsonInterpreter {
 
   case class Result[+T](value: Option[T], annotations: Seq[Annotation]) {
     def addScope(name: String): Result[T] = copy(annotations = annotations.map(_.addScope(name)))
-    def map[B](f: T => B): Result[B]      = Result(value.map(f), annotations)
+    def map[B](f:      T => B): Result[B] = Result(value.map(f), annotations)
 
     def flatMap[B](f: T => Result[B]): Result[B] = {
       val res: Option[Result[B]] = value.map(f)
@@ -64,10 +64,10 @@ object JsonInterpreter {
     def anyToJValue(any: Any): Try[JValue] =
       Try {
         any match {
-          case s: String      => JString(s)
-          case b: Boolean     => JBool(b)
-          case i: Int         => JInt(i)
-          case d: Double      => JDouble(d)
+          case s:  String     => JString(s)
+          case b:  Boolean    => JBool(b)
+          case i:  Int        => JInt(i)
+          case d:  Double     => JDouble(d)
           case de: BigDecimal => JDecimal(de)
 
         }
@@ -93,17 +93,17 @@ object JsonInterpreter {
 
         case TypedExpr.CaseWhen(source, cases) => Fnk.Expr.Ops.CaseWhen(source, cases)
 
-        case Left(source,      n) => source.as[String] <*> n |> (_ take _)
+        case Left(source, n) => source.as[String] <*> n |> (_ take _)
         case DateAdd(interval, n, source) =>
           interval <*> n <*> source.as[String] |> {
-            case ("day",   days,   LocalDate(start)) => start.plusDays(days).toString
+            case ("day", days, LocalDate(start))     => start.plusDays(days).toString
             case ("month", months, LocalDate(start)) => start.plusMonths(months).toString
-            case ("year",  years,  LocalDate(start)) => start.plusYears(years).toString
+            case ("year", years, LocalDate(start))   => start.plusYears(years).toString
           }
 
         case DateDiff(datepart, startdate, enddate) =>
           datepart <*> startdate.as[String] <*> enddate.as[String] |> {
-            case ("day",   LocalDate(start), LocalDate(end)) => Days.daysBetween(start,     end).getDays
+            case ("day", LocalDate(start), LocalDate(end))   => Days.daysBetween(start, end).getDays
             case ("month", LocalDate(start), LocalDate(end)) => Months.monthsBetween(start, end).getMonths
           }
 
@@ -115,16 +115,18 @@ object JsonInterpreter {
 
     implicit def tryToResult[T](t: Try[T]): Result[T] = t match {
       case Success(v) => Result(Some(v), Nil)
-      case Failure(e) => Result(None,    CaughtException(e, Nil) :: Nil)
+      case Failure(e) => Result(None, CaughtException(e, Nil) :: Nil)
     }
 
     def rawJson(source: Expr, f: JValue => JValue): JValue => Result[JValue] = {
       val f1 = compute(source)
-      f1.andThen(x =>
-          x.value match {
-            case None => x.copy(value = Some(JNothing))
-            case _    => x
-        })
+      f1.andThen(
+          x =>
+            x.value match {
+              case None => x.copy(value = Some(JNothing))
+              case _    => x
+          }
+        )
         .andThen(_.flatMap(x => Try(f(x))))
     }
 
@@ -212,8 +214,8 @@ object JsonInterpreter {
             case v: JInt if enc == Encoder.Int            => v
             case v: JDouble if enc == Encoder.Double      => v
             case v: JDecimal if enc == Encoder.BigDecimal => v
-            case JInt(x) if enc == Encoder.BigDecimal     => JDecimal(BigDecimal(x))
-            case JInt(x) if enc == Encoder.Double         => JDouble(x.toDouble)
+            case JInt(x) if enc == Encoder.BigDecimal => JDecimal(BigDecimal(x))
+            case JInt(x) if enc == Encoder.Double     => JDouble(x.toDouble)
             //Int => String
             case JString(ExtractInt(i)) if enc == Encoder.Int => JInt(i)
             case JString(s) if enc == Encoder.BigDecimal      => JDecimal(BigDecimal(s))
@@ -244,7 +246,7 @@ object JsonInterpreter {
         case Field(name) =>
           jobj =>
             jobj \\ name match {
-              case JObject(Nil) => Result(None,    MissingField(name) :: Nil)
+              case JObject(Nil) => Result(None, MissingField(name) :: Nil)
               case x            => Result(Some(x), Nil)
             }
 
@@ -252,11 +254,13 @@ object JsonInterpreter {
           val f1 = compute(source)
           jvalue =>
             {
-              f1(jvalue).flatMap(y =>
-                y \ name match {
-                  case JObject(Nil) => Result(None, MissingField(name) :: Nil)
-                  case x            => Result.point(x)
-              })
+              f1(jvalue).flatMap(
+                y =>
+                  y \ name match {
+                    case JObject(Nil) => Result(None, MissingField(name) :: Nil)
+                    case x            => Result.point(x)
+                }
+              )
             }
 
         case Expr.Ops.CaseWhen(source, cases) =>

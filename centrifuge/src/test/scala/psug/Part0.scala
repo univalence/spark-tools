@@ -21,9 +21,8 @@ trait Applicative[M[_]] extends Functor[M] {
 
   def ap[A, B](ma: M[A], mb: M[A => B]): M[B] = map(zip(ma, mb))(t => t._2(t._1))
 
-  def apply2[A, B, C](ma: M[A], mb: M[B])(f: (A, B) => C): M[C] = {
+  def apply2[A, B, C](ma: M[A], mb: M[B])(f: (A, B) => C): M[C] =
     ap(mb, map(ma)(x => (b: B) => f(x, b)))
-  }
 }
 
 trait Monads[M[_]] extends Applicative[M] {
@@ -47,9 +46,8 @@ object Functor {
     override def map[A, B](fa: IronSuit[A])(f: (A) => B): IronSuit[B] =
       IronSuit(f(fa.value))
 
-    override def ap[A, B](ma: IronSuit[A], mb: IronSuit[(A) => B]): IronSuit[B] = {
+    override def ap[A, B](ma: IronSuit[A], mb: IronSuit[(A) => B]): IronSuit[B] =
       point(mb.value(ma.value))
-    }
 
     override def zip[A, B](ma: IronSuit[A], mb: IronSuit[B]): IronSuit[(A, B)] =
       ???

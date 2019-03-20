@@ -1,7 +1,9 @@
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
-import org.apache.spark.sql.types.{LongType,                  TimestampType}
+import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.Literal
+import org.apache.spark.sql.types.LongType
+import org.apache.spark.sql.types.TimestampType
 
 object MyUDF {
 
@@ -16,9 +18,8 @@ object MyUDF {
     }
   }
 
-  def register(sparkSession: SparkSession): Unit = {
+  def register(sparkSession: SparkSession): Unit =
     sparkSession.sessionState.functionRegistry
       .registerFunction("toTs", myTimestampCast)
-  }
 
 }

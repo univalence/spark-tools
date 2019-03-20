@@ -107,7 +107,7 @@ class AutoBuildConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacro
     //to try for position : https://github.com/kevinwright/macroflection/blob/master/kernel/src/main/scala/net/thecoda/macroflection/Validation.scala#L75
 
     def stringToType(s: String): Type = {
-      val dummyNme: String              = c.fresh()
+      val dummyNme: String = c.fresh()
       val parse                         = c.parse(s"{ type $dummyNme = " + s + " }")
       val q"{ type $dummyNme2 = $tpt }" = c.typeCheck(parse)
       tpt.tpe.asInstanceOf[Type] // helping IntelliJ
@@ -137,7 +137,8 @@ class AutoBuildConstruct[C <: whitebox.Context](val c: C) extends CaseClassMacro
 
             val generateDef = CaseClassApplicativeBuilder.generateDef(
               of.map(t => t._1.encoded -> CleanTypeName.clean(t._2.toString)),
-              CleanTypeName.clean(typeToBuild.toString))
+              CleanTypeName.clean(typeToBuild.toString)
+            )
 
             if (of.toMap != argSpec.toMap) {
               c.abort(

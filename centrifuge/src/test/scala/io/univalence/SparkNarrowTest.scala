@@ -6,7 +6,8 @@ import java.sql.Date
 import io.univalence.centrifuge.Sparknarrow
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Encoders, SparkSession}
+import org.apache.spark.sql.Encoders
+import org.apache.spark.sql.SparkSession
 import org.scalatest.FunSuite
 
 case class Person(name: String, age: Int, date: Date)
@@ -30,7 +31,7 @@ class SparknarrowTest extends FunSuite {
 
   def checkDefinition(scalaCode: String): Unit = {
     import scala.tools.reflect.ToolBox
-    import scala.reflect.runtime.{universe => ru}
+    import scala.reflect.runtime.{ universe => ru }
     import ru._
 
     val cl = this.getClass.getClassLoader
@@ -58,8 +59,9 @@ class SparknarrowTest extends FunSuite {
     val yo = StructType(
       Seq(
         StructField("name", StringType),
-        StructField("tel",  ArrayType(StringType))
-      ))
+        StructField("tel", ArrayType(StringType))
+      )
+    )
 
     yo.printTreeString()
   }

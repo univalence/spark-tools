@@ -10,7 +10,9 @@ import org.scalatest.FunSuite
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 class ExecutorTest extends FunSuite {
 
@@ -32,7 +34,8 @@ class ExecutorTest extends FunSuite {
         .retryDs(ds)(run = x => Try(1))({ case (a, Success(1)) => a })(nbGlobalAttemptMax = 1000)
         ._1
         .collect()
-        .toSeq == totoes)
+        .toSeq == totoes
+    )
 
     val startDate: Long = System.currentTimeMillis()
 
@@ -78,8 +81,9 @@ class ExecutorTest extends FunSuite {
     val ds = ss.createDataset(List(1, 2, 5, 10, 100, 200, 500, 1000))
 
     val t =
-      RetryDs.retryDsWithTask(ds)(x => Task(Thread.sleep(x)).timeout(Duration(10, TimeUnit.MILLISECONDS)))((x, y) =>
-        (x, y.isSuccess))(2, None)
+      RetryDs.retryDsWithTask(ds)(x => Task(Thread.sleep(x)).timeout(Duration(10, TimeUnit.MILLISECONDS)))(
+        (x, y) => (x, y.isSuccess)
+      )(2, None)
 
     import monix.execution.Scheduler.Implicits.global
     val res = Await.result(t.runAsync, Duration.Inf)._1.collect().toList

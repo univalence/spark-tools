@@ -29,7 +29,8 @@ object CheckCogroup {
     }
 
   implicit def rCons[K, V, REST <: HList, RES <: HList](
-      implicit removeFirstT: CheckCogroup.Aux[K, REST, RES]): CheckCogroup.Aux[K, RDD[(K, V)] :: REST, Seq[V] :: RES] =
+    implicit removeFirstT: CheckCogroup.Aux[K, REST, RES]
+  ): CheckCogroup.Aux[K, RDD[(K, V)] :: REST, Seq[V] :: RES] =
     new CheckCogroup[K, RDD[(K, V)] :: REST] {
       type Res = Seq[V] :: RES
 
@@ -64,14 +65,15 @@ object CoGroupN {
     }
 
   implicit def cogroupNByCase[K, H1 <: RDD[_], HRest <: HList, ABC <: HList, R <: Product](
-      implicit
-      // verifie que c'est une séquence de RDD[(K,V)] :: RDD[(K,VV)] ::  ...
-      // et permet d'extraire le type ABC : Seq[V] :: Seq[VV] :: ...
-      checkCoGroup: CheckCogroup.Aux[K, H1 :: HRest, ABC],
-      // permet de passer de ABC au tuple R (Seq[V], Seq[VV], ... )
-      tupler: Tupler.Aux[ABC, R],
-      // permet d'extraire ABC depuis un Array[Iterable[_]]
-      fromTraversable: FromTraversable[ABC]): CoGroupN.Aux[K, H1 :: HRest, (K, R)] = new CoGroupN[K, H1 :: HRest] {
+    implicit
+    // verifie que c'est une séquence de RDD[(K,V)] :: RDD[(K,VV)] ::  ...
+    // et permet d'extraire le type ABC : Seq[V] :: Seq[VV] :: ...
+    checkCoGroup: CheckCogroup.Aux[K, H1 :: HRest, ABC],
+    // permet de passer de ABC au tuple R (Seq[V], Seq[VV], ... )
+    tupler: Tupler.Aux[ABC, R],
+    // permet d'extraire ABC depuis un Array[Iterable[_]]
+    fromTraversable: FromTraversable[ABC]
+  ): CoGroupN.Aux[K, H1 :: HRest, (K, R)] = new CoGroupN[K, H1 :: HRest] {
     type Res = (K, R)
 
     override def arrayToRes(k: K, array: Array[Iterable[_]]): Res =
@@ -85,11 +87,11 @@ object CoGroupN {
     Usage : cogroupN(rdd1 :: rdd2 :: rdd3 :: HNil)
    */
   def cogroupN[K, H <: HList, Res](h: H, part: Partitioner = new HashPartitioner(1024))(
-      implicit
-      ctK:   ClassTag[K],
-      ctRes: ClassTag[Res],
-      //ToTraversable.Aux[H,List,RDD[(K,_)]] don't work
-      coGroupAble: CoGroupN.Aux[K, H, Res]
+    implicit
+    ctK:   ClassTag[K],
+    ctRes: ClassTag[Res],
+    //ToTraversable.Aux[H,List,RDD[(K,_)]] don't work
+    coGroupAble: CoGroupN.Aux[K, H, Res]
   ): RDD[Res] =
     new CoGroupedRDD(coGroupAble.toSeq(h), part)
       .map((coGroupAble.arrayToRes _).tupled)

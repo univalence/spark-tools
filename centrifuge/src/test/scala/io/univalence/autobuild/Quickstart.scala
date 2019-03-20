@@ -1,6 +1,7 @@
 package io.univalence.autobuild
 
-import io.univalence.centrifuge.{Annotation, Result}
+import io.univalence.centrifuge.Annotation
+import io.univalence.centrifuge.Result
 import org.scalatest.FunSuite
 
 class Quickstart extends FunSuite {
@@ -34,8 +35,8 @@ class Quickstart extends FunSuite {
     object Hello {
       @autoBuildResult
       def build(
-          name:  Result[String],
-          greet: Result[Boolean]
+        name:  Result[String],
+        greet: Result[Boolean]
       ): Result[Hello] = MacroMarker.generated_applicative
 
     }

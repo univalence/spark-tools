@@ -1,7 +1,8 @@
 package io.univalence.sparktools.kpialgebra
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
 import shapeless.contrib.spire._
 import spire.algebra._
 import spire.implicits._
@@ -9,23 +10,23 @@ import spire.implicits._
 import scala.reflect.ClassTag
 
 case class DeltaPart[T: AdditiveMonoid](
-    count: Long,
-    part:  T
+  count: Long,
+  part:  T
 )
 
 case class DeltaCommon[T: AdditiveMonoid](
-    count:     Long,
-    countZero: Long,
-    diff:      T,
-    error:     T,
-    left:      T,
-    right:     T
+  count:     Long,
+  countZero: Long,
+  diff:      T,
+  error:     T,
+  left:      T,
+  right:     T
 )
 
 case class Delta[L: AdditiveMonoid, R: AdditiveMonoid, C: AdditiveMonoid](
-    left:   DeltaPart[L],
-    right:  DeltaPart[R],
-    common: DeltaCommon[C]
+  left:   DeltaPart[L],
+  right:  DeltaPart[R],
+  common: DeltaCommon[C]
 )
 
 object KpiAlgebra {
@@ -50,8 +51,9 @@ object KpiAlgebra {
               LM:  AdditiveMonoid: ClassTag,
               RM:  AdditiveMonoid: ClassTag,
               LRC: AdditiveAbGroup: MultiplicativeSemigroup: ClassTag](
-      left:  RDD[(K, L)],
-      right: RDD[(K, R)])(flm: L => LM, frm: R => RM, flc: L => LRC, frc: R => LRC): Delta[LM, RM, LRC] = {
+    left:  RDD[(K, L)],
+    right: RDD[(K, R)]
+  )(flm:   L => LM, frm: R => RM, flc: L => LRC, frc: R => LRC): Delta[LM, RM, LRC] = {
 
     val map: RDD[Delta[LM, RM, LRC]] = left
       .fullOuterJoin(right)

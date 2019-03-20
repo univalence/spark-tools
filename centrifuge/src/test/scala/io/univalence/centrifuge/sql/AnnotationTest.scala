@@ -1,8 +1,11 @@
 package io.univalence.centrifuge.sql
 
-import io.univalence.centrifuge.{Annotation, AnnotationSql, Result}
+import io.univalence.centrifuge.Annotation
+import io.univalence.centrifuge.AnnotationSql
+import io.univalence.centrifuge.Result
 import org.apache.spark.sql.SparkSession
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.FunSuite
 
 case class Person(name: String, age: Int)
 
@@ -11,22 +14,19 @@ case class PersonWithAnnotations(name: String, age: Int, annotations: Seq[Annota
 case class BetterPerson(name: String, age: Option[Int])
 
 object AnnotationTest {
-  def to_age(i: Int): Result[Int] = {
-    {} match {
-      case _ if i < 0    => Result.fromError("BELOW_ZERO")
-      case _ if i <= 13  => Result.fromWarning(i, "UNDER_13")
-      case _ if i >= 130 => Result.fromError("OVER_130")
-      case _             => Result.pure(i)
-    }
+  def to_age(i: Int): Result[Int] = {} match {
+    case _ if i < 0    => Result.fromError("BELOW_ZERO")
+    case _ if i <= 13  => Result.fromWarning(i, "UNDER_13")
+    case _ if i >= 130 => Result.fromError("OVER_130")
+    case _             => Result.pure(i)
   }
 
-  def non_empty_string(str: String): Result[String] = {
+  def non_empty_string(str: String): Result[String] =
     str match {
       //case None => Result.fromError("NULL_VALUE")
       case "" => Result.fromError("EMPTY_STRING")
       case _  => Result.pure(str)
     }
-  }
 
 }
 
@@ -43,17 +43,17 @@ class AnnotationTest extends FunSuite with BeforeAndAfterAll {
 
   import ss.implicits._
 
-  val joe     = Person("Joe",   14)
+  val joe     = Person("Joe", 14)
   val timmy   = Person("Timmy", 8)
-  val invalid = Person("",      -1)
+  val invalid = Person("", -1)
 
   val onePersonDf = ss.sparkContext.makeRDD(Seq(joe)).toDF()
 
   test("quickstart") {
 
-    val joe     = Person("Joe",   14)
+    val joe     = Person("Joe", 14)
     val timmy   = Person("Timmy", 8)
-    val invalid = Person("",      -1)
+    val invalid = Person("", -1)
 
     import io.univalence.centrifuge.implicits._
     import ss.implicits._
@@ -178,7 +178,8 @@ BetterPerson(,None)
           onField    = Some("age"),
           fromFields = Vector("age")
         )
-      ))
+      )
+    )
   }
 
   test("with more annotations (same field)") {
@@ -199,12 +200,14 @@ BetterPerson(,None)
     assert(p.get._1 == 12)
     assert(
       p.get._2.toSet == Set(
-        AnnotationSql("UNDER_13", isError = false, count = 4, onField = "age", fromFields = Vector("age"))))
+        AnnotationSql("UNDER_13", isError = false, count = 4, onField = "age", fromFields = Vector("age"))
+      )
+    )
   }
 
   test("multicol") {
 
-    ss.registerTransformation("to_age",    AnnotationTest.to_age)
+    ss.registerTransformation("to_age", AnnotationTest.to_age)
     ss.registerTransformation("non_empty", AnnotationTest.non_empty_string)
 
     ss.sparkContext
@@ -237,7 +240,8 @@ BetterPerson(,None)
           onField    = "person_name",
           fromFields = Vector("name")
         )
-      ))
+      )
+    )
   }
 
   test("") {}
@@ -256,7 +260,8 @@ BetterPerson(,None)
       .createOrReplaceTempView("togroup")
 
     val agg = ss.sql(
-      "select non_empty(_1) as f,FIRST(non_empty(_2),true) as s, count(*) as c from togroup group by non_empty(_1)")
+      "select non_empty(_1) as f,FIRST(non_empty(_2),true) as s, count(*) as c from togroup group by non_empty(_1)"
+    )
     val (a, b, c, as) = agg.includeAnnotations
       .as[(Option[String], String, Long, Seq[AnnotationSql])]
       .collect()
@@ -287,7 +292,8 @@ BetterPerson(,None)
         .as[Seq[AnnotationSql]]
         .collect()
         .toSeq
-        .exists(_.nonEmpty))
+        .exists(_.nonEmpty)
+    )
 
     ss.sql("select _1 as id, non_empty(_2) as name, _3 as a_id from entity")
       .createOrReplaceTempView("entity_validated")
@@ -299,10 +305,12 @@ BetterPerson(,None)
         .as[Seq[AnnotationSql]]
         .collect()
         .toSeq
-        .exists(_.nonEmpty))
+        .exists(_.nonEmpty)
+    )
 
     val df = ss.sql(
-      "select *, concat(e.name,a.name) as supername from entity_validated e left join a_validated a on e.a_id = a.id")
+      "select *, concat(e.name,a.name) as supername from entity_validated e left join a_validated a on e.a_id = a.id"
+    )
 
     //println((df.queryExecution.toString())
 
@@ -314,7 +322,8 @@ BetterPerson(,None)
   test("test function chain with option") {
     //
     ss.sql(
-      "select *, concat(e.name,non_empty(a.name)) as supername from entity_validated e left join a_validated a on e.a_id = a.id")
+      "select *, concat(e.name,non_empty(a.name)) as supername from entity_validated e left join a_validated a on e.a_id = a.id"
+    )
   }
 
   test("sub select") {
@@ -341,10 +350,11 @@ BetterPerson(,None)
     ss.sparkContext
       .makeRDD(
         Seq(
-          Person("Joe",    12),
+          Person("Joe", 12),
           Person("Robert", -1),
-          Person("Jane",   21)
-        ))
+          Person("Jane", 21)
+        )
+      )
       .toDS()
       .createOrReplaceTempView("person")
 

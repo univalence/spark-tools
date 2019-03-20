@@ -6,22 +6,19 @@ import org.apache.spark.sql.expressions.UserDefinedFunction
 
 object Explore {
 
-  def to_age(i: Int): Result[Int] = {
-    {} match {
-      case _ if i < 0    => Result.fromError("BELOW_ZERO")
-      case _ if i <= 13  => Result.fromWarning(i, "UNDER_13")
-      case _ if i >= 130 => Result.fromError("OVER_130")
-      case _             => Result.pure(i)
-    }
+  def to_age(i: Int): Result[Int] = {} match {
+    case _ if i < 0    => Result.fromError("BELOW_ZERO")
+    case _ if i <= 13  => Result.fromWarning(i, "UNDER_13")
+    case _ if i >= 130 => Result.fromError("OVER_130")
+    case _             => Result.pure(i)
   }
 
-  def non_empty_string(str: String): Result[String] = {
+  def non_empty_string(str: String): Result[String] =
     str match {
       //case None => Result.fromError("NULL_VALUE")
       case "" => Result.fromError("EMPTY_STRING")
       case _  => Result.pure(str)
     }
-  }
 
   def main(args: Array[String]): Unit = {
 
@@ -30,7 +27,7 @@ object Explore {
     val ss =
       SparkSession.builder().appName("test").master("local[*]").getOrCreate()
 
-    ss.registerTransformation("to_age",           to_age)
+    ss.registerTransformation("to_age", to_age)
     ss.registerTransformation("non_empty_string", non_empty_string)
 
     import ss.sqlContext.implicits._
@@ -68,7 +65,8 @@ object Explore {
 
     //BLOG IDEA, AUTOMATICALY FLATTEN STRUCTURE IN SPARK
     ss.sql(
-      "select col.msg, col.isError, col.count, age,name from  (select explode(annotations) as col, age, name from toto) t")
+      "select col.msg, col.isError, col.count, age,name from  (select explode(annotations) as col, age, name from toto) t"
+    )
     //.show(false)
 
     ss.sql("select non_empty_string(name) as person_name from person").includeAnnotations

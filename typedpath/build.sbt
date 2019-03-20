@@ -1,6 +1,3 @@
-
-
-
 organization := "io.univalence"
 
 name := "typedpath"
