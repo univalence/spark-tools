@@ -2,7 +2,7 @@ lazy val plumbus =
   (project in file("."))
     .settings(metaSettings, scalaSettings)
     .settings(
-      name := "spark-plumbus",
+      name := "plumbus",
       version := "0.0.1-SNAPSHOT",
       description := "Collection of tools for Scala Spark",
       startYear := Some(2019),
