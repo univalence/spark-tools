@@ -1,3 +1,5 @@
 *.iml
-target
-.idea
+target/
+.idea/
+.metals/
+.bloop/
