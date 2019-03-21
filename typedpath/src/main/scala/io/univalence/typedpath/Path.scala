@@ -6,48 +6,45 @@ import shapeless.tag.@@
 
 import scala.reflect.macros.whitebox
 import language.experimental.macros
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
+object PathMacro {
 
-object PathMacro{
-
-  def pathMacro(c: whitebox.Context)(args: c.Expr[Path]*):c.Expr[Path] = {
+  def pathMacro(c: whitebox.Context)(args: c.Expr[Path]*): c.Expr[Path] = {
     import c.universe._
 
-
     val Apply(_, List(Apply(_, rawParts))) = c.prefix.tree
-     //val q"$x($y(...$rawParts))" = c.prefix.tree
+    //val q"$x($y(...$rawParts))" = c.prefix.tree
 
-    rawParts.foreach(x => {
-      val Literal(Constant(y)) = x
+    val parts: Seq[String] = rawParts.map({ case Literal(Constant(y: String)) => y })
 
-      c.warning(c.enclosingPosition, "'" + y  + "' --- " +y.getClass.toString)
-    })
+    val head: c.Expr[String] = c.Expr(Literal(Constant(parts.head)))
 
-      c.warning(c.enclosingPosition,c.prefix.tree.toString())
+    if (parts == Seq("")) {
+      reify(Root)
+    } else if (parts.last.lastOption.contains('/')) {
+      reify(???.asInstanceOf[Array])
+    } else {
+      reify(Field(head.splice, Root).get)
+    }
 
-//    parts.foreach(println)
-
+    /*
+    c.warning(c.enclosingPosition, parts.toString())
+    c.warning(c.enclosingPosition,c.prefix.tree.toString())
     c.abort(c.enclosingPosition,"j'ai pas fini")
     reify(???)
+   */
   }
 }
-
 
 sealed trait Path
 
 object Path {
 
-
-
   implicit class PathHelper(val sc: StringContext) extends AnyVal {
-    def path(args: Path*) = macro PathMacro.pathMacro
-
-
+    def path(args: Path*): Any = macro PathMacro.pathMacro
 
   }
-
-
 
   type Name = string.MatchesRegex[Witness.`"[a-zA-Z_][a-zA-Z0-9_]*"`.T]
 
