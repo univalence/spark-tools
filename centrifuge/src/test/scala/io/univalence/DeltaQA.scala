@@ -1,4 +1,4 @@
-package io.univalence.sparktools.kpialgebra
+package io.univalence.deltaqa.kpialgebra
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkConf

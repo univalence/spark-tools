@@ -93,7 +93,7 @@ object Explore {
     val collect: Seq[Option[Expression]] = plan.expressions.collect({
       case Alias(child, colname) => {
         child match {
-          case s @ ScalaUDF(f, dt, children, inputTypes, Some(name)) if name == "non_empty_string" =>
+          case s: ScalaUDF if s.udfName.contains("non_empty_string") =>
             Some(s)
           case _ => None
         }

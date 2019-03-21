@@ -1,4 +1,3 @@
-
 organization         := "io.univalence"
 organizationName     := "Univalence"
 organizationHomepage := Some(url("https://univalence.io/"))
@@ -7,13 +6,14 @@ name := "spark-tools"
 
 version := "0.2-SNAPSHOT"
 
-crossScalaVersions := List("2.11.12", "2.12.8")
+val defaultConfiguration = Seq(
+  crossScalaVersions := List("2.11.12", "2.12.8"),
+  //By default projects in spark-tool work with 2.11 and are ready for 2.12
+  //Spark projects are locked in 2.11 at the moment
+  scalaVersion := crossScalaVersions.value.head
+)
 
-//By default projects in spark-tool work with 2.11 and are ready for 2.12
-//Spark projects are locked in 2.11 at the moment
-scalaVersion := crossScalaVersions.value.head
-
-licenses := Seq("The Apache License, Version 2.0" → url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+licenses := Seq("The Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 
 scmInfo := Some(
   ScmInfo(
@@ -53,42 +53,44 @@ developers := List(
   )
 )
 
-lazy val centrifuge = project.settings(
-  description := "Centrifuge is for data quality",
-  homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/centrifuge")),
-  startYear   := Some(2017),
-  libraryDependencies ++= Seq(
-    "com.chuusai"    %% "shapeless"        % "2.2.5",
-    "org.scalaz"     %% "scalaz-core"      % "7.1.4",
-    "org.spire-math" %% "spire"            % "0.13.0",
-    "org.typelevel"  %% "shapeless-spire"  % "0.6.1",
-    "org.typelevel"  %% "shapeless-scalaz" % "0.4",
-    "org.scala-lang" % "scala-reflect"     % scalaVersion.value,
-    "io.monix"       %% "monix"            % "2.3.3",
-    "org.typelevel"  %% "cats-core"        % "1.0.0",
-    "org.typelevel"  %% "cats-laws"        % "1.0.0"
-  ),
-  useSpark(sparkVersion = "2.1.1")(modules = "core", "sql", "mllib"),
-  addTestLibs,
-  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-)
+lazy val centrifuge = project
+  .settings(defaultConfiguration: _*)
+  .settings(
+    description := "Centrifuge is for data quality",
+    homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/centrifuge")),
+    startYear   := Some(2017),
+    libraryDependencies ++= Seq(
+      "com.chuusai" %% "shapeless"   % "2.3.3",
+      "org.scalaz"  %% "scalaz-core" % "7.2.27",
+      //"org.typelevel" %% "spire" % "0.15.0",
+      "org.typelevel" %% "shapeless-spire" % "0.6.1",
+      //"org.typelevel" %% "shapeless-scalaz" % "0.6.1",
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+      "io.monix"       %% "monix"        % "2.3.3",
+      "org.typelevel"  %% "cats-core"    % "1.0.0",
+      "org.typelevel"  %% "cats-laws"    % "1.0.0"
+    ),
+    useSpark(sparkVersion = "2.1.1")(modules = "core", "sql", "mllib"),
+    addTestLibs,
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+  )
 
-lazy val fenek = project.settings(
-  libraryDependencies ++= Seq("joda-time" % "joda-time" % "2.10", "org.json4s" %% "json4s-native" % "3.2.11"),
-  useSpark("2.0.0")("sql"),
-  addTestLibs
-)
+lazy val fenek = project
+  .settings(defaultConfiguration: _*)
+  .settings(
+    libraryDependencies ++= Seq("joda-time" % "joda-time" % "2.10", "org.json4s" %% "json4s-native" % "3.2.11"),
+    useSpark("2.0.0")("sql"),
+    addTestLibs
+  )
 
-lazy val plumbus   = project
-lazy val typedpath = project
+lazy val plumbus   = project.settings(defaultConfiguration: _*)
+lazy val typedpath = project.settings(defaultConfiguration: _*)
 
-
-def addTestLibs:SettingsDefinition = {
+def addTestLibs: SettingsDefinition =
   libraryDependencies ++= Seq(
     "org.scalatest"  %% "scalatest"  % "3.0.3"  % Test,
     "org.scalacheck" %% "scalacheck" % "1.13.5" % Test
   )
-}
 
 def useSpark(sparkVersion: String)(modules: String*): SettingsDefinition =
   libraryDependencies ++= {

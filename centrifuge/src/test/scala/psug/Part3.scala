@@ -1,6 +1,6 @@
 package psug.shapeless
 
-import shapeless.contrib.scalaz.Sequencer
+//import shapeless.contrib.scalaz.Sequencer
 import shapeless.labelled._
 import shapeless.ops.hlist.Mapper
 import shapeless.syntax.singleton._
@@ -10,7 +10,12 @@ import scala.language.higherKinds
 import scalaz._
 import scalaz.std.option._
 
+/*
 object Builder {
+
+  /*
+   example de construction applicative présentée au PSUG avec scalaz et shapeless
+ */
 
   object transFormField extends Poly1 {
     implicit def kv[K, V, A[_]](implicit app: Applicative[A]): Case.Aux[FieldType[K, A[V]], A[FieldType[K, V]]] =
@@ -65,3 +70,4 @@ object Test {
   }
 
 }
+ */

@@ -1,5 +1,6 @@
 package io.univalence
 
+/*
 trait Monoid[T] {
 
   def zero: T
@@ -151,3 +152,4 @@ object IntroScala {
   }
 
 }
+ */

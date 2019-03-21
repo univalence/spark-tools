@@ -2,6 +2,7 @@ package org.apache.spark.sql
 
 import io.univalence.centrifuge.AnnotationSql
 import io.univalence.centrifuge.Result
+import org.apache.spark.sql.catalyst.analysis.FunctionRegistry.FunctionBuilder
 import org.apache.spark.sql.catalyst.analysis.UnresolvedStar
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.aggregate.CollectList
@@ -51,18 +52,26 @@ package object centrifuge_sql {
 
     def registerTransformation[A: TypeTag, B: TypeTag](name: String, f: A => Result[B]): UserDefinedFunction = {
 
-      val udf: UserDefinedFunction =
-        sparkSession.udf.register("qa_raw_" + name, f)
+      val udf: UserDefinedFunction = sparkSession.udf.register("qa_raw_" + name, f)
 
+      val expressionsToField: Seq[Expression] => GetStructField = (s: Seq[Expression]) =>
+        GetStructField(
+          child   = udf.apply(s.map(Column.apply): _*).expr,
+          ordinal = 0,
+          name    = Some("value")
+      )
+
+      /*
       sparkSession.sessionState.functionRegistry.registerFunction(
         name,
-        (s: Seq[Expression]) =>
-          GetStructField(
-            child   = udf.apply(s.map(Column.apply): _*).expr,
-            ordinal = 0,
-            name    = Some("value")
-        )
-      )
+        expressionsToField
+      )*/
+
+      val registry = sparkSession.sessionState.functionRegistry
+
+      //TODO update the call for spark 2.4
+      val method = registry.getClass.getMethod("registerFunction", classOf[String], classOf[FunctionBuilder])
+      method.invoke(registry, name, expressionsToField)
 
       udf
     }
