@@ -62,7 +62,6 @@ lazy val centrifuge = project
     libraryDependencies ++= Seq(
       "com.chuusai" %% "shapeless"   % "2.3.3",
       "org.scalaz"  %% "scalaz-core" % "7.2.27",
-      //"org.typelevel" %% "spire" % "0.15.0",
       "org.typelevel" %% "shapeless-spire" % "0.6.1",
       //"org.typelevel" %% "shapeless-scalaz" % "0.6.1",
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
@@ -84,7 +83,14 @@ lazy val fenek = project
   )
 
 lazy val plumbus   = project.settings(defaultConfiguration: _*)
-lazy val typedpath = project.settings(defaultConfiguration: _*)
+
+lazy val typedpath = project.settings(defaultConfiguration: _*).settings(
+  libraryDependencies ++= Seq(
+    "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+    "eu.timepit" %% "refined" % "0.9.4"
+  ),
+  addTestLibs
+)
 
 def addTestLibs: SettingsDefinition =
   libraryDependencies ++= Seq(
