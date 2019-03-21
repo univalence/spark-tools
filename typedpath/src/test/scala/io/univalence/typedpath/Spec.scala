@@ -7,7 +7,7 @@ import scala.util.Try
 class PathSpec extends FunSuite {
 
   //TODO @Harrison fix it!
-  ignore("createPath") {
+  test("createPath") {
 
     assert(
       Path.create("abcd.edfg//hijk") ==
@@ -25,24 +25,27 @@ class PathSpec extends FunSuite {
   "abc.def/"
   "abc.def/ghi"
   "abc.def//"
+
+  ["abc" "def" :/ "ghi"]
    */
   }
-  ignore("follow up") {
+
+  test("error") {
+
+    assert(Path.create("123").isFailure)
+  }
+  test("follow up") {
 
     assert(Path.create("").get == Root)
-    assert(Path.create("abc") == Field("abc",Root))
-    assert(Path.create("abc.def/").get == Array(Field("def",Field("abc", Root).get).get))
-
-
+    assert(Path.create("abc") == Field("abc", Root))
+    assert(Path.create("abc.def/").get == Array(Field("def", Field("abc", Root).get).get))
     /*
 
    {:abc {:def 1}}   abc.def
 
     {:abc {:def [{:ghi 1} {:ghi 2}]}}  abc.def/ghi
-     */
-
+   */
 
   }
-
 
 }

@@ -60,8 +60,8 @@ lazy val centrifuge = project
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/centrifuge")),
     startYear   := Some(2017),
     libraryDependencies ++= Seq(
-      "com.chuusai" %% "shapeless"   % "2.3.3",
-      "org.scalaz"  %% "scalaz-core" % "7.2.27",
+      "com.chuusai"   %% "shapeless"       % "2.3.3",
+      "org.scalaz"    %% "scalaz-core"     % "7.2.27",
       "org.typelevel" %% "shapeless-spire" % "0.6.1",
       //"org.typelevel" %% "shapeless-scalaz" % "0.6.1",
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
@@ -82,15 +82,17 @@ lazy val fenek = project
     addTestLibs
   )
 
-lazy val plumbus   = project.settings(defaultConfiguration: _*)
+lazy val plumbus = project.settings(defaultConfiguration: _*)
 
-lazy val typedpath = project.settings(defaultConfiguration: _*).settings(
-  libraryDependencies ++= Seq(
-    "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-    "eu.timepit" %% "refined" % "0.9.4"
-  ),
-  addTestLibs
-)
+lazy val typedpath = project
+  .settings(defaultConfiguration: _*)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+      "eu.timepit"     %% "refined"      % "0.9.4"
+    ),
+    addTestLibs
+  )
 
 def addTestLibs: SettingsDefinition =
   libraryDependencies ++= Seq(
