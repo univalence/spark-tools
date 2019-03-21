@@ -26,7 +26,23 @@ class PathSpec extends FunSuite {
   "abc.def/ghi"
   "abc.def//"
    */
+  }
+  ignore("follow up") {
+
+    assert(Path.create("").get == Root)
+    assert(Path.create("abc") == Field("abc",Root))
+    assert(Path.create("abc.def/").get == Array(Field("def",Field("abc", Root).get).get))
+
+
+    /*
+
+   {:abc {:def 1}}   abc.def
+
+    {:abc {:def [{:ghi 1} {:ghi 2}]}}  abc.def/ghi
+     */
+
 
   }
+
 
 }
