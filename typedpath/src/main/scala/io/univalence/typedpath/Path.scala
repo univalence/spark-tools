@@ -4,15 +4,57 @@ import eu.timepit.refined._
 import shapeless.Witness
 import shapeless.tag.@@
 
-import scala.util.{ Failure, Success, Try }
+import scala.reflect.macros.whitebox
+import language.experimental.macros
+import scala.util.{Failure, Success, Try}
+
+
+object PathMacro{
+
+  def pathMacro(c: whitebox.Context)(args: c.Expr[Path]*):c.Expr[Path] = {
+    import c.universe._
+
+
+    val Apply(_, List(Apply(_, rawParts))) = c.prefix.tree
+     //val q"$x($y(...$rawParts))" = c.prefix.tree
+
+    rawParts.foreach(x => {
+      val Literal(Constant(y)) = x
+
+      c.warning(c.enclosingPosition, "'" + y  + "' --- " +y.getClass.toString)
+    })
+
+      c.warning(c.enclosingPosition,c.prefix.tree.toString())
+
+//    parts.foreach(println)
+
+    c.abort(c.enclosingPosition,"j'ai pas fini")
+    reify(???)
+  }
+}
+
 
 sealed trait Path
 
 object Path {
+
+
+
+  implicit class PathHelper(val sc: StringContext) extends AnyVal {
+    def path(args: Path*) = macro PathMacro.pathMacro
+
+
+
+  }
+
+
+
   type Name = string.MatchesRegex[Witness.`"[a-zA-Z_][a-zA-Z0-9_]*"`.T]
 
   def createName(string: String): Either[String, String @@ Name] = refineT[Name](string)
 
+  //TODO implementation alternative avec les parseurs combinators
+  //TODO implementation alternative avec une PEG grammar
   def create(string: String): Try[Path] =
     if (string.isEmpty) {
       Try(Root)

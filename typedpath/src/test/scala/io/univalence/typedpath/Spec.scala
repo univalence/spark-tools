@@ -6,6 +6,28 @@ import scala.util.Try
 
 class PathSpec extends FunSuite {
 
+  test("interpolation") {
+    import Path._
+
+
+    /*
+    val prefix = "abc"
+    Path.create(prefix).map(prefix => {
+      val somePath = path"$prefix.<:€"
+    })
+
+
+
+    val abc:Field = path"abc"
+    val ghi:Field = path"$abc.ghi" // >.abc.>.ghi
+    val lol:Field = path"lol" //
+    val compose:Field = path"$abc/$lol"
+    val compose2:Array = path"$compose/"
+
+    */
+
+  }
+
   //TODO @Harrison fix it!
   test("createPath") {
 
