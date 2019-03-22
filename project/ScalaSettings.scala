@@ -5,22 +5,21 @@ object ScalaSettings {
 
   val stdOptions =
     (Opts.compile.encoding("utf-8")
-    ++ Seq(
-      Opts.compile.deprecation, // Emit warning and location for usages of deprecated APIs.
-      Opts.compile.explaintypes, // Explain type errors in more detail.
-      Opts.compile.unchecked, // Enable additional warnings where generated code depends on assumptions.
-      "-feature", // Emit warning and location for usages of features that should be imported explicitly.
-      "-language:existentials", // Existential types (besides wildcard types) can be written and inferred
-      "-language:experimental.macros", // Allow macro definition (besides implementation and application)
-      "-language:higherKinds", // Allow higher-kinded types
-      "-language:implicitConversions", // Allow definition of implicit functions called views
-      //           "-Xcheckinit", // Wrap field accessors to throw an exception on uninitialized access.
-      //            "-Xfatal-warnings", // Fail the compilation if there are any warnings.
-      "-Xfuture", // Turn on future language features.
-      "-Yrangepos", // Use range positions for syntax trees.
-
-      "-Ywarn-numeric-widen" // Warn when numerics are widened.
-    ))
+      ++ Seq(
+        Opts.compile.deprecation, // Emit warning and location for usages of deprecated APIs.
+        Opts.compile.explaintypes, // Explain type errors in more detail.
+        Opts.compile.unchecked, // Enable additional warnings where generated code depends on assumptions.
+        "-feature", // Emit warning and location for usages of features that should be imported explicitly.
+        "-language:existentials", // Existential types (besides wildcard types) can be written and inferred
+        "-language:experimental.macros", // Allow macro definition (besides implementation and application)
+        "-language:higherKinds", // Allow higher-kinded types
+        "-language:implicitConversions", // Allow definition of implicit functions called views
+        //           "-Xcheckinit", // Wrap field accessors to throw an exception on uninitialized access.
+        //            "-Xfatal-warnings", // Fail the compilation if there are any warnings.
+        "-Xfuture", // Turn on future language features.
+        "-Yrangepos", // Use range positions for syntax trees.
+        "-Ywarn-numeric-widen" // Warn when numerics are widened.
+      ))
 
   def extraOptions(scalaVersion: String) =
     CrossVersion.partialVersion(scalaVersion) match {
