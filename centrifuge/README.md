@@ -1,6 +1,3 @@
-[![Build Status](https://travis-ci.org/UNIVALENCE/centrifuge.png?branch=master)](https://travis-ci.org/UNIVALENCE/centrifuge)
-[![codecov](https://codecov.io/gh/UNIVALENCE/centrifuge/branch/master/graph/badge.svg)](https://codecov.io/gh/UNIVALENCE/centrifuge)
-
 # centrifuge
 Data quality tools for Big Data
 
