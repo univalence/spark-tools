@@ -1,7 +1,5 @@
 # Spark Plumbus
 
-[![CircleCI](https://circleci.com/gh/UNIVALENCE/spark-plumbus.svg?style=svg)](https://circleci.com/gh/UNIVALENCE/spark-plumbus)
-
 Spark Plumbus is a collection of tools for Scala Spark, that aims to
 improve the day to day life of data engineers.
 
