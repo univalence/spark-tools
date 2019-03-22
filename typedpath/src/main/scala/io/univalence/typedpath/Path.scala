@@ -114,6 +114,15 @@ sealed trait Path
 
 object Path {
 
+  sealed trait Token
+
+  case object Dot extends Token // .
+  case object Slash extends Token //  /
+  case class NamePart(name:   String) extends Token // [a-zA-Z0-9_]+
+  case class ErrorToken(part: String) extends Token
+
+  def tokenize(string: String): Seq[Token] = ???
+
   def combine(prefix: Path, suffix: Path): Path =
     suffix match {
       case Root => prefix

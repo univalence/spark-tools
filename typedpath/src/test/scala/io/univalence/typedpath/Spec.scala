@@ -1,10 +1,18 @@
 package io.univalence.typedpath
 
+import io.univalence.typedpath.Path.{ NamePart , Slash }
 import org.scalatest.FunSuite
 
 import scala.util.Try
 
 class PathSpec extends FunSuite {
+
+  test("tokenize") {
+
+    //TODO @Harrison @Bernarith
+    assert(Path.tokenize("abc/def") == Seq(NamePart("abc"), Slash, NamePart("def")))
+
+  }
 
   test("interpolation") {
     import Path._
