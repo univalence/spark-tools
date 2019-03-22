@@ -107,9 +107,11 @@ object Explore {
         Project(anncol :: projectList.toList, child)
     }
 
-    val ndf = new Dataset[Row](sqlContext = sQLContext,
-                               newPlan,
-                               RowEncoder(ss.sessionState.executePlan(newPlan).analyzed.schema))
+    val ndf = new Dataset[Row](
+      sqlContext = sQLContext,
+      newPlan,
+      RowEncoder(ss.sessionState.executePlan(newPlan).analyzed.schema)
+    )
 
     ndf.show(false)
 

@@ -28,8 +28,9 @@ object SparkLens {
       })
       .mkString("/")
 
-  def lensRegExp(df: DataFrame)(fieldSelect: (String, DataType) => Boolean,
-                                transform: (Any, DataType) => Any): DataFrame =
+  def lensRegExp(
+    df: DataFrame
+  )(fieldSelect: (String, DataType) => Boolean, transform: (Any, DataType) => Any): DataFrame =
     lens(df)({ case (p, dt) => fieldSelect(pathToStr(p), dt) }, transform)
 
   type Jump = Seq[Option[Int]]

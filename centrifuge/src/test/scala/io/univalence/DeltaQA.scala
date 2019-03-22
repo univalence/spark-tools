@@ -34,23 +34,27 @@ object KpiAlgebra {
   def computeCommon[LRC: AdditiveAbGroup: MultiplicativeSemigroup](left: LRC, right: LRC): DeltaCommon[LRC] = {
     val diff  = left - right
     val error = diff * diff
-    DeltaCommon(count     = 1,
-                countZero = if (diff == Monoid.additive[LRC].id) 1 else 0,
-                diff      = diff,
-                error     = error,
-                left      = left,
-                right     = right)
+    DeltaCommon(
+      count     = 1,
+      countZero = if (diff == Monoid.additive[LRC].id) 1 else 0,
+      diff      = diff,
+      error     = error,
+      left      = left,
+      right     = right
+    )
   }
 
   def monoid[LM: AdditiveMonoid, RM: AdditiveMonoid, LRC: AdditiveMonoid]: Monoid[Delta[LM, RM, LRC]] =
     Monoid.additive[Delta[LM, RM, LRC]]
 
-  def compare[K: ClassTag,
-              L: ClassTag,
-              R: ClassTag,
-              LM: AdditiveMonoid: ClassTag,
-              RM: AdditiveMonoid: ClassTag,
-              LRC: AdditiveAbGroup: MultiplicativeSemigroup: ClassTag](
+  def compare[
+    K: ClassTag,
+    L: ClassTag,
+    R: ClassTag,
+    LM: AdditiveMonoid: ClassTag,
+    RM: AdditiveMonoid: ClassTag,
+    LRC: AdditiveAbGroup: MultiplicativeSemigroup: ClassTag
+  ](
     left: RDD[(K, L)],
     right: RDD[(K, R)]
   )(flm: L => LM, frm: R => RM, flc: L => LRC, frc: R => LRC): Delta[LM, RM, LRC] = {

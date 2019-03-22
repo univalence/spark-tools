@@ -17,10 +17,12 @@ object RetryDs {
   def retryDs[A, C, B](in: Dataset[A])(run: A => Try[C])(integrate: (A, Try[C]) => B)(
     nbGlobalAttemptMax: Int,
     circuitBreakerMaxFailure: Int = 10
-  )(implicit
+  )(
+    implicit
     encoderA: Encoder[A],
     encoderB: Encoder[B],
-    encoderI: Encoder[(Option[A], LocalExecutionStatus, B)]): (Dataset[B], ExecutionSummary) = {
+    encoderI: Encoder[(Option[A], LocalExecutionStatus, B)]
+  ): (Dataset[B], ExecutionSummary) = {
     import monix.execution.Scheduler.Implicits.global
     Await.result(
       retryDsWithTask(in)(a => Task(run(a).get))(integrate)(
@@ -51,10 +53,12 @@ object RetryDs {
   def retryDsWithTask[A, C, B](in: Dataset[A])(run: A => Task[C])(integrate: (A, Try[C]) => B)(
     nbGlobalAttemptMax: Int,
     circuitBreakerMaxFailure: Option[Int] = Option(10)
-  )(implicit
+  )(
+    implicit
     encoderA: Encoder[A],
     encoderB: Encoder[B],
-    encoderI: Encoder[(Option[A], LocalExecutionStatus, B)]): Task[(Dataset[B], ExecutionSummary)] = {
+    encoderI: Encoder[(Option[A], LocalExecutionStatus, B)]
+  ): Task[(Dataset[B], ExecutionSummary)] = {
 
     type M = (Option[A], LocalExecutionStatus, B)
 
@@ -72,8 +76,10 @@ object RetryDs {
       }
     }
 
-    def loopTheLoop(mAndEs: (Dataset[M], ExecutionSummary),
-                    attemptRemaining: Int): Task[(Dataset[M], ExecutionSummary)] =
+    def loopTheLoop(
+      mAndEs: (Dataset[M], ExecutionSummary),
+      attemptRemaining: Int
+    ): Task[(Dataset[M], ExecutionSummary)] =
       if (mAndEs._2.nbFailure == 0 || attemptRemaining <= 0)
         Task.pure(mAndEs)
       else {

@@ -68,17 +68,19 @@ class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
 
   test("should flaMap over a Seq of Person in a dataframe") {
     val resultdf =
-      dataset.select($"id",
-                     $"family"
-                       .as[Seq[Person]]
-                       .flatMap(
-                         p =>
-                           if (p.age > 18)
-                             Seq()
-                           else
-                             Seq(p, Person("Younger " + p.name, p.age - 5))
-                       )
-                       .as("album"))
+      dataset.select(
+        $"id",
+        $"family"
+          .as[Seq[Person]]
+          .flatMap(
+            p =>
+              if (p.age > 18)
+                Seq()
+              else
+                Seq(p, Person("Younger " + p.name, p.age - 5))
+          )
+          .as("album")
+      )
 
     val result =
       dataframeToMap(
@@ -103,10 +105,12 @@ class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
     val result =
       dataframeToMap(
         r =>
-          r.getAs[String]("id") -> ((
-                                      r.getAs[String]("name"),
-                                      r.getAs[Int]("age")
-                                    ))
+          r.getAs[String]("id") -> (
+            (
+              r.getAs[String]("name"),
+              r.getAs[Int]("age")
+            )
+        )
       )(resultdf)
 
     result("1") should be(("toto", 13))
@@ -127,13 +131,15 @@ class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
     val result =
       dataframeToMap(
         r =>
-          r.getAs[String]("id_0") -> ((
-                                        r.getAs[String]("name_0"),
-                                        r.getAs[Int]("age_0"),
-                                        r.getAs[String]("id_1"),
-                                        r.getAs[String]("name_1"),
-                                        r.getAs[Int]("age_1")
-                                      ))
+          r.getAs[String]("id_0") -> (
+            (
+              r.getAs[String]("name_0"),
+              r.getAs[Int]("age_0"),
+              r.getAs[String]("id_1"),
+              r.getAs[String]("name_1"),
+              r.getAs[Int]("age_1")
+            )
+        )
       )(resultdf)
 
     result("1") should be(("toto", 13, "1", "toto", 13))

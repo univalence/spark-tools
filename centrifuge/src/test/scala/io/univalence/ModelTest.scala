@@ -28,9 +28,11 @@ class ModelTest extends FunSuite {
 
   implicit val arbitraryAnn: Arbitrary[Annotation] = Arbitrary(Gen.resultOf(Annotation.apply _))
 
-  implicit def arbitraryResult[T](implicit
-                                  oA: Arbitrary[Option[T]],
-                                  aAnn: Arbitrary[Vector[Annotation]]): Arbitrary[Result[T]] =
+  implicit def arbitraryResult[T](
+    implicit
+    oA: Arbitrary[Option[T]],
+    aAnn: Arbitrary[Vector[Annotation]]
+  ): Arbitrary[Result[T]] =
     Arbitrary(Gen.resultOf[Option[T], Vector[Annotation], Result[T]](Result.apply))
 
   test("Monad laws") {
@@ -118,16 +120,18 @@ class ModelTest extends FunSuite {
     )
     assert(Result.fromEither(testResultEmptyAnnotation.toEither)(_.toString) == testResultEmptyAnnotation)
     assert(
-      Result.fromEither(testResultBothEmpty.toEither)(_.toString) == Result(None,
-                                                                            Vector(
-                                                                              Annotation(
-                                                                                "Vector()",
-                                                                                None,
-                                                                                Vector(),
-                                                                                isError = true,
-                                                                                1
-                                                                              )
-                                                                            ))
+      Result.fromEither(testResultBothEmpty.toEither)(_.toString) == Result(
+        None,
+        Vector(
+          Annotation(
+            "Vector()",
+            None,
+            Vector(),
+            isError = true,
+            1
+          )
+        )
+      )
     )
     //assert(Result.fromEither(testResultEmptyValue.toEither)(_.toString) == Result(None,Vector(Annotation(Vector(Annotation(msg,Some(oF),Vector(fF),false,1)),None,Vector(),true,1))))
   }

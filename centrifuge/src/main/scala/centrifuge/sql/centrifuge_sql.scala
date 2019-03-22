@@ -130,10 +130,12 @@ package object centrifuge_sql {
             .groupBy(x => x.toSeq.updated(x.fieldIndex("count"), 0))
             .values
             .map(x => {
-              new GenericRowWithSchema(x.head.toSeq
-                                         .updated(x.head.fieldIndex("count"), x.map(_.getAs[Long]("count")).sum)
-                                         .toArray,
-                                       x.head.schema)
+              new GenericRowWithSchema(
+                x.head.toSeq
+                  .updated(x.head.fieldIndex("count"), x.map(_.getAs[Long]("count")).sum)
+                  .toArray,
+                x.head.schema
+              )
             })
             .toSeq
             .asInstanceOf[Seq[T]]
@@ -218,10 +220,10 @@ package object centrifuge_sql {
       type KpiApplier = (Column, Column) => (String, Column)
 
       val kpis: Seq[KpiApplier] = Seq[KpiApplier](
-        (c1, _) => ("OnlyLeft", when(onlyLeft, c1)),
-        (_, c2) => ("OnlyRight", when(onlyRight, c2)),
-        (c1, _) => ("BothLeft", when(both, c1)),
-        (_, c2) => ("BothRight", when(both, c2)),
+        (c1, _)  => ("OnlyLeft", when(onlyLeft, c1)),
+        (_, c2)  => ("OnlyRight", when(onlyRight, c2)),
+        (c1, _)  => ("BothLeft", when(both, c1)),
+        (_, c2)  => ("BothRight", when(both, c2)),
         (c1, c2) => ("BothDelta", when(both, c1 - c2)),
         (c1, c2) => ("BothDeltaSquared", when(both, (c1 - c2).multiply(c1 - c2))),
         (c1, c2) => ("BothCountEqual", when(both && (c1 === c2), Column(Literal(1))))
@@ -296,8 +298,10 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
     private val emptyAnnotation =
       Literal(ArrayData.toArrayData(Nil), annotationsDt)
 
-    private def recursiveNewPlan(logicalPlan: LogicalPlan,
-                                 sparkSession: SparkSession): (LogicalPlan, Seq[Attribute]) = {
+    private def recursiveNewPlan(
+      logicalPlan: LogicalPlan,
+      sparkSession: SparkSession
+    ): (LogicalPlan, Seq[Attribute]) = {
 
       val res = logicalPlan match {
         case Project(projectList, child) =>
@@ -320,13 +324,15 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
         case Join(left, right, joinType, condition) =>
           val plan1 = recursiveNewPlan(left, sparkSession)
           val plan2 = recursiveNewPlan(right, sparkSession)
-          (Join(
-             left      = plan1._1,
-             right     = plan2._1,
-             joinType  = joinType,
-             condition = condition
-           ),
-           plan1._2 ++ plan2._2)
+          (
+            Join(
+              left      = plan1._1,
+              right     = plan2._1,
+              joinType  = joinType,
+              condition = condition
+            ),
+            plan1._2 ++ plan2._2
+          )
 
         case agg @ Aggregate(groupingExpressions, aggregateExpressions, child) =>
           val mergeAnnotationUDF = sparkSession.udf
@@ -350,10 +356,14 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
             "annotations"
           )()
 
-          (Aggregate(groupingExpressions,
-                     aggregateExpressions :+ collected,
-                     Project(Seq(UnresolvedStar(None), annotationCol), newChild)),
-           Seq(collected.toAttribute))
+          (
+            Aggregate(
+              groupingExpressions,
+              aggregateExpressions :+ collected,
+              Project(Seq(UnresolvedStar(None), annotationCol), newChild)
+            ),
+            Seq(collected.toAttribute)
+          )
 
         case x: ObjectConsumer =>
           (Project(Seq(UnresolvedStar(None), Alias(emptyAnnotation, "annotations")()), x), Nil)

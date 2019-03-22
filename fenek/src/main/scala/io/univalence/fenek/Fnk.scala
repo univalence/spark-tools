@@ -136,14 +136,20 @@ object Fnk {
     }
 
     object CaseWhenExpr {
-      def merge[B](caseWhenExprTyped1: CaseWhenExprTyped[B],
-                   caseWhenExprTyped2: CaseWhenExprTyped[B]): CaseWhenExprTyped[B] =
-        CaseWhenExprTyped(caseWhenExprTyped1.pairs ++ caseWhenExprTyped2.pairs,
-                          caseWhenExprTyped1.orElse orElse caseWhenExprTyped2.orElse)
+      def merge[B](
+        caseWhenExprTyped1: CaseWhenExprTyped[B],
+        caseWhenExprTyped2: CaseWhenExprTyped[B]
+      ): CaseWhenExprTyped[B] =
+        CaseWhenExprTyped(
+          caseWhenExprTyped1.pairs ++ caseWhenExprTyped2.pairs,
+          caseWhenExprTyped1.orElse orElse caseWhenExprTyped2.orElse
+        )
 
       def merge(caseWhenExprTyped1: CaseWhenExpr, caseWhenExprTyped2: CaseWhenExpr): CaseWhenExpr =
-        CaseWhenExprUnTyped(caseWhenExprTyped1.pairs ++ caseWhenExprTyped2.pairs,
-                            caseWhenExprTyped1.orElse orElse caseWhenExprTyped2.orElse)
+        CaseWhenExprUnTyped(
+          caseWhenExprTyped1.pairs ++ caseWhenExprTyped2.pairs,
+          caseWhenExprTyped1.orElse orElse caseWhenExprTyped2.orElse
+        )
 
       def setDefault[A](caseWhenExprTyped: CaseWhenExprTyped[A], value: TypedExpr[A]): CaseWhenExprTyped[A] =
         caseWhenExprTyped.copy(orElse = Some(value))
@@ -272,12 +278,13 @@ object Fnk {
         Try(f(a.asInstanceOf[A], b.asInstanceOf[B]))
     }
 
-    case class Map3[A, B, C, D](first: TypedExpr[A],
-                                second: TypedExpr[B],
-                                third: TypedExpr[C],
-                                f: (A, B, C) => D,
-                                enc: Encoder[D])
-        extends TypedExpr[D] {
+    case class Map3[A, B, C, D](
+      first: TypedExpr[A],
+      second: TypedExpr[B],
+      third: TypedExpr[C],
+      f: (A, B, C) => D,
+      enc: Encoder[D]
+    ) extends TypedExpr[D] {
       def tryApply(a: Any, b: Any, c: Any): Try[D] =
         Try(f(a.asInstanceOf[A], b.asInstanceOf[B], c.asInstanceOf[C]))
     }

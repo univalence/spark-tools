@@ -35,8 +35,10 @@ trait FieldsNonRecur[L] {
 }
 
 trait LowPriorityFieldsNonRecur {
-  implicit def caseClassFields[F, G](implicit gen: LabelledGeneric.Aux[F, G],
-                                     encode: Lazy[FieldsNonRecur[G]]): FieldsNonRecur[F] =
+  implicit def caseClassFields[F, G](
+    implicit gen: LabelledGeneric.Aux[F, G],
+    encode: Lazy[FieldsNonRecur[G]]
+  ): FieldsNonRecur[F] =
     new FieldsNonRecur[F] {
       override def fieldnames: List[(String, String)] = encode.value.fieldnames
     }
