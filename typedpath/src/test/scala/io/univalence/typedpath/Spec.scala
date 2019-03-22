@@ -1,6 +1,6 @@
 package io.univalence.typedpath
 
-import io.univalence.typedpath.Path.{ NamePart , Slash }
+import io.univalence.typedpath.Path.{ NamePart, Slash }
 import org.scalatest.FunSuite
 
 import scala.util.Try

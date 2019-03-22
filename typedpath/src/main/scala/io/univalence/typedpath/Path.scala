@@ -116,9 +116,10 @@ object Path {
 
   sealed trait Token
 
-  case object Dot extends Token // .
-  case object Slash extends Token //  /
-  case class NamePart(name:   String) extends Token // [a-zA-Z0-9_]+
+  sealed trait ValidToken extends Token
+  case object Dot extends ValidToken // "."
+  case object Slash extends ValidToken //  "/"
+  case class NamePart(name:   String) extends ValidToken // "[a-zA-Z0-9_]+"
   case class ErrorToken(part: String) extends Token
 
   def tokenize(string: String): Seq[Token] = ???
