@@ -121,7 +121,7 @@ class JsonInterpreterTest extends FunSuite {
     val expr1 = >.gppTypeProduit.caseWhen("KTTR" -> >.ktStartCommitmentDate | Else -> dateparution)
     val expr2 = >.ktInvoicingType.caseWhen(
       "STANDARD" -> est_annulé.caseWhen(true -> dateparution | false -> >.ktStartCommitmentDate) |
-        Else -> expr1
+        Else     -> expr1
     )
     val da_deb_periode = >.gppTypeProduit
       .caseWhen("KTREMB" -> daValidVente | "KTREGU" -> daValidVente) orElse

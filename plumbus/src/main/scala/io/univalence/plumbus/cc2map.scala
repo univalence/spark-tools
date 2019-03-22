@@ -11,7 +11,7 @@ object cc2map {
   class Prefix private (private val names: String = "") extends AnyVal {
     def rekey(str: String): String =
       str
-        .map(s ⇒ if (s.isUpper) "_" + s.toLower else s.toString)
+        .map(s => if (s.isUpper) "_" + s.toLower else s.toString)
         .mkString
 
     def add(name: String): Prefix =
@@ -54,8 +54,8 @@ object cc2map {
       new ToMap[Option[T]] {
         override def toMap(t: Option[T], prefix: Prefix): Map[String, Any] =
           t match {
-            case None    ⇒ Map.empty
-            case Some(x) ⇒ T.toMap(x, prefix)
+            case None    => Map.empty
+            case Some(x) => T.toMap(x, prefix)
           }
       }
 
@@ -63,7 +63,7 @@ object cc2map {
       new ToMap[T] {
         override def toMap(t: T, prefix: Prefix): Map[String, Any] =
           ctx.parameters
-            .flatMap(param ⇒ {
+            .flatMap(param => {
               param.typeclass.toMap(param.dereference(t), prefix.add(param.label))
             })
             .toMap
@@ -72,7 +72,7 @@ object cc2map {
     def dispatch[T](ctx: SealedTrait[Typeclass, T]): ToMap[T] =
       new ToMap[T] {
         override def toMap(t: T, prefix: Prefix): Map[String, Any] =
-          ctx.dispatch(t) { sub ⇒
+          ctx.dispatch(t) { sub =>
             sub.typeclass.toMap(sub.cast(t), prefix)
           }
       }

@@ -99,7 +99,7 @@ lazy val plumbus =
       name        := "plumbus",
       description := "Collection of tools for Scala Spark",
       startYear   := Some(2019),
-      licenses    := Seq("The Apache License, Version 2.0" → url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+      licenses    := Seq("The Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
     )
     .settings(
       libraryDependencies ++= Seq(

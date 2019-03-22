@@ -209,7 +209,7 @@ object Fnk {
       Map1[A, B](this, f, enc)
 
     trait Map2Builder[B] {
-      def |>[C:  Encoder](f:         (A, B) => C):  TypedExpr[C]
+      def |>[C:  Encoder](f:         (A, B) => C): TypedExpr[C]
       def <*>[C: Encoder](typedExpr: TypedExpr[C]): Map3Builder[C]
       trait Map3Builder[C] {
         def |>[D: Encoder](f: (A, B, C) => D): TypedExpr[D]
@@ -351,8 +351,8 @@ object Source {
         case _ =>
           for {
             sourceline <- genericExpr.sources.toVector
-            source <- sourceline.value
-            x <- loop(source)
+            source     <- sourceline.value
+            x          <- loop(source)
           } yield x
 
       }

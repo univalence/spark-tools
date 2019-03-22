@@ -74,7 +74,7 @@ object Test2 {
 
     //println((Option(1).map(_ + 1))
 
-    //println((Option(-1).flatMap(x ⇒ if (x < 0) None else Some("abc")))
+    //println((Option(-1).flatMap(x => if (x < 0) None else Some("abc")))
 
   }
 }

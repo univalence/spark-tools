@@ -10,9 +10,9 @@ object MyUDF {
   private def myTimestampCast(xs: Seq[Expression]): Expression = {
     val expSource = xs.head
     expSource.dataType match {
-      case LongType =>
+      case LongType ⇒
         new Column(expSource).divide(Literal(1000)).cast(TimestampType).expr
-      case TimestampType =>
+      case TimestampType ⇒
         /* WARNING */
         expSource
     }

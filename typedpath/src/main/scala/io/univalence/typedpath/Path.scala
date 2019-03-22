@@ -164,7 +164,7 @@ object Path {
 
         for {
           parent <- create(prefix)
-          field <- Field(suffix, parent)
+          field  <- Field(suffix, parent)
         } yield field
       } else {
         val (xs, x) = string.splitAt(slashIndex)

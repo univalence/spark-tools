@@ -15,7 +15,7 @@ case class PrefixName(name: String) extends Prefix
 object SparkLens {
 
   /*implicit class Regex(sc: StringContext) {
-    def r = new util.matching.Regex(sc.parts.mkString, sc.parts.tail.map(_ ⇒ "x"): _*)
+    def r = new util.matching.Regex(sc.parts.mkString, sc.parts.tail.map(_ => "x"): _*)
   }*/
 
   type Path = Seq[Prefix]
