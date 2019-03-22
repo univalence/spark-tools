@@ -6,13 +6,13 @@ import scala.util.Try
 
 class PathSpec extends FunSuite {
 
-  ignore("interpolation") {
+  test("interpolation") {
     import Path._
 
     val prefix = "abc"
 
     //illtyped
-    val u = Path.create(prefix).map(prefix => path"$prefix.<:€")
+    val u = Path.create(prefix).map(prefix => path"$prefix.abc")
 
     val x: Root.type = path""
 
@@ -20,17 +20,17 @@ class PathSpec extends FunSuite {
 
     assert(y.name == "abc")
 
-    val abc:      Field = path"abc"
-    val ghi:      Field = path"$abc.ghi" // >.abc.>.ghi
-    val lol:      Field = path"lol" //
-    val compose:  Field = path"$abc/$lol"
-    val compose2: Array = path"$compose/"
+    val abc:   Field = path"abc"
+    val ghi:   Field = path"$abc.ghi" // >.abc.>.ghi
+    val lol:   Field = path"lol" //
+    val comp:  Field = path"$abc/$lol"
+    val comp2: Array = path"$comp/"
+    val comp3: Array = path"$comp2"
 
   }
 
   //TODO @Harrison fix it!
   test("createPath") {
-
     assert(
       Path.create("abcd.edfg//hijk") ==
         Field("hijk", Array(Array(Field("edfg", Field("abcd", Root).get).get)))
