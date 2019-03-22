@@ -19,9 +19,11 @@ object FenekSyntaxTest {
     def |+(field: Field): struct = ???
   }
 
-  val x: struct = struct(path"source.source.source.source" as "target1",
-                         "target0"  <<- path"source.source.source.source",
-                         "target42" <<- path"source.source.source.source") |+
+  val x: struct = struct(
+    path"source.source.source.source" as "target1",
+    "target0"  <<- path"source.source.source.source",
+    "target42" <<- path"source.source.source.source"
+  ) |+
     "target2"  <<- path"source" |+
     "target43" <<- path"source" |+
     (path"sourceX" as "target3")

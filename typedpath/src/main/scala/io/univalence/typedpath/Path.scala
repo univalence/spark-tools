@@ -89,11 +89,13 @@ object PathMacro {
             reify(Array(create(prefix, base).splice.asInstanceOf[NonEmptyPath]))
           } else {
             reify(
-              Field(lit(suffix).splice,
-                    Array(
-                      create(prefix, base).splice
-                        .asInstanceOf[NonEmptyPath]
-                    )).get
+              Field(
+                lit(suffix).splice,
+                Array(
+                  create(prefix, base).splice
+                    .asInstanceOf[NonEmptyPath]
+                )
+              ).get
             )
           }
         }
@@ -134,7 +136,43 @@ object Path {
   case class NamePart(name: String) extends ValidToken // "[a-zA-Z0-9_]+"
   case class ErrorToken(part: String) extends Token
 
-  def tokenize(string: String): Seq[Token] = ???
+  def tokenize(string: String): Seq[Token] = {
+    val validTokenRegExp = "\\.|/|[a-zA-Z0-9_]+".r
+
+    def go(string: String, acc: Seq[Token]): Seq[Token] =
+      if (string.isEmpty) acc
+      else {
+        validTokenRegExp.findFirstMatchIn(string) match {
+          case Some(matcher) =>
+            val (beginning, rest) = string.splitAt(matcher.end)
+            val (error_, matched) = beginning.splitAt(matcher.start)
+
+            val matchedToken: ValidToken = matched match {
+              case "."  => Dot
+              case "/"  => Slash
+              case name => NamePart(name)
+            }
+
+            if (error_.isEmpty) go(rest, acc :+ matchedToken)
+            else go(rest, acc :+ ErrorToken(error_) :+ matchedToken)
+
+          case None => acc :+ ErrorToken(string)
+        }
+
+      }
+    go(string, Vector.empty)
+  }
+
+  def stringify(token: Token*): String =
+    token
+    //.view
+      .map({
+        case Dot           => "."
+        case Slash         => "/"
+        case ErrorToken(x) => x
+        case NamePart(x)   => x
+      })
+      .mkString
 
   def combine(prefix: Path, suffix: Path): Path =
     suffix match {
