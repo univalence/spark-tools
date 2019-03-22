@@ -192,49 +192,42 @@ object Path {
 
   }
 
+  //TODO : remove refine (le moins de dépendances, le mieux)
   type Name = string.MatchesRegex[Witness.`"[a-zA-Z_][a-zA-Z0-9_]*"`.T]
 
   def createName(string: String): Either[String, String @@ Name] =
     refineT[Name](string)
 
-  //TODO implementation alternative avec les parseurs combinators
-  //TODO implementation alternative avec une PEG grammar
-  def create(string: String): Try[Path] =
-    if (string.isEmpty) {
-      Try(Root)
+  def create(string: String): Try[Path] = {
+    val tokens = tokenize(string)
+    if (tokens.exists(_.isInstanceOf[ErrorToken])) {
+
+      val error = tokens.map({
+        case ErrorToken(part) => s"[$part]"
+        case x                => stringify(x)
+      })
+
+      Failure(
+        new Exception(
+          s"invalid string $error as a path"
+        )
+      )
     } else {
-      val dotIndex   = string.lastIndexOf('.')
-      val slashIndex = string.lastIndexOf('/')
+      val validToken = tokens.collect({ case v: ValidToken => v })
 
-      if (dotIndex == -1 && slashIndex == -1) {
-        Field(string, Root)
-      } else if (dotIndex > -1 && (dotIndex > slashIndex || slashIndex == -1)) {
-        val (xs, x)        = string.splitAt(dotIndex)
-        val suffix: String = x.tail
-        val prefix: String = xs
+      validToken.foldLeft[Try[Path]](Try(Root))({
+        case (parent, NamePart(name)) => parent.flatMap(Field(name, _))
+        case (parent, Dot)            => parent //Meh c'est un peu étrange, mais par construction
+        case (parent, Slash) =>
+          parent.flatMap({
+            case n: NonEmptyPath => Try(Array(n))
+            case _               => Failure(new Exception(s"cannot create an array at the root $string"))
+          })
 
-        for {
-          parent <- create(prefix)
-          field  <- Field(suffix, parent)
-        } yield field
-      } else {
-        val (xs, x) = string.splitAt(slashIndex)
-        val suffix  = x.tail
-        val prefix  = xs
-
-        val parentPath: Try[Array] =
-          create(prefix) flatMap {
-            case value: NonEmptyPath => Try(Array(value))
-            case value               => Failure(new Exception(s"$value non NonEmptyPath"))
-          }
-
-        if (suffix == "") {
-          parentPath
-        } else {
-          parentPath.flatMap(Field(suffix, _))
-        }
-      }
+      })
     }
+
+  }
 }
 
 case object Root extends Path

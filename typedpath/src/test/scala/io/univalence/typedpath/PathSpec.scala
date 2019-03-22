@@ -3,7 +3,7 @@ package io.univalence.typedpath
 import io.univalence.typedpath.Path.{ ErrorToken, NamePart, Slash }
 import org.scalatest.FunSuite
 
-import scala.util.Try
+import scala.util.{ Failure, Try }
 
 class PathSpec extends FunSuite {
 
@@ -15,6 +15,13 @@ class PathSpec extends FunSuite {
       Path.tokenize("$abc/def") ==
         Seq(ErrorToken("$"), NamePart("abc"), Slash, NamePart("def"))
     )
+
+  }
+
+  test("create error") {
+    val f = Path.create("$abc/(edf").asInstanceOf[Failure[_]]
+    assert(f.exception.getMessage.contains("[$]"))
+    assert(f.exception.getMessage.contains("[(]"))
 
   }
 
