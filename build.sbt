@@ -50,6 +50,12 @@ developers := List(
     name  = "Bernarith Men",
     email = "bernarith@univalence.io",
     url   = url("https://github.com/bernit77")
+  ),
+  Developer(
+    id    = "HarrisonCheng",
+    name  = "Harrison Cheng",
+    email = "harrison@univalence.io",
+    url   = url("https://github.com/HarrisonCheng")
   )
 )
 
