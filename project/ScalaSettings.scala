@@ -1,4 +1,3 @@
-
 import sbt._
 import sbt.Keys._
 
@@ -50,7 +49,8 @@ object ScalaSettings {
           "-Ywarn-infer-any", // Warn when a type argument is inferred to be `Any`.
           "-Ywarn-nullary-override", // Warn when non-nullary `def f()' overrides nullary `def f'.
           "-Ywarn-nullary-unit", // Warn when nullary methods return Unit.
-          "-Ypatmat-exhaust-depth", "off"
+          "-Ypatmat-exhaust-depth",
+          "off"
         )
       case Some((2, 11)) =>
         Seq(
@@ -77,7 +77,8 @@ object ScalaSettings {
           "-Ywarn-infer-any", // Warn when a type argument is inferred to be `Any`.
           "-Ywarn-nullary-override", // Warn when non-nullary `def f()' overrides nullary `def f'.
           "-Ywarn-nullary-unit", // Warn when nullary methods return Unit.
-          "-Ypatmat-exhaust-depth", "off"
+          "-Ypatmat-exhaust-depth",
+          "off"
         )
       case _ => Seq.empty
     }
