@@ -1,61 +1,37 @@
 package io.univalence.typedpath
 
-import io.univalence.typedpath.Path.Name
-
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 import scala.util.{ Failure, Success, Try }
 
 object PathMacro {
 
-  /*
-  class Serialize(val c: whitebox.Context) {
-    import c.universe._
-
-    def apply(field: Field): c.Expr[Field] = {
-      val n = c.Expr[String](Literal(Constant(field.name)))
-      val p = apply(field.parent)
-      reify(Field(n.splice, p.splice).get)
-    }
-
-    def apply(array: Array): c.Expr[Array] = {
-      val p = apply(array.parent)
-      reify(Array(p.splice))
-    }
-
-    def apply(nonEmptyPath: NonEmptyPath): c.Expr[NonEmptyPath] =
-      nonEmptyPath match {
-        case a: Array => apply(a)
-        case f: Field => apply(f)
+  //interleave(Seq(poteau, poteau, poteau), Seq(cloture,cloture)) == Seq(poteau, cloture, poteau, cloture, poteau)
+  def interleave[A, B](xa: Seq[A], xb: Seq[B]): Seq[Either[A, B]] = {
+    def go(xa: Seq[A], xb: Seq[B], accc: Vector[Either[A, B]]): Vector[Either[A, B]] =
+      (xa, xb) match {
+        case (Seq(), _)                         => accc
+        case (Seq(x, _ @_*), Seq())             => accc :+ Left(x)
+        case (Seq(a, as @ _*), Seq(b, bs @ _*)) => go(as, bs, accc :+ Left(a) :+ Right(b))
       }
-    def apply(path: Path): c.Expr[Path] =
-      path match {
-        case Root     => reify(Root)
-        case f: Field => apply(f)
-        case a: Array => apply(a)
-      }
+    go(xa, xb, Vector.empty)
+  }
 
-  }*/
-
-  def pathMacro(c: whitebox.Context)(args: c.Expr[Path]*): c.Expr[Path] = {
+  def pathMacro(c: whitebox.Context)(args: c.Expr[Path]*): c.Expr[NonEmptyPath] = {
     import c.universe._
-
-    //pattern matching pour récupérer les chaines de du string contexte
-    val Apply(_, List(Apply(_, rawParts))) = c.prefix.tree
-    //val q"$x($y(...$rawParts))" = c.prefix.tree
-
-    val head :: tail: List[String] = rawParts.map({
-      case Literal(Constant(y: String)) => y
-    })
-
-    val allParts: List[Either[String, c.Expr[Path]]] =
-      (Left(head) :: args
-        .map(Right(_))
-        .zip(tail.map(Left(_)))
-        .flatMap({ case (a, b) => Seq(a, b) })
-        .toList)
 
     def lit(s: String): c.Expr[String] = c.Expr[String](Literal(Constant(s)))
+
+    val strings: List[String] = {
+      //pattern matching pour récupérer les chaines de du string contexte
+      //val q"$x($y(...$rawParts))" = c.prefix.tree
+      val Apply(_, List(Apply(_, rawParts))) = c.prefix.tree
+      rawParts.map({
+        case Literal(Constant(y: String)) => y
+      })
+    }
+
+    val allParts: Seq[Either[String, c.Expr[Path]]] = interleave(strings, args)
 
     def create(string: String, base: c.Expr[Path]): c.Expr[Path] =
       if (string.isEmpty) base
@@ -91,7 +67,17 @@ object PathMacro {
 
     //c.warning(c.enclosingPosition,s"$allParts \n ${head::tail} \n $args")
 
-    allParts.foldLeft[c.Expr[Path]](reify(Root))({
+    if (!allParts.exists({
+          case Left(x)  => x.nonEmpty
+          case Right(p) => p.actualType <:< typeOf[NonEmptyPath]
+        })) {
+      c.abort(
+        c.enclosingPosition,
+        s"path [${allParts.filterNot(_.left.exists(_.isEmpty)).map(_.fold(identity, _.tree)).mkString(" - ")}] can't turn into a NonEmptyPath. Use case object Root instead if you want to target the Root."
+      )
+    }
+
+    val res = allParts.foldLeft[c.Expr[Path]](reify(Root))({
       case (base, Left("")) => base
       case (base, Left(x))  => create(x, base)
       case (base, Right(x)) => {} match {
@@ -104,6 +90,7 @@ object PathMacro {
       }
     })
 
+    res.asInstanceOf[c.Expr[NonEmptyPath]]
     //c.warning(c.enclosingPosition,res.toString())
 
     //pour les args, récupérer le vrai type en dessus de Path (Path, NonEmpty)
@@ -185,20 +172,8 @@ object Path {
     suffix.copy(parent = combineToPath(prefix, suffix.parent))
 
   implicit class PathHelper(val sc: StringContext) extends AnyVal {
-    def path(args: Path*): Path = macro PathMacro.pathMacro
+    def path(args: Path*): NonEmptyPath = macro PathMacro.pathMacro
 
-  }
-
-  //TODO : remove refine (le moins de dépendances, le mieux)
-  sealed trait Name //= string.MatchesRegex[Witness.`""`.T]
-
-  def createName(string: String): Try[String with Name] = {
-    val regExp = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
-    regExp
-      .findPrefixMatchOf(string)
-      .fold[Try[String with Name]](Failure(new Exception(s"$string is not a valid field name")))(
-        _ => Success(string.asInstanceOf[String with Name])
-      )
   }
 
   def create(string: String): Try[Path] = {
@@ -233,11 +208,22 @@ case object Root extends Path
 
 sealed trait NonEmptyPath extends Path
 
-case class Field(name: String with Path.Name, parent: Path) extends NonEmptyPath
+case class Field(name: String with Field.Name, parent: Path) extends NonEmptyPath
 
 object Field {
+  sealed trait Name
+
+  def createName(string: String): Try[String with Name] = {
+    val regExp = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
+    regExp
+      .findPrefixMatchOf(string)
+      .fold[Try[String with Name]](Failure(new Exception(s"$string is not a valid field name")))(
+        _ => Success(string.asInstanceOf[String with Name])
+      )
+  }
+
   def apply(name: String, parent: Path): Try[Field] =
-    Path.createName(name).map(new Field(_, parent))
+    createName(name).map(new Field(_, parent))
 }
 
 case class Array(parent: NonEmptyPath) extends NonEmptyPath

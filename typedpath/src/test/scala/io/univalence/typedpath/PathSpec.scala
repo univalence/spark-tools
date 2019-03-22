@@ -30,10 +30,18 @@ class PathSpec extends FunSuite {
 
     val prefix = "abc"
 
-    //TODO : illtyped
-    val u = Path.create(prefix).map(prefix => path"$prefix.abc")
+    //TODO : check illtyped
+    //val u = Path.create(prefix).map(prefix => path"$prefix.abc")
 
-    val x: Root.type = path""
+    //Check IllTyped
+    //val x: Root.type = path""
+
+    val r = Root
+
+    //check IllTyped
+    //val r1        = path"$r"
+
+    val r2: Array = path"$r.def/"
 
     val abc: Field = path"abc"
 
