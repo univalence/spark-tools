@@ -1,15 +1,14 @@
 package io.univalence.typedpath
 
-import eu.timepit.refined._
-import shapeless.Witness
-import shapeless.tag.@@
+import io.univalence.typedpath.Path.Name
 
+import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
-import language.experimental.macros
 import scala.util.{ Failure, Success, Try }
 
 object PathMacro {
 
+  /*
   class Serialize(val c: whitebox.Context) {
     import c.universe._
 
@@ -36,7 +35,7 @@ object PathMacro {
         case a: Array => apply(a)
       }
 
-  }
+  }*/
 
   def pathMacro(c: whitebox.Context)(args: c.Expr[Path]*): c.Expr[Path] = {
     import c.universe._
@@ -54,67 +53,58 @@ object PathMacro {
         .map(Right(_))
         .zip(tail.map(Left(_)))
         .flatMap({ case (a, b) => Seq(a, b) })
-        .toList).reverse
-
-    val serialize = new Serialize(c)
+        .toList)
 
     def lit(s: String): c.Expr[String] = c.Expr[String](Literal(Constant(s)))
 
     def create(string: String, base: c.Expr[Path]): c.Expr[Path] =
       if (string.isEmpty) base
       else {
-        /*
-        match {
-          case Failure(e) => c.abort(c.enclosingPosition,e.getMessage)
-          case Success(path) =>
-            reify(Path.combine(fold(xs).splice,serialize(path).splice))
-        }*/
 
-        val slashIndex = string.lastIndexOf('/')
-        val dotIndex   = string.lastIndexOf('.')
-        if (dotIndex == -1 && slashIndex == -1) {
-          reify(Field(lit(string).splice, base.splice).get)
-        } else if (dotIndex > -1 && (dotIndex > slashIndex || slashIndex == -1)) {
+        val tokens: Seq[Path.Token] = Path.tokenize(string)
+        if (tokens.exists(_.isInstanceOf[Path.ErrorToken])) {
 
-          val (xs, x)        = string.splitAt(dotIndex)
-          val suffix: String = x.tail
-          val prefix: String = xs
-          reify(Field(lit(suffix).splice, create(prefix, base).splice).get)
+          val error = Path.highlightErrors(tokens: _*)
+          c.abort(c.enclosingPosition, s"invalid path $error")
         } else {
-          val (xs, x) = string.splitAt(slashIndex)
-          val suffix  = x.tail
-          val prefix  = xs
 
-          if (suffix == "") {
-            reify(Array(create(prefix, base).splice.asInstanceOf[NonEmptyPath]))
-          } else {
-            reify(
-              Field(
-                lit(suffix).splice,
-                Array(
-                  create(prefix, base).splice
-                    .asInstanceOf[NonEmptyPath]
-                )
-              ).get
-            )
-          }
+          val validTokens: Seq[Path.ValidToken] = tokens.collect({ case s: Path.ValidToken => s })
+
+          validTokens.foldLeft[c.Expr[Path]](
+            base
+          )({
+            case (parent, Path.NamePart(name)) =>
+              //improve checks on name
+              reify(Field(lit(name).splice, parent.splice).get)
+            case (parent, Path.Dot) => parent
+            case (parent, Path.Slash) if c.typecheck(parent.tree).tpe <:< typeOf[NonEmptyPath] =>
+              reify(Array(parent.splice.asInstanceOf[NonEmptyPath]))
+
+            case (parent, Path.Slash) =>
+              c.abort(c.enclosingPosition, s"${parent.actualType} can't create array from root : $parent $string")
+
+          })
+
         }
 
       }
 
-    def fold(allParts: List[Either[String, c.Expr[Path]]]): c.Expr[Path] =
-      allParts match {
-        case Nil            => reify(Root)
-        case Left("") :: xs => fold(xs)
-        case Left(x) :: xs  => create(x, fold(xs))
-        case Right(x) :: xs =>
-          reify(Path.combine(fold(xs).splice, x.splice))
-      }
+    //c.warning(c.enclosingPosition,s"$allParts \n ${head::tail} \n $args")
 
-    val res = fold(allParts)
+    allParts.foldLeft[c.Expr[Path]](reify(Root))({
+      case (base, Left("")) => base
+      case (base, Left(x))  => create(x, base)
+      case (base, Right(x)) => {} match {
+        case _ if x.actualType == typeOf[Array] =>
+          reify(Path.combineToArray(base.splice, x.splice.asInstanceOf[Array]))
+        case _ if x.actualType == typeOf[Field] =>
+          reify(Path.combineToField(base.splice, x.splice.asInstanceOf[Field]))
+        case _ =>
+          reify(Path.combineToPath(base.splice, x.splice))
+      }
+    })
 
     //c.warning(c.enclosingPosition,res.toString())
-    res
 
     //pour les args, récupérer le vrai type en dessus de Path (Path, NonEmpty)
 
@@ -158,7 +148,6 @@ object Path {
 
           case None => acc :+ ErrorToken(string)
         }
-
       }
     go(string, Vector.empty)
   }
@@ -174,18 +163,26 @@ object Path {
       })
       .mkString
 
-  def combine(prefix: Path, suffix: Path): Path =
+  def highlightErrors(tokens: Token*): String =
+    tokens
+      .map({
+        case ErrorToken(part) => s"[$part]"
+        case x                => stringify(x)
+      })
+      .mkString
+
+  def combineToPath(prefix: Path, suffix: Path): Path =
     suffix match {
       case Root     => prefix
-      case f: Field => combine(prefix, f)
-      case a: Array => combine(prefix, a)
+      case f: Field => combineToField(prefix, f)
+      case a: Array => combineToArray(prefix, a)
     }
 
-  def combine(prefix: Path, suffix: Array): Array =
-    Array(combine(prefix, suffix.parent).asInstanceOf[NonEmptyPath])
+  def combineToArray(prefix: Path, suffix: Array): Array =
+    Array(combineToPath(prefix, suffix.parent).asInstanceOf[NonEmptyPath])
 
-  def combine(prefix: Path, suffix: Field): Field =
-    suffix.copy(parent = combine(prefix, suffix.parent))
+  def combineToField(prefix: Path, suffix: Field): Field =
+    suffix.copy(parent = combineToPath(prefix, suffix.parent))
 
   implicit class PathHelper(val sc: StringContext) extends AnyVal {
     def path(args: Path*): Path = macro PathMacro.pathMacro
@@ -193,25 +190,27 @@ object Path {
   }
 
   //TODO : remove refine (le moins de dépendances, le mieux)
-  type Name = string.MatchesRegex[Witness.`"[a-zA-Z_][a-zA-Z0-9_]*"`.T]
+  sealed trait Name //= string.MatchesRegex[Witness.`""`.T]
 
-  def createName(string: String): Either[String, String @@ Name] =
-    refineT[Name](string)
+  def createName(string: String): Try[String with Name] = {
+    val regExp = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
+    regExp
+      .findPrefixMatchOf(string)
+      .fold[Try[String with Name]](Failure(new Exception(s"$string is not a valid field name")))(
+        _ => Success(string.asInstanceOf[String with Name])
+      )
+  }
 
   def create(string: String): Try[Path] = {
     val tokens = tokenize(string)
     if (tokens.exists(_.isInstanceOf[ErrorToken])) {
 
-      val error = tokens.map({
-        case ErrorToken(part) => s"[$part]"
-        case x                => stringify(x)
-      })
-
       Failure(
         new Exception(
-          s"invalid string $error as a path"
+          s"invalid string ${highlightErrors(tokens: _*)} as a path"
         )
       )
+
     } else {
       val validToken = tokens.collect({ case v: ValidToken => v })
 
@@ -234,16 +233,11 @@ case object Root extends Path
 
 sealed trait NonEmptyPath extends Path
 
-case class Field(name: String @@ Path.Name, parent: Path) extends NonEmptyPath
+case class Field(name: String with Path.Name, parent: Path) extends NonEmptyPath
 
 object Field {
-  def apply(name: String, parent: Path): Try[Field] = {
-    import scala.util._
-    Path.createName(name) match {
-      case Left(a)            => Failure(new Exception(a))
-      case Right(refinedName) => Success(new Field(refinedName, parent))
-    }
-  }
+  def apply(name: String, parent: Path): Try[Field] =
+    Path.createName(name).map(new Field(_, parent))
 }
 
 case class Array(parent: NonEmptyPath) extends NonEmptyPath

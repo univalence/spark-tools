@@ -108,8 +108,7 @@ lazy val typedpath = project
   .settings(defaultConfiguration)
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      "eu.timepit"     %% "refined"      % "0.9.4"
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value
     ),
     addTestLibs
   )
