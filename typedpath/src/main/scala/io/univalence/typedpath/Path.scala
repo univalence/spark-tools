@@ -138,7 +138,7 @@ object Path {
     suffix.copy(parent = combine(prefix, suffix.parent))
 
   implicit class PathHelper(val sc: StringContext) extends AnyVal {
-    def path(args: Path*): Any = macro PathMacro.pathMacro
+    def path(args: Path*): Path = macro PathMacro.pathMacro
 
   }
 
