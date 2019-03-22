@@ -4,14 +4,14 @@ import org.scalatest.FunSuite
 
 import scala.util.Try
 
-case class PersonCC(name:  String, age: Int, x: Option[Int])
+case class PersonCC(name: String, age: Int, x: Option[Int])
 case class PersonCC2(name: String, age: Int)
 
 class Cc2mapTest extends FunSuite {
 
-  val p1 = PersonCC("a", 1, None)
+  val p1                   = PersonCC("a", 1, None)
   val m1: Map[String, Any] = Map("name" -> "a", "age" -> 1)
-  val p2 = PersonCC("a", 1, Some(3))
+  val p2                   = PersonCC("a", 1, Some(3))
   val m2: Map[String, Any] = Map("name" -> "a", "age" -> 1, "x" -> 3)
 
   val p1_2 = PersonCC2("a", 1)

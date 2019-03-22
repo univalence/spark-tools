@@ -29,7 +29,7 @@ class ModelTest extends FunSuite {
   implicit val arbitraryAnn: Arbitrary[Annotation] = Arbitrary(Gen.resultOf(Annotation.apply _))
 
   implicit def arbitraryResult[T](implicit
-                                  oA:   Arbitrary[Option[T]],
+                                  oA: Arbitrary[Option[T]],
                                   aAnn: Arbitrary[Vector[Annotation]]): Arbitrary[Result[T]] =
     Arbitrary(Gen.resultOf[Option[T], Vector[Annotation], Result[T]](Result.apply))
 

@@ -35,7 +35,7 @@ class Quickstart extends FunSuite {
     object Hello {
       @autoBuildResult
       def build(
-        name:  Result[String],
+        name: Result[String],
         greet: Result[Boolean]
       ): Result[Hello] = MacroMarker.generated_applicative
 

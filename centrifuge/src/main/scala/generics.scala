@@ -36,15 +36,15 @@ trait FieldsNonRecur[L] {
 
 trait LowPriorityFieldsNonRecur {
   implicit def caseClassFields[F, G](implicit gen: LabelledGeneric.Aux[F, G],
-                                     encode:       Lazy[FieldsNonRecur[G]]): FieldsNonRecur[F] =
+                                     encode: Lazy[FieldsNonRecur[G]]): FieldsNonRecur[F] =
     new FieldsNonRecur[F] {
       override def fieldnames: List[(String, String)] = encode.value.fieldnames
     }
 
   implicit def hcon[K <: Symbol, H, T <: HList](
     implicit
-    key:        Witness.Aux[K],
-    tv:         TypeName[H],
+    key: Witness.Aux[K],
+    tv: TypeName[H],
     tailEncode: Lazy[FieldsNonRecur[T]]
   ): FieldsNonRecur[FieldType[K, H] :: T] =
     new FieldsNonRecur[FieldType[K, H] :: T] {
@@ -58,5 +58,6 @@ object FieldsNonRecur extends LowPriorityFieldsNonRecur {
     override def fieldnames: List[(String, String)] = Nil
   }
 
-  def fieldnames[A](implicit tmr: FieldsNonRecur[A]): Seq[(String, String)] = tmr.fieldnames
+  def fieldnames[A](implicit tmr: FieldsNonRecur[A]): Seq[(String, String)] =
+    tmr.fieldnames
 }

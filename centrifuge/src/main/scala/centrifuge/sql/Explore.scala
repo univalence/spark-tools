@@ -100,7 +100,7 @@ object Explore {
       }
     })
 
-    val head:   Expression      = collect.flatten.head
+    val head: Expression        = collect.flatten.head
     val anncol: NamedExpression = Alias(head, "annotations")()
     val newPlan = plan match {
       case Project(projectList, child) =>

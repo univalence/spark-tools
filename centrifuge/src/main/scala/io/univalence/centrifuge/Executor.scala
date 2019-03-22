@@ -14,8 +14,8 @@ import scala.util.Try
 case class ExecutionSummary(nbFailure: Long)
 
 object RetryDs {
-  def retryDs[A, C, B](in:    Dataset[A])(run: A => Try[C])(integrate: (A, Try[C]) => B)(
-    nbGlobalAttemptMax:       Int,
+  def retryDs[A, C, B](in: Dataset[A])(run: A => Try[C])(integrate: (A, Try[C]) => B)(
+    nbGlobalAttemptMax: Int,
     circuitBreakerMaxFailure: Int = 10
   )(implicit
     encoderA: Encoder[A],
@@ -49,8 +49,8 @@ object RetryDs {
   private type ExecutionStat = Long
 
   def retryDsWithTask[A, C, B](in: Dataset[A])(run: A => Task[C])(integrate: (A, Try[C]) => B)(
-    nbGlobalAttemptMax:            Int,
-    circuitBreakerMaxFailure:      Option[Int] = Option(10)
+    nbGlobalAttemptMax: Int,
+    circuitBreakerMaxFailure: Option[Int] = Option(10)
   )(implicit
     encoderA: Encoder[A],
     encoderB: Encoder[B],
@@ -72,7 +72,7 @@ object RetryDs {
       }
     }
 
-    def loopTheLoop(mAndEs:           (Dataset[M], ExecutionSummary),
+    def loopTheLoop(mAndEs: (Dataset[M], ExecutionSummary),
                     attemptRemaining: Int): Task[(Dataset[M], ExecutionSummary)] =
       if (mAndEs._2.nbFailure == 0 || attemptRemaining <= 0)
         Task.pure(mAndEs)

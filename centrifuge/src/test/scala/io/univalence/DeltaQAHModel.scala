@@ -38,7 +38,7 @@ package datalab.pj.validate {
   import shapeless.contrib.spire._
 
   case class DeltaJobParam(
-    to:   String,
+    to: String,
     from: String
   )
 
@@ -46,7 +46,7 @@ package datalab.pj.validate {
 
     def main(args: Array[String]) {
 
-      val to:   String = ""
+      val to: String   = ""
       val from: String = ""
 
       def read(s: String): RDD[(String, ByVisitor)] = ???
@@ -100,24 +100,24 @@ package datalab.pj.validate {
 
   case class DeltaByVisitor(
     nbVisitor: Long,
-    nbZero:    Long,
-    delta:     ByVisitor,
-    error:     ByVisitor,
-    orig:      ByVisitor,
-    dest:      ByVisitor
+    nbZero: Long,
+    delta: ByVisitor,
+    error: ByVisitor,
+    orig: ByVisitor,
+    dest: ByVisitor
   )
 
   /** ALL THE FOLLOWING CODE IS SPECIFIC TO THE MODELEH DELTA
     */
   //KPI DEFINITION
   case class ByVisitor(
-    nbSearch:      Long,
-    nbDisplayLR:   Long,
-    nbFDMinLR:     Long,
-    nbFDO:         Long,
-    nbClicLR:      Long,
+    nbSearch: Long,
+    nbDisplayLR: Long,
+    nbFDMinLR: Long,
+    nbFDO: Long,
+    nbClicLR: Long,
     nbClicFDMinLR: Long,
-    nbClicFDO:     Long,
+    nbClicFDO: Long,
     // nbSearchWithBadLocality:         Long,
     // nbSearchDisplayEnrich:           Long,
     nbRechercheWithNonContinousBloc: Long
@@ -172,9 +172,9 @@ package datalab.pj.validate.hlight {
     *
     */
   case class Visiteur(
-    visitorId:  String,
+    visitorId: String,
     typeSource: String,
-    sessions:   Seq[Session]
+    sessions: Seq[Session]
   ) {
 
     def recherches = sessions.flatMap(_.recherches)
@@ -183,12 +183,12 @@ package datalab.pj.validate.hlight {
   case class Session(recherches: Seq[Recherche])
 
   case class Recherche(
-    typeReponse:        String,
+    typeReponse: String,
     typeAccesRecherche: String,
     //history:            Seq[PageRecherche],
-    lrs:           Seq[Reponse],
+    lrs: Seq[Reponse],
     codesLieuxBag: Seq[CodeLieu],
-    fdSeo:         Seq[FicheDetailleeOrpheline]
+    fdSeo: Seq[FicheDetailleeOrpheline]
   )
 
   case class PageRecherche(
@@ -205,10 +205,10 @@ package datalab.pj.validate.hlight {
 
   case class Reponse(
     blocNumeroClient: String,
-    etablissements:   Seq[String],
-    fd:               Seq[FicheDetaillee],
-    clics:            Seq[Clic],
-    blocPosition:     Option[Int]
+    etablissements: Seq[String],
+    fd: Seq[FicheDetaillee],
+    clics: Seq[Clic],
+    blocPosition: Option[Int]
   )
 
   case class FicheDetaillee(clics: Seq[Clic])
@@ -216,11 +216,11 @@ package datalab.pj.validate.hlight {
   case class Clic(coType: String, natureClic: Option[String])
 
   case class Annotation(
-    level:    String,
-    stage:    String,
+    level: String,
+    stage: String,
     typeName: String,
-    message:  String,
-    path:     String
+    message: String,
+    path: String
   )
 
   object ModeleHConverter {

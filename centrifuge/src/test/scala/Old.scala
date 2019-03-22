@@ -7,8 +7,8 @@ object testBuilder {
   //@autoBuildResult
   def build(
     name: Result[String],
-    i:    Result[Int],
-    l:    Result[String]
+    i: Result[Int],
+    l: Result[String]
   ): Result[Ahoy] = {
 
     val _1 = name.addPathPart("name")

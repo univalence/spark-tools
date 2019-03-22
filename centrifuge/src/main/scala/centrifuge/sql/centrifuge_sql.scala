@@ -28,14 +28,14 @@ import scala.reflect.runtime.universe.TypeTag
 package object centrifuge_sql {
 
   case class DeltaPart(
-    colName:             String,
-    sumOnlyLeft:         Option[Long],
-    sumOnlyRight:        Option[Long],
-    sumBothRight:        Option[Long],
-    sumBothLeft:         Option[Long],
-    sumBothDelta:        Option[Long],
+    colName: String,
+    sumOnlyLeft: Option[Long],
+    sumOnlyRight: Option[Long],
+    sumBothRight: Option[Long],
+    sumBothLeft: Option[Long],
+    sumBothDelta: Option[Long],
     sumBothDeltaSquared: Option[Long],
-    countNbExact:        Option[Long]
+    countNbExact: Option[Long]
   ) {
 
     def hasDifference: Boolean =
@@ -164,7 +164,7 @@ package object centrifuge_sql {
     private def recursivelyFindScalaUDF(exp: Expression, tocol: String): Seq[QAUdfInPlan] =
       exp match {
         case s: ScalaUDF => Seq(QAUdfInPlan(tocol, s, findColChild(s)))
-        case _ => exp.children.flatMap(x => recursivelyFindScalaUDF(x, tocol))
+        case _           => exp.children.flatMap(x => recursivelyFindScalaUDF(x, tocol))
       }
 
     private def recursivelyFindScalaUDF(expressions: Seq[Expression]): Seq[QAUdfInPlan] =
@@ -211,17 +211,17 @@ package object centrifuge_sql {
           })
           .toList
 
-      val onlyLeft:  Column = leftKey.isNotNull.&&(rightKey.isNull)
+      val onlyLeft: Column  = leftKey.isNotNull.&&(rightKey.isNull)
       val onlyRight: Column = leftKey.isNull.&&(rightKey.isNotNull)
-      val both:      Column = leftKey.isNotNull.&&(rightKey.isNotNull)
+      val both: Column      = leftKey.isNotNull.&&(rightKey.isNotNull)
 
       type KpiApplier = (Column, Column) => (String, Column)
 
       val kpis: Seq[KpiApplier] = Seq[KpiApplier](
-        (c1, _)  => ("OnlyLeft", when(onlyLeft, c1)),
-        (_, c2)  => ("OnlyRight", when(onlyRight, c2)),
-        (c1, _)  => ("BothLeft", when(both, c1)),
-        (_, c2)  => ("BothRight", when(both, c2)),
+        (c1, _) => ("OnlyLeft", when(onlyLeft, c1)),
+        (_, c2) => ("OnlyRight", when(onlyRight, c2)),
+        (c1, _) => ("BothLeft", when(both, c1)),
+        (_, c2) => ("BothRight", when(both, c2)),
         (c1, c2) => ("BothDelta", when(both, c1 - c2)),
         (c1, c2) => ("BothDeltaSquared", when(both, (c1 - c2).multiply(c1 - c2))),
         (c1, c2) => ("BothCountEqual", when(both && (c1 === c2), Column(Literal(1))))
@@ -296,7 +296,7 @@ andidates are: "io.univalence.centrifuge.Annotation(java.lang.String, scala.Opti
     private val emptyAnnotation =
       Literal(ArrayData.toArrayData(Nil), annotationsDt)
 
-    private def recursiveNewPlan(logicalPlan:  LogicalPlan,
+    private def recursiveNewPlan(logicalPlan: LogicalPlan,
                                  sparkSession: SparkSession): (LogicalPlan, Seq[Attribute]) = {
 
       val res = logicalPlan match {

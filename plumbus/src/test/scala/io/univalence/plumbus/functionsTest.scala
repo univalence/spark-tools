@@ -52,7 +52,8 @@ class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
   }
 
   test("should filter over a Seq of Person in a dataframe") {
-    val resultdf = dataset.select($"id", $"family".as[Seq[Person]].filter(_.age < 18).as("persons"))
+    val resultdf =
+      dataset.select($"id", $"family".as[Seq[Person]].filter(_.age < 18).as("persons"))
 
     val result =
       dataframeToMap(
@@ -143,5 +144,5 @@ class functionsTest extends FunSuiteLike with SparkTestLike with Matchers {
 
 }
 
-case class Person(name:     String, age:  Int)
+case class Person(name: String, age: Int)
 case class PersonWithId(id: String, name: String, age: Int)

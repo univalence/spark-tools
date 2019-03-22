@@ -11,11 +11,11 @@ package object centrifuge {
   object AnnotationSql {
 
     def apply(
-      msg:        String,
-      onField:    String,
+      msg: String,
+      onField: String,
       fromFields: Vector[String],
-      isError:    Boolean,
-      count:      Long
+      isError: Boolean,
+      count: Long
     ): Annotation = Annotation(
       message    = msg,
       isError    = isError,

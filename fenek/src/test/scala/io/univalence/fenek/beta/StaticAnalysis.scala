@@ -72,7 +72,8 @@ object StaticAnalysis {
         case TypeCasted(a, _) => Seq(a)
       }
 
-      def next(expr: Expr, index: Int): Seq[PosExpr] = loop(expr, pos + 1, index)
+      def next(expr: Expr, index: Int): Seq[PosExpr] =
+        loop(expr, pos + 1, index)
 
       val res = toUnfold.foldLeft[(Seq[PosExpr], Int)]((Nil, index + 1))(
         {
@@ -99,7 +100,8 @@ object StaticAnalysis {
     val x = >.a caseWhen (1 -> (ab |> (_ + _)) | 2 -> (ab |> (_ - _)) | Else -> 3)
 
     staticAnalysis(x).foreach({
-      case PosExpr(level, index, expr) => println(index.formatted("%03d ") + ("  " * level) + expr)
+      case PosExpr(level, index, expr) =>
+        println(index.formatted("%03d ") + ("  " * level) + expr)
     })
 
   }

@@ -5,7 +5,7 @@ import scala.util.Success
 import scala.util.Try
 
 case class Result[+T](
-  value:       Option[T],
+  value: Option[T],
   annotations: Vector[Annotation]
 ) {
 
@@ -82,11 +82,11 @@ object Result {
 }
 
 case class Annotation(
-  message:    String,
-  onField:    Option[String] = None,
+  message: String,
+  onField: Option[String]    = None,
   fromFields: Vector[String] = Vector.empty,
-  isError:    Boolean,
-  count:      Long = 1L
+  isError: Boolean,
+  count: Long = 1L
 ) {
 
   def this(message: String, onField: Option[String], fromFields: Seq[String], isError: Boolean, count: Long) = {
@@ -96,7 +96,7 @@ case class Annotation(
 
 object Annotation {
   def fromString(
-    msg:   String,
+    msg: String,
     error: Boolean
   ): Annotation =
     Annotation(

@@ -19,7 +19,8 @@ trait Applicative[M[_]] extends Functor[M] {
 
   def zip[A, B](ma: M[A], mb: M[B]): M[(A, B)]
 
-  def ap[A, B](ma: M[A], mb: M[A => B]): M[B] = map(zip(ma, mb))(t => t._2(t._1))
+  def ap[A, B](ma: M[A], mb: M[A => B]): M[B] =
+    map(zip(ma, mb))(t => t._2(t._1))
 
   def apply2[A, B, C](ma: M[A], mb: M[B])(f: (A, B) => C): M[C] =
     ap(mb, map(ma)(x => (b: B) => f(x, b)))

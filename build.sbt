@@ -13,8 +13,12 @@ val defaultConfiguration =
     crossScalaVersions := List("2.11.12", "2.12.8"),
     //By default projects in spark-tool work with 2.11 and are ready for 2.12
     //Spark projects are locked in 2.11 at the moment
-    scalaVersion  := crossScalaVersions.value.head,
-    scalacOptions := stdOptions ++ extraOptions(scalaVersion.value)
+    scalaVersion      := crossScalaVersions.value.head,
+    scalacOptions     := stdOptions ++ extraOptions(scalaVersion.value),
+    useGpg            := true,
+    scalafmtOnCompile := false,
+    publishTo         := sonatypePublishTo.value,
+    licenses          := Seq("The Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
   )
 
 licenses := Seq("The Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
@@ -26,9 +30,6 @@ scmInfo := Some(
     "scm:git:git@github.com:univalence/spark-tools.git"
   )
 )
-
-publishTo := sonatypePublishTo.value
-useGpg    := true
 
 developers := List(
   Developer(
@@ -96,25 +97,11 @@ lazy val plumbus =
   project
     .settings(defaultConfiguration)
     .settings(
-      name        := "plumbus",
       description := "Collection of tools for Scala Spark",
       startYear   := Some(2019),
-      licenses    := Seq("The Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
-    )
-    .settings(
-      libraryDependencies ++= Seq(
-        "org.apache.spark" %% "spark-sql" % "2.4.0",
-        "com.propensive"   %% "magnolia"  % "0.10.0"
-      ),
-      libraryDependencies ++= Seq(
-        "org.scalatest"  %% "scalatest"  % "3.0.5",
-        "org.scalacheck" %% "scalacheck" % "1.13.4"
-      ).map(_ % Test)
-    )
-    .settings(
-      scalafmtOnCompile := true,
-      publishTo         := sonatypePublishTo.value,
-      useGpg            := true
+      useSpark("2.4.0")("sql"),
+      libraryDependencies ++= Seq("com.propensive" %% "magnolia" % "0.10.0"),
+      addTestLibs
     )
 
 lazy val typedpath = project
@@ -135,17 +122,16 @@ def addTestLibs: SettingsDefinition =
 
 def useSpark(sparkVersion: String)(modules: String*): SettingsDefinition =
   libraryDependencies ++= {
-    val minVersion: String = CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 11)) => "2.0.0"
-      case Some((2, 12)) => "2.4.0"
-      case x             => throw new Exception(s"unsupported scala version $x for Spark")
-    }
+    val minVersion: String =
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 11)) => "2.0.0"
+        case Some((2, 12)) => "2.4.0"
+        case x             => throw new Exception(s"unsupported scala version $x for Spark")
+      }
     val bumpedVersion = Seq(sparkVersion, minVersion).max
 
     modules.map(name => "org.apache.spark" %% s"spark-$name" % bumpedVersion % Provided)
   }
-
-scalafmtOnCompile := false
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 

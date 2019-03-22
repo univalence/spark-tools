@@ -31,7 +31,7 @@ object PathMacro {
       }
     def apply(path: Path): c.Expr[Path] =
       path match {
-        case Root => reify(Root)
+        case Root     => reify(Root)
         case f: Field => apply(f)
         case a: Array => apply(a)
       }
@@ -45,10 +45,16 @@ object PathMacro {
     val Apply(_, List(Apply(_, rawParts))) = c.prefix.tree
     //val q"$x($y(...$rawParts))" = c.prefix.tree
 
-    val head :: tail: List[String] = rawParts.map({ case Literal(Constant(y: String)) => y })
+    val head :: tail: List[String] = rawParts.map({
+      case Literal(Constant(y: String)) => y
+    })
 
     val allParts: List[Either[String, c.Expr[Path]]] =
-      (Left(head) :: args.map(Right(_)).zip(tail.map(Left(_))).flatMap({ case (a, b) => Seq(a, b) }).toList).reverse
+      (Left(head) :: args
+        .map(Right(_))
+        .zip(tail.map(Left(_)))
+        .flatMap({ case (a, b) => Seq(a, b) })
+        .toList).reverse
 
     val serialize = new Serialize(c)
 
@@ -70,7 +76,7 @@ object PathMacro {
           reify(Field(lit(string).splice, base.splice).get)
         } else if (dotIndex > -1 && (dotIndex > slashIndex || slashIndex == -1)) {
 
-          val (xs, x) = string.splitAt(dotIndex)
+          val (xs, x)        = string.splitAt(dotIndex)
           val suffix: String = x.tail
           val prefix: String = xs
           reify(Field(lit(suffix).splice, create(prefix, base).splice).get)
@@ -82,7 +88,13 @@ object PathMacro {
           if (suffix == "") {
             reify(Array(create(prefix, base).splice.asInstanceOf[NonEmptyPath]))
           } else {
-            reify(Field(lit(suffix).splice, Array(create(prefix, base).splice.asInstanceOf[NonEmptyPath])).get)
+            reify(
+              Field(lit(suffix).splice,
+                    Array(
+                      create(prefix, base).splice
+                        .asInstanceOf[NonEmptyPath]
+                    )).get
+            )
           }
         }
 
@@ -119,14 +131,14 @@ object Path {
   sealed trait ValidToken extends Token
   case object Dot extends ValidToken // "."
   case object Slash extends ValidToken //  "/"
-  case class NamePart(name:   String) extends ValidToken // "[a-zA-Z0-9_]+"
+  case class NamePart(name: String) extends ValidToken // "[a-zA-Z0-9_]+"
   case class ErrorToken(part: String) extends Token
 
   def tokenize(string: String): Seq[Token] = ???
 
   def combine(prefix: Path, suffix: Path): Path =
     suffix match {
-      case Root => prefix
+      case Root     => prefix
       case f: Field => combine(prefix, f)
       case a: Array => combine(prefix, a)
     }
@@ -144,7 +156,8 @@ object Path {
 
   type Name = string.MatchesRegex[Witness.`"[a-zA-Z_][a-zA-Z0-9_]*"`.T]
 
-  def createName(string: String): Either[String, String @@ Name] = refineT[Name](string)
+  def createName(string: String): Either[String, String @@ Name] =
+    refineT[Name](string)
 
   //TODO implementation alternative avec les parseurs combinators
   //TODO implementation alternative avec une PEG grammar
@@ -158,7 +171,7 @@ object Path {
       if (dotIndex == -1 && slashIndex == -1) {
         Field(string, Root)
       } else if (dotIndex > -1 && (dotIndex > slashIndex || slashIndex == -1)) {
-        val (xs, x) = string.splitAt(dotIndex)
+        val (xs, x)        = string.splitAt(dotIndex)
         val suffix: String = x.tail
         val prefix: String = xs
 
@@ -174,7 +187,7 @@ object Path {
         val parentPath: Try[Array] =
           create(prefix) flatMap {
             case value: NonEmptyPath => Try(Array(value))
-            case value => Failure(new Exception(s"$value non NonEmptyPath"))
+            case value               => Failure(new Exception(s"$value non NonEmptyPath"))
           }
 
         if (suffix == "") {

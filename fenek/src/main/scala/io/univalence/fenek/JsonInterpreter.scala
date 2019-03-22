@@ -25,16 +25,19 @@ object JsonInterpreter {
   }
 
   case class MissingField(name: String, scope: Seq[String] = Nil) extends Annotation {
-    override def addScope(name: String): MissingField = copy(scope = name +: scope)
+    override def addScope(name: String): MissingField =
+      copy(scope = name +: scope)
   }
 
   case class CaughtException(exception: Throwable, scope: Seq[String] = Nil) extends Annotation {
-    override def addScope(name: String): CaughtException = copy(scope = name +: scope)
+    override def addScope(name: String): CaughtException =
+      copy(scope = name +: scope)
   }
 
   case class Result[+T](value: Option[T], annotations: Seq[Annotation]) {
-    def addScope(name: String): Result[T] = copy(annotations = annotations.map(_.addScope(name)))
-    def map[B](f:      T => B): Result[B] = Result(value.map(f), annotations)
+    def addScope(name: String): Result[T] =
+      copy(annotations = annotations.map(_.addScope(name)))
+    def map[B](f: T => B): Result[B] = Result(value.map(f), annotations)
 
     def flatMap[B](f: T => Result[B]): Result[B] = {
       val res: Option[Result[B]] = value.map(f)
@@ -64,10 +67,10 @@ object JsonInterpreter {
     def anyToJValue(any: Any): Try[JValue] =
       Try {
         any match {
-          case s:  String     => JString(s)
-          case b:  Boolean    => JBool(b)
-          case i:  Int        => JInt(i)
-          case d:  Double     => JDouble(d)
+          case s: String      => JString(s)
+          case b: Boolean     => JBool(b)
+          case i: Int         => JInt(i)
+          case d: Double      => JDouble(d)
           case de: BigDecimal => JDecimal(de)
 
         }
@@ -80,7 +83,8 @@ object JsonInterpreter {
         case JBool(s)    => Try(s)
         case JDouble(s)  => Try(s)
         case JDecimal(s) => Try(s)
-        case _           => Failure(new Exception("[" + jvalue + "] can't be converted to Scala values"))
+        case _ =>
+          Failure(new Exception("[" + jvalue + "] can't be converted to Scala values"))
       }
 
     object LocalDate {
@@ -91,20 +95,26 @@ object JsonInterpreter {
     def rewrite(expr: Expr): Expr =
       expr match {
 
-        case TypedExpr.CaseWhen(source, cases) => Fnk.Expr.Ops.CaseWhen(source, cases)
+        case TypedExpr.CaseWhen(source, cases) =>
+          Fnk.Expr.Ops.CaseWhen(source, cases)
 
         case Left(source, n) => source.as[String] <*> n |> (_ take _)
         case DateAdd(interval, n, source) =>
           interval <*> n <*> source.as[String] |> {
-            case ("day", days, LocalDate(start))     => start.plusDays(days).toString
-            case ("month", months, LocalDate(start)) => start.plusMonths(months).toString
-            case ("year", years, LocalDate(start))   => start.plusYears(years).toString
+            case ("day", days, LocalDate(start)) =>
+              start.plusDays(days).toString
+            case ("month", months, LocalDate(start)) =>
+              start.plusMonths(months).toString
+            case ("year", years, LocalDate(start)) =>
+              start.plusYears(years).toString
           }
 
         case DateDiff(datepart, startdate, enddate) =>
           datepart <*> startdate.as[String] <*> enddate.as[String] |> {
-            case ("day", LocalDate(start), LocalDate(end))   => Days.daysBetween(start, end).getDays
-            case ("month", LocalDate(start), LocalDate(end)) => Months.monthsBetween(start, end).getMonths
+            case ("day", LocalDate(start), LocalDate(end)) =>
+              Days.daysBetween(start, end).getDays
+            case ("month", LocalDate(start), LocalDate(end)) =>
+              Months.monthsBetween(start, end).getMonths
           }
 
         case Remove(source, toRemove) =>
@@ -138,7 +148,9 @@ object JsonInterpreter {
       rewrite(expr) match {
         case IsEmpty(source) =>
           val f = compute(source)
-          rawJson(source, { case JString("") | JNothing => JBool(true); case _ => JBool(false) })
+          rawJson(source, {
+            case JString("") | JNothing => JBool(true); case _ => JBool(false)
+          })
 
         // LastElement can't be rewriten, it would need a way to specify the schema of the ouput, even using #>
         case LastElement(source) =>
@@ -214,11 +226,12 @@ object JsonInterpreter {
             case v: JInt if enc == Encoder.Int            => v
             case v: JDouble if enc == Encoder.Double      => v
             case v: JDecimal if enc == Encoder.BigDecimal => v
-            case JInt(x) if enc == Encoder.BigDecimal => JDecimal(BigDecimal(x))
-            case JInt(x) if enc == Encoder.Double     => JDouble(x.toDouble)
+            case JInt(x) if enc == Encoder.BigDecimal     => JDecimal(BigDecimal(x))
+            case JInt(x) if enc == Encoder.Double         => JDouble(x.toDouble)
             //Int => String
             case JString(ExtractInt(i)) if enc == Encoder.Int => JInt(i)
-            case JString(s) if enc == Encoder.BigDecimal      => JDecimal(BigDecimal(s))
+            case JString(s) if enc == Encoder.BigDecimal =>
+              JDecimal(BigDecimal(s))
             //Boolean => String
             case JString("true") if enc == Encoder.Bool  => JBool(true)
             case JString("false") if enc == Encoder.Bool => JBool(false)
@@ -239,8 +252,9 @@ object JsonInterpreter {
           jVal =>
             val res = f1(jVal)
             res.value match {
-              case None | Some(JNothing) => f2(jVal).addAnnotation(res.annotations: _*)
-              case _                     => res
+              case None | Some(JNothing) =>
+                f2(jVal).addAnnotation(res.annotations: _*)
+              case _ => res
             }
 
         case Field(name) =>
@@ -266,7 +280,8 @@ object JsonInterpreter {
         case Expr.Ops.CaseWhen(source, cases) =>
           val f1: JValue => Result[JValue] = compute(source)
 
-          val elseCase: Option[JValue => Result[JValue]] = cases.orElse.map(compute)
+          val elseCase: Option[JValue => Result[JValue]] =
+            cases.orElse.map(compute)
 
           val otherCases: Seq[(JValue => Result[JValue], JValue => Result[JValue])] =
             cases.pairs
@@ -281,7 +296,8 @@ object JsonInterpreter {
 
               otherCases
                 .collectFirst({
-                  case (f2, f3) if f2(jvalue).value == input.value => f3(jvalue).addAnnotation(input.annotations: _*)
+                  case (f2, f3) if f2(jvalue).value == input.value =>
+                    f3(jvalue).addAnnotation(input.annotations: _*)
                 })
                 .getOrElse(
                   elseCase.fold[Result[JValue]](Result.empty)(_(jvalue))
@@ -296,15 +312,20 @@ object JsonInterpreter {
     }
 
     val maps: scala.List[(String, JValue => Result[JValue])] =
-      struct.fields.map(x => x.name -> compute(x.source).andThen(_.flatMap(Result.point))).toList
+      struct.fields
+        .map(x => x.name -> compute(x.source).andThen(_.flatMap(Result.point)))
+        .toList
 
     jobj =>
       {
-        val res: List[(String, Result[JValue])] = maps.map({ case (name, f) => (name, f(jobj).addScope(name)) })
+        val res: List[(String, Result[JValue])] = maps.map({
+          case (name, f) => (name, f(jobj).addScope(name))
+        })
 
         val allAnnotations: Seq[Annotation] = res.flatMap(_._2.annotations)
 
-        val values: List[(String, JValue)] = res.flatMap({ case (name, r) => r.value.map(name -> _) }).toList
+        val values: List[(String, JValue)] =
+          res.flatMap({ case (name, r) => r.value.map(name -> _) }).toList
 
         Result(Some(JObject(values)), allAnnotations)
 

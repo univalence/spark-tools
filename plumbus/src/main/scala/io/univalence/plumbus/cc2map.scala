@@ -44,10 +44,10 @@ object cc2map {
 
     def instance[T]: ToMap[T] = _instance.asInstanceOf[ToMap[T]]
 
-    implicit val str:     ToMap[String]  = instance
-    implicit val int:     ToMap[Int]     = instance
-    implicit val uuid:    ToMap[UUID]    = instance
-    implicit val long:    ToMap[Long]    = instance
+    implicit val str: ToMap[String]      = instance
+    implicit val int: ToMap[Int]         = instance
+    implicit val uuid: ToMap[UUID]       = instance
+    implicit val long: ToMap[Long]       = instance
     implicit val boolean: ToMap[Boolean] = instance
 
     implicit def opt[T](implicit T: ToMap[T]): ToMap[Option[T]] =
@@ -91,13 +91,14 @@ object cc2map {
     type Typeclass[T] = FromMap[T]
 
     def instance[T]: FromMap[T] = new FromMap[T] {
-      override def fromMap(map: Map[String, Any]): Try[T] = Try(map.head._2.asInstanceOf[T])
+      override def fromMap(map: Map[String, Any]): Try[T] =
+        Try(map.head._2.asInstanceOf[T])
     }
 
-    implicit val str:     FromMap[String]  = instance
-    implicit val int:     FromMap[Int]     = instance
-    implicit val uuid:    FromMap[UUID]    = instance
-    implicit val long:    FromMap[Long]    = instance
+    implicit val str: FromMap[String]      = instance
+    implicit val int: FromMap[Int]         = instance
+    implicit val uuid: FromMap[UUID]       = instance
+    implicit val long: FromMap[Long]       = instance
     implicit val boolean: FromMap[Boolean] = instance
 
     implicit def opt[T](implicit T: FromMap[T]): FromMap[Option[T]] =
@@ -112,14 +113,18 @@ object cc2map {
     def combine[T](ctx: CaseClass[Typeclass, T]): FromMap[T] =
       new FromMap[T] {
         override def fromMap(map: Map[String, Any]): Try[T] =
-          ctx.constructMonadic(param => { param.typeclass.fromMap(map.filterKeys(_ == param.label)) })
+          ctx.constructMonadic(param => {
+            param.typeclass.fromMap(map.filterKeys(_ == param.label))
+          })
       }
 
     implicit def gen[T]: FromMap[T] = macro Magnolia.gen[T]
   }
 
-  def toMap[CC: ToMap](cc: CC): Map[String, Any] = implicitly[ToMap[CC]].toMap(cc)
+  def toMap[CC: ToMap](cc: CC): Map[String, Any] =
+    implicitly[ToMap[CC]].toMap(cc)
 
-  def fromMap[CC: FromMap](map: Map[String, Any]): Try[CC] = implicitly[FromMap[CC]].fromMap(map)
+  def fromMap[CC: FromMap](map: Map[String, Any]): Try[CC] =
+    implicitly[FromMap[CC]].fromMap(map)
 
 }

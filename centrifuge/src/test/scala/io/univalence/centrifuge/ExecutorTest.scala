@@ -27,7 +27,7 @@ class ExecutorTest extends FunSuite {
 
   test("spark") {
     val totoes: Seq[Toto] = Seq(Toto("a", 1), Toto("b", 2))
-    val ds = ss.createDataset(totoes)
+    val ds                = ss.createDataset(totoes)
 
     assert(
       RetryDs

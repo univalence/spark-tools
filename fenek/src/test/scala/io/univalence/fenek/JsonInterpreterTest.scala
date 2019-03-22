@@ -16,7 +16,8 @@ class JsonInterpreterTest extends FunSuite {
 
   sealed trait StructChecker {
 
-    private def self: StructChecker.StructCheckerImpl = this.asInstanceOf[StructChecker.StructCheckerImpl]
+    private def self: StructChecker.StructCheckerImpl =
+      this.asInstanceOf[StructChecker.StructCheckerImpl]
 
     object setInput extends Dynamic {
       def applyDynamicNamed(method: String)(call: (String, Any)*): StructChecker =
@@ -37,16 +38,18 @@ class JsonInterpreterTest extends FunSuite {
 
       def anyToJValue(any: Any): JValue =
         any match {
-          case s:  String     => JString(s)
-          case a:  JValue     => a
-          case i:  Int        => JInt(i)
-          case b:  Boolean    => JBool(b)
-          case d:  Double     => JDouble(d)
+          case s: String      => JString(s)
+          case a: JValue      => a
+          case i: Int         => JInt(i)
+          case b: Boolean     => JBool(b)
+          case d: Double      => JDouble(d)
           case de: BigDecimal => JDecimal(de)
         }
 
       val ts = self.struct
-      val in = JObject(self.inputs.toList.map({ case (k, v) => (k, anyToJValue(v)) }))
+      val in = JObject(self.inputs.toList.map({
+        case (k, v) => (k, anyToJValue(v))
+      }))
 
       val res = ts.tx(in)
 
@@ -102,7 +105,8 @@ class JsonInterpreterTest extends FunSuite {
 
     }
 
-    def tx(jobj: JObject): JsonInterpreter.Result[JObject] = JsonInterpreter.tx(ts)(jobj)
+    def tx(jobj: JObject): JsonInterpreter.Result[JObject] =
+      JsonInterpreter.tx(ts)(jobj)
   }
 
   implicit def jsonConversionToStringInTheContextOfThisFile(str: String): JObject = {
@@ -127,7 +131,8 @@ class JsonInterpreterTest extends FunSuite {
       .caseWhen("KTREMB" -> daValidVente | "KTREGU" -> daValidVente) orElse
       expr2
 
-    val tx = struct(da_deb_periode = da_deb_periode, expr1 = expr1, expr2 = expr2)
+    val tx =
+      struct(da_deb_periode = da_deb_periode, expr1 = expr1, expr2 = expr2)
 
     tx.setInput(ktInvoicingType = "MONTHLY", gppTypeProduit = "TOTO")
       .setExpected(
@@ -159,10 +164,11 @@ class JsonInterpreterTest extends FunSuite {
 
   test("<*> & |> avec int operation not working") {
     val factIterationNumber: TypedExpr[Int] = 13
-    val data12:              TypedExpr[Int] = 12
+    val data12: TypedExpr[Int]              = 12
 
     val isTR: TypedExpr[Boolean] =
-      (lit(13) <*> lit(12) |> (_ % _) caseWhen (Else -> false | 1 -> true)).as[Boolean]
+      (lit(13) <*> lit(12) |> (_ % _) caseWhen (Else -> false | 1 -> true))
+        .as[Boolean]
 
     struct(expr = isTR).setExpected(expr = true).check()
 
@@ -180,8 +186,10 @@ class JsonInterpreterTest extends FunSuite {
 
   test("<*> & |> avec int operation not working 2") {
     val factIterationNumber: TypedExpr[Int] = >.iterationinvoicenumber.as[Int]
-    val data12:              TypedExpr[Int] = 12
-    val TR = (factIterationNumber <*> data12 |> (_ % _) caseWhen (Else -> false | 1 -> true)).as[Boolean]
+    val data12: TypedExpr[Int]              = 12
+    val TR =
+      (factIterationNumber <*> data12 |> (_ % _) caseWhen (Else -> false | 1 -> true))
+        .as[Boolean]
 
     val tx = struct(expr = TR)
     val s: StructChecker = tx
@@ -193,7 +201,9 @@ class JsonInterpreterTest extends FunSuite {
 
   test("""lit("1").as[Int] <*> lit("0").as[Int] |> ( _+_ )""") {
 
-    struct(a = lit("1").as[Int] <*> lit("2").as[Int] |> (_ + _)).setExpected(a = 3).check()
+    struct(a = lit("1").as[Int] <*> lit("2").as[Int] |> (_ + _))
+      .setExpected(a = 3)
+      .check()
 
   }
 
@@ -269,7 +279,10 @@ class JsonInterpreterTest extends FunSuite {
 
     val tx = struct(niveauPack = in.configuration #> {
       case JArray(arr) => {
-        arr.map(x => x \\ "niveauPack").collect({ case JString(s) => s }).mkString(", ")
+        arr
+          .map(x => x \\ "niveauPack")
+          .collect({ case JString(s) => s })
+          .mkString(", ")
       }
     })
 
@@ -300,9 +313,15 @@ class JsonInterpreterTest extends FunSuite {
 
   //TODO
   test("caseWhen") {
-    struct.create(c = in.a.caseWhen(true -> "ok" | false -> "no")).check("""{"a":true}""", """{"c":"ok"}""")
-    struct.create(c = in.a.caseWhen(true -> "ok" | false -> "no")).check("""{"a":false}""", """{"c":"no"}""")
-    struct.create(c = in.a.caseWhen(true -> "ok" | false -> "no")).check("""{"a":1}""", """{}""")
+    struct
+      .create(c = in.a.caseWhen(true -> "ok" | false -> "no"))
+      .check("""{"a":true}""", """{"c":"ok"}""")
+    struct
+      .create(c = in.a.caseWhen(true -> "ok" | false -> "no"))
+      .check("""{"a":false}""", """{"c":"no"}""")
+    struct
+      .create(c = in.a.caseWhen(true -> "ok" | false -> "no"))
+      .check("""{"a":1}""", """{}""")
   }
 
 }

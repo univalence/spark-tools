@@ -11,21 +11,21 @@ import scala.reflect.ClassTag
 
 case class DeltaPart[T: AdditiveMonoid](
   count: Long,
-  part:  T
+  part: T
 )
 
 case class DeltaCommon[T: AdditiveMonoid](
-  count:     Long,
+  count: Long,
   countZero: Long,
-  diff:      T,
-  error:     T,
-  left:      T,
-  right:     T
+  diff: T,
+  error: T,
+  left: T,
+  right: T
 )
 
 case class Delta[L: AdditiveMonoid, R: AdditiveMonoid, C: AdditiveMonoid](
-  left:   DeltaPart[L],
-  right:  DeltaPart[R],
+  left: DeltaPart[L],
+  right: DeltaPart[R],
   common: DeltaCommon[C]
 )
 
@@ -45,15 +45,15 @@ object KpiAlgebra {
   def monoid[LM: AdditiveMonoid, RM: AdditiveMonoid, LRC: AdditiveMonoid]: Monoid[Delta[LM, RM, LRC]] =
     Monoid.additive[Delta[LM, RM, LRC]]
 
-  def compare[K:   ClassTag,
-              L:   ClassTag,
-              R:   ClassTag,
-              LM:  AdditiveMonoid: ClassTag,
-              RM:  AdditiveMonoid: ClassTag,
+  def compare[K: ClassTag,
+              L: ClassTag,
+              R: ClassTag,
+              LM: AdditiveMonoid: ClassTag,
+              RM: AdditiveMonoid: ClassTag,
               LRC: AdditiveAbGroup: MultiplicativeSemigroup: ClassTag](
-    left:  RDD[(K, L)],
+    left: RDD[(K, L)],
     right: RDD[(K, R)]
-  )(flm:   L => LM, frm: R => RM, flc: L => LRC, frc: R => LRC): Delta[LM, RM, LRC] = {
+  )(flm: L => LM, frm: R => RM, flc: L => LRC, frc: R => LRC): Delta[LM, RM, LRC] = {
 
     val map: RDD[Delta[LM, RM, LRC]] = left
       .fullOuterJoin(right)

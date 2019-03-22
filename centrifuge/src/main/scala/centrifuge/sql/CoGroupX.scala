@@ -88,7 +88,7 @@ object CoGroupN {
    */
   def cogroupN[K, H <: HList, Res](h: H, part: Partitioner = new HashPartitioner(1024))(
     implicit
-    ctK:   ClassTag[K],
+    ctK: ClassTag[K],
     ctRes: ClassTag[Res],
     //ToTraversable.Aux[H,List,RDD[(K,_)]] don't work
     coGroupAble: CoGroupN.Aux[K, H, Res]

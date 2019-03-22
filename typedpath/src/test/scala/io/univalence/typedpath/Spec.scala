@@ -28,10 +28,10 @@ class PathSpec extends FunSuite {
 
     assert(y.name == "abc")
 
-    val abc:   Field = path"abc"
-    val ghi:   Field = path"$abc.ghi" // >.abc.>.ghi
-    val lol:   Field = path"lol" //
-    val comp:  Field = path"$abc/$lol"
+    val abc: Field   = path"abc"
+    val ghi: Field   = path"$abc.ghi" // >.abc.>.ghi
+    val lol: Field   = path"lol" //
+    val comp: Field  = path"$abc/$lol"
     val comp2: Array = path"$comp/"
     val comp3: Array = path"$comp2"
 

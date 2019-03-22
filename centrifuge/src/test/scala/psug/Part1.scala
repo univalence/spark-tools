@@ -29,7 +29,8 @@ trait ApplicativeAlternative[M[_]] {
 
   // def flatMap[A,B](m1:M[A])(f:A => M[B]):M[B]
   //derived
-  def ap[A, B](m1: M[A])(m2: M[A => B]): M[B] = map(zip(m1, m2))(t => t._2(t._1))
+  def ap[A, B](m1: M[A])(m2: M[A => B]): M[B] =
+    map(zip(m1, m2))(t => t._2(t._1))
 
   def apply2[A, B, C](m1: M[A], m2: M[B])(f: (A, B) => C): M[C] =
     map(zip(m1, m2))(f.tupled)
