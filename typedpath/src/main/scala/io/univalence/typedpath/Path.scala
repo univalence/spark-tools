@@ -3,7 +3,7 @@ package io.univalence.typedpath
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 import scala.util.matching.Regex
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 object PathMacro {
 
