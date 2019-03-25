@@ -2,7 +2,8 @@ package io.univalence.typedpath
 
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
-import scala.util.{ Failure, Success, Try }
+import scala.util.matching.Regex
+import scala.util.{Failure, Success, Try}
 
 object PathMacro {
 
@@ -19,6 +20,7 @@ object PathMacro {
 
   def pathMacro(c: whitebox.Context)(args: c.Expr[Path]*): c.Expr[NonEmptyPath] = {
     import c.universe._
+    import Path.Token
 
     def lit(s: String): c.Expr[String] = c.Expr[String](Literal(Constant(s)))
 
@@ -37,7 +39,7 @@ object PathMacro {
       if (string.isEmpty) base
       else {
 
-        val tokens: Seq[Path.Token] = Path.tokenize(string)
+        val tokens: Seq[Token] = Token.tokenize(string)
         if (tokens.exists(_.isInstanceOf[Path.ErrorToken])) {
 
           val error = Path.highlightErrors(tokens: _*)
@@ -113,48 +115,63 @@ object Path {
   case class NamePart(name: String) extends ValidToken // "[a-zA-Z0-9_]+"
   case class ErrorToken(part: String) extends Token
 
-  def tokenize(string: String): Seq[Token] = {
-    val validTokenRegExp = "\\.|/|[a-zA-Z0-9_]+".r
-
-    def go(string: String, acc: Seq[Token]): Seq[Token] =
-      if (string.isEmpty) acc
-      else {
-        validTokenRegExp.findFirstMatchIn(string) match {
-          case Some(matcher) =>
-            val (beginning, rest) = string.splitAt(matcher.end)
-            val (error_, matched) = beginning.splitAt(matcher.start)
-
-            val matchedToken: ValidToken = matched match {
-              case "."  => Dot
-              case "/"  => Slash
-              case name => NamePart(name)
-            }
-
-            if (error_.isEmpty) go(rest, acc :+ matchedToken)
-            else go(rest, acc :+ ErrorToken(error_) :+ matchedToken)
-
-          case None => acc :+ ErrorToken(string)
+  object Token {
+    object Pattern {
+      case class StartWithPattern(pattern: String) {
+        val regex: Regex = ("^(" + pattern + ")(.*?)$").r
+        def unapply(string: String): Option[(String, String)] = string match {
+          case regex(m, r) => Some((m, r))
+          case _           => None
         }
       }
-    go(string, Vector.empty)
-  }
+      case class StartWithChar(char: Char) {
+        def unapply(string: String): Option[String] =
+          if (string.nonEmpty && string.head == char) Some(string.tail) else None
+      }
 
-  def stringify(token: Token*): String =
-    token
-    //.view
-      .map({
-        case Dot           => "."
-        case Slash         => "/"
-        case ErrorToken(x) => x
-        case NamePart(x)   => x
-      })
-      .mkString
+      val Dot   = StartWithChar('.')
+      val Slash = StartWithChar('/')
+      val Name  = StartWithPattern("\\w+")
+      val Error = StartWithPattern("[^\\w/.]+")
+    }
+
+    val tokenOf: String => Option[(Token, String)] = {
+      case ""                         => None
+      case Pattern.Dot(rest)          => Some((Dot, rest))
+      case Pattern.Slash(rest)        => Some((Slash, rest))
+      case Pattern.Name(name, rest)   => Some((NamePart(name), rest))
+      case Pattern.Error(error, rest) => Some((ErrorToken(error), rest))
+      case error                      => Some((ErrorToken(error), ""))
+    }
+
+    //probablement dans catz ou scalas
+    def unfold[A, S](z: S)(f: S => Option[(A, S)]): Vector[A] = {
+      def go(z: S, acc: Vector[A]): Vector[A] =
+        f(z) match {
+          case None         => acc
+          case Some((a, s)) => go(s, acc :+ a)
+        }
+      go(z, Vector.empty)
+    }
+
+    val tokenize: String => Seq[Token] = unfold(_)(tokenOf)
+
+    val stringify: Token => String = {
+      case Dot               => "."
+      case Slash             => "/"
+      case NamePart(name)    => name
+      case ErrorToken(error) => error
+    }
+
+    def stringify(tokens: Token*): String =
+      tokens.map(stringify).mkString
+  }
 
   def highlightErrors(tokens: Token*): String =
     tokens
       .map({
         case ErrorToken(part) => s"[$part]"
-        case x                => stringify(x)
+        case x                => Token.stringify(x)
       })
       .mkString
 
@@ -177,7 +194,7 @@ object Path {
   }
 
   def create(string: String): Try[Path] = {
-    val tokens = tokenize(string)
+    val tokens = Token.tokenize(string)
     if (tokens.exists(_.isInstanceOf[ErrorToken])) {
 
       Failure(
