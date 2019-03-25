@@ -1,8 +1,7 @@
 import ScalaSettings._
 import Dependencies._
 
-name    := "spark-tools"
-version := "0.2-SNAPSHOT"
+name := "spark-tools"
 
 lazy val projectDescription =
   Def.settings(
@@ -53,6 +52,7 @@ lazy val projectDescription =
 
 lazy val defaultConfiguration =
   Def.settings(
+    version            := "0.2-SNAPSHOT",
     crossScalaVersions := List(libVersion.scala2_11, libVersion.scala2_12),
     //By default projects in spark-tool work with 2.11 and are ready for 2.12
     //Spark projects are locked in 2.11 at the moment
