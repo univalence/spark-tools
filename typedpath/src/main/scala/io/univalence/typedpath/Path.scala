@@ -59,7 +59,7 @@ object PathMacro {
               reify(Array(parent.splice.asInstanceOf[NonEmptyPath]))
 
             case (parent, Path.Slash) =>
-              c.abort(c.enclosingPosition, s"${parent.actualType} can't create array from root : $parent $string")
+              c.abort(c.enclosingPosition, s"${Option(parent.actualType).getOrElse("")} can't create array from root : ${parent.tree} $string")
 
           })
 

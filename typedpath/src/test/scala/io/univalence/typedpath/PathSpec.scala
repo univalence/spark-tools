@@ -40,6 +40,10 @@ class PathSpec extends FunSuite {
 
     //check IllTyped
     //val r1        = path"$r"
+    //check IllTyped
+    //val r0 = path"1abc"
+    //check Illtyped
+    //val r1 = path"$r/"
 
     val r2: Array = path"$r.def/"
 
