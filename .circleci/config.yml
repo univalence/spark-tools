@@ -35,9 +35,6 @@ commands:
         type: string
     steps:
       - run:
-          name: "Check code format"
-          command: cat /dev/null | sbt << parameters.project_name >>/check
-      - run:
           name: "Compile code and test code"
           command: cat /dev/null | sbt << parameters.project_name >>/compile << parameters.project_name >>/test:compile
       - run:
@@ -51,6 +48,9 @@ jobs:
     steps:
       - checkout
       - restore_cache: *restore_cache_dependencies
+      - run:
+          name: "Check code format"
+          command: cat /dev/null | sbt check
       - build_project:
           project_name: "centrifuge"
       - build_project:
