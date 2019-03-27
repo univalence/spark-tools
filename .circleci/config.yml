@@ -43,7 +43,7 @@ commands:
           command: cat /dev/null | sbt << parameters.project_name >>/compile << parameters.project_name >>/test:compile
       - run:
           name: "Test and compute code coverage"
-          command: cat /dev/null | sbt << parameters.project_name >>/coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
+          command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
 
 jobs:
   build:
