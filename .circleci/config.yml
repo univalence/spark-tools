@@ -23,6 +23,10 @@ aliases:
       - ~/.sbt
     key: sbt-dependencies-{{ checksum "build.sbt" }}
 
+  - &fmt_check
+    name: "Check code format"
+    command: cat /dev/null | sbt check
+
   - &export_coverage
     name: "Export code coverage report"
     command: bash <(curl -s https://codecov.io/bash)
@@ -48,9 +52,7 @@ jobs:
     steps:
       - checkout
       - restore_cache: *restore_cache_dependencies
-      - run:
-          name: "Check code format"
-          command: cat /dev/null | sbt check
+#      - run: *fmt_check
       - build_project:
           project_name: "centrifuge"
       - build_project:
