@@ -1,46 +1,63 @@
-# Scala CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/sample-config/ for more details
-#
-version: 2
-jobs:
-  build:
+version: 2.1
+
+aliases:
+  - &environment
     docker:
-      # specify the version you desire here
       - image: circleci/openjdk:8-jdk
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    working_directory: ~/repo
-
     environment:
-      # Customize the JVM maximum heap limit
       JVM_OPTS: -Xmx3200m
       TERM: dumb
 
+  - &restore_cache_dependencies
+    name: "Restore dependencies from the cache"
+    keys:
+      - sbt-dependencies-{{ checksum "build.sbt" }}
+      # fallback to using the latest cache if no exact match is found
+      - sbt-dependencies-
+
+  - &save_cache_dependencies
+    name: "Save dependencies in the cache"
+    paths:
+      - ~/.m2
+      - ~/.ivy2
+      - ~/.sbt
+    key: sbt-dependencies-{{ checksum "build.sbt" }}
+
+  - &export_coverage
+    name: "Export code coverage report"
+    command: bash <(curl -s https://codecov.io/bash)
+
+commands:
+  build_project:
+    description: "build a sub-project"
+    parameters:
+      project_name:
+        type: string
+    steps:
+      - run:
+          name: "Check code format"
+          command: cat /dev/null | sbt << parameters.project_name >>/check
+      - run:
+          name: "Compile code and test code"
+          command: cat /dev/null | sbt << parameters.project_name >>/compile << parameters.project_name >>/test:compile
+      - run:
+          name: "Test and compute code coverage"
+          command: cat /dev/null | sbt << parameters.project_name >>/coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
+
+jobs:
+  build:
+    <<: *environment
+    working_directory: ~/repo
     steps:
       - checkout
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "build.sbt" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
-
-      #- run: sbt check #bugs
-
-      - run: cat /dev/null | sbt test:compile
-
-      - save_cache:
-          paths:
-            - ~/.m2
-            - ~/.ivy2
-            - ~/.sbt
-          key: v1-dependencies--{{ checksum "build.sbt" }}
-
-      # run tests!
-      - run: cat /dev/null | sbt test:test
+      - restore_cache: *restore_cache_dependencies
+      - build_project:
+          project_name: "centrifuge"
+      - build_project:
+          project_name: "plumbus"
+      - build_project:
+          project_name: "typedpath"
+      - build_project:
+          project_name: "fenek"
+      - save_cache: *save_cache_dependencies
+      - run: *export_coverage
