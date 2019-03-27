@@ -103,7 +103,7 @@ object Fnk {
       def caseWhen(when: CaseWhenExpr): Expr = Ops.CaseWhen(expr, when)
 
       def caseWhen[X](when: CaseWhenExprTyped[X]): TypedExpr[X] =
-        TypedExpr.CaseWhen(expr, when)
+        TypedExpr.CaseWhenTyped(expr, when)
 
       def dateAdd(interval: TypedExpr[String], n: TypedExpr[Int]): Expr =
         Ops.DateAdd(interval, n, expr)
@@ -258,7 +258,7 @@ object Fnk {
 
   object TypedExpr {
 
-    case class CaseWhen[B](source: Expr, cases: CaseWhenExprTyped[B]) extends TypedExpr[B] {
+    case class CaseWhenTyped[B](source: Expr, cases: CaseWhenExprTyped[B]) extends TypedExpr[B] {
       override def enc: Encoder[B] = cases.enc
     }
 

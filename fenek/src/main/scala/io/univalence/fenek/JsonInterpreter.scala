@@ -95,7 +95,7 @@ object JsonInterpreter {
     def rewrite(expr: Expr): Expr =
       expr match {
 
-        case TypedExpr.CaseWhen(source, cases) =>
+        case TypedExpr.CaseWhenTyped(source, cases) =>
           Fnk.Expr.Ops.CaseWhen(source, cases)
 
         case Left(source, n) => source.as[String] <*> n |> (_ take _)
