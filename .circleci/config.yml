@@ -38,7 +38,7 @@ aliases:
 
 commands:
   build_project:
-    description: build a sub-project << parameters.project_name >>
+    description: build a sub-project #<< parameters.project_name >>
     parameters:
       project_name:
         type: string
