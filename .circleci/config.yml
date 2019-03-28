@@ -95,21 +95,21 @@ jobs:
       - run: *export_coverage
 
 
-  workflows:
-    version: 2
-    master:
-      jobs:
-        - prepare_deps
-        - centrifuge:
-            requires: *prep
-        - typedpath:
-            requires: *prep
-        - fenek:
-            requires:
-              - *prep
-              - typedpath
-        - plumbus:
-            requires:
-              - *prep
-        - coverage:
-            require: *all_projects
+workflows:
+  version: 2
+  master:
+    jobs:
+      - prepare_deps
+      - centrifuge:
+          requires: *prep
+      - typedpath:
+          requires: *prep
+      - fenek:
+          requires:
+            - *prep
+            - typedpath
+      - plumbus:
+          requires:
+            - *prep
+      - coverage:
+          require: *all_projects
