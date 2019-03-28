@@ -71,26 +71,36 @@ jobs:
       - save_cache: *save_cache_dependencies
 
   centrifuge:
+    <<: *environment
+    working_directory: ~/repo
     steps:
       - build_project:
           project_name: centrifuge
 
   plumbus:
+    <<: *environment
+    working_directory: ~/repo
     steps:
       - build_project:
           project_name: plumbus
 
   typedpath:
+    <<: *environment
+    working_directory: ~/repo
     steps:
       - build_project:
           project_name: typedpath
 
   fenek:
+    <<: *environment
+    working_directory: ~/repo
     steps:
       - build_project:
           project_name: fenek
 
   coverage:
+    <<: *environment
+    working_directory: ~/repo
     steps:
       - run: *export_coverage
 
