@@ -60,7 +60,6 @@ lazy val defaultConfiguration =
     publishTo          := sonatypePublishTo.value,
     parallelExecution  := true,
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oNCXELOPQRMD")
-
   )
 
 // ====
