@@ -112,10 +112,13 @@ jobs:
 workflows:
   master:
     jobs:
-      - update_deps_in_cache
       - centrifuge
       - typedpath
       - fenek
       - plumbus
       - coverage:
           requires: *all_projects
+  update-caches:
+    jobs:
+      - update_deps_in_cache:
+          - master
