@@ -1,7 +1,6 @@
 import Dependencies._
 import ScalaSettings._
 
-
 lazy val projectDescription =
   Def.settings(
     organization         := "io.univalence",
@@ -63,11 +62,11 @@ lazy val defaultConfiguration =
 
 // ====
 
-
-lazy val sparkTools = (project in file(".")).aggregate(centrifuge, fenek, typedpath, plumbus).settings(
-  name := "spark-tools"
-
-)
+lazy val sparkTools = (project in file("."))
+  .aggregate(centrifuge, fenek, typedpath, plumbus)
+  .settings(
+    name := "spark-tools"
+  )
 
 lazy val centrifuge = project
   .settings(projectDescription, defaultConfiguration)
