@@ -97,18 +97,19 @@ jobs:
 
   workflows:
     version: 2
-    jobs:
-      - prepare_deps
-      - centrifuge:
-          requires: *prep
-      - typedpath:
-          requires: *prep
-      - fenek:
-          requires:
-            - *prep
-            - typedpath
-      - plumbus:
-          requires:
-            - *prep
-      - coverage:
-          require: *all_projects
+    master:
+      jobs:
+        - prepare_deps
+        - centrifuge:
+            requires: *prep
+        - typedpath:
+            requires: *prep
+        - fenek:
+            requires:
+              - *prep
+              - typedpath
+        - plumbus:
+            requires:
+              - *prep
+        - coverage:
+            require: *all_projects
