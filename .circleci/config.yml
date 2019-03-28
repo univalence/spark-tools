@@ -40,11 +40,16 @@ aliases:
   - &prep
     - prepare_deps
 
+  - &prep_and_typedpath
+    - prepare_deps
+    - typedpath
+
   - &all_projects
     - centrifuge
     - fenek
     - typedpath
     - plumbus
+
 
 commands:
   build_project:
@@ -115,9 +120,7 @@ workflows:
       - typedpath:
           requires: *prep
       - fenek:
-          requires:
-            - *prep
-            - typedpath
+          requires: *prep_and_typedpath
       - plumbus:
           requires:
             - *prep
