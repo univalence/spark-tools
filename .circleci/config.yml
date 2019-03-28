@@ -15,6 +15,10 @@ aliases:
       # fallback to using the latest cache if no exact match is found
       - sbt-dependencies-
 
+  - &update_dependencies
+    name: "Update all the dependencies"
+    command: cat /dev/null | sbt +update
+
   - &save_cache_dependencies
     name: "Save dependencies in the cache"
     paths:
@@ -53,7 +57,9 @@ jobs:
     steps:
       - checkout
       - restore_cache: *restore_cache_dependencies
-#      - run: *fmt_check
+      - update_deps: *update_dependencies
+      - save_cache: *save_cache_dependencies
+      #      - run: *fmt_check
       - build_project:
           project_name: "centrifuge"
       - build_project:
@@ -62,5 +68,4 @@ jobs:
           project_name: "typedpath"
       - build_project:
           project_name: "fenek"
-      - save_cache: *save_cache_dependencies
       - run: *export_coverage
