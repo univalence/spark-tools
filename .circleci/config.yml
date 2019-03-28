@@ -48,8 +48,6 @@ aliases:
 
 commands:
   build_project:
-    <<: *environment
-    working_directory: ~/repo
     description: build a sub-project #<< parameters.project_name >>
     parameters:
       project_name:
