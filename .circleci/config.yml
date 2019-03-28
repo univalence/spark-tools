@@ -57,7 +57,7 @@ jobs:
     steps:
       - checkout
       - restore_cache: *restore_cache_dependencies
-      - update_deps: *update_dependencies
+      - run: *update_dependencies
       - save_cache: *save_cache_dependencies
       #      - run: *fmt_check
       - build_project:
