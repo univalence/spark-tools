@@ -94,7 +94,7 @@ lazy val centrifuge = project
 lazy val fenek = project
   .settings(projectDescription, defaultConfiguration)
   .settings(
-    description := "Fenek",
+    description := "Fenek is for better mapping",
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/fenek")),
     startYear   := Some(2018),
     libraryDependencies ++= Seq("joda-time"  % "joda-time"      % libVersion.jodaTime,
