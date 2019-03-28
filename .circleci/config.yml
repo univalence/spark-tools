@@ -121,4 +121,5 @@ workflows:
   update-caches:
     jobs:
       - update_deps_in_cache:
-          - master
+          - requires:
+            - master
