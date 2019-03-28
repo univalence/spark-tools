@@ -122,7 +122,6 @@ workflows:
       - fenek:
           requires: *prep_and_typedpath
       - plumbus:
-          requires:
-            - *prep
+          requires: *prep
       - coverage:
           require: *all_projects
