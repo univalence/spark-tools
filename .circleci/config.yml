@@ -21,6 +21,7 @@ aliases:
       - ~/.m2
       - ~/.ivy2
       - ~/.sbt
+      - ~/.cache
     key: sbt-dependencies-{{ checksum "build.sbt" }}
 
   - &fmt_check
@@ -33,16 +34,16 @@ aliases:
 
 commands:
   build_project:
-    description: "build a sub-project"
+    description: "build a sub-project " << parameters.project_name >>
     parameters:
       project_name:
         type: string
     steps:
       - run:
-          name: "Compile code and test code"
+          name: "Compile code and test code " << parameters.project_name >>
           command: cat /dev/null | sbt << parameters.project_name >>/compile << parameters.project_name >>/test:compile
       - run:
-          name: "Test and compute code coverage"
+          name: "Test and compute code coverage " << parameters.project_name >>
           command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
 
 jobs:
