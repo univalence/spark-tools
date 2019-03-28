@@ -58,9 +58,11 @@ commands:
       project_name:
         type: string
     steps:
+      - checkout
+      - restore_cache: *restore_cache_dependencies
       - run:
           name: check
-          command: pwd
+          command: ls -R
       - run:
           name: Compile code and test code << parameters.project_name >>
           command: cat /dev/null | sbt << parameters.project_name >>/compile << parameters.project_name >>/test:compile
