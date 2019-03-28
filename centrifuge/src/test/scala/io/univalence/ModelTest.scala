@@ -35,7 +35,9 @@ class ModelTest extends FunSuite {
   ): Arbitrary[Result[T]] =
     Arbitrary(Gen.resultOf[Option[T], Vector[Annotation], Result[T]](Result.apply))
 
-  test("Monad laws") {
+
+  //TODO mettre ça dans les slow tests
+  ignore("Monad laws") {
     MonadTests[Result].stackUnsafeMonad[Int, Int, Int].all.check()
   }
 

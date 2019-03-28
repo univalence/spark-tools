@@ -1,16 +1,14 @@
 package io.univalence.fenek
 
-
-import io.univalence.fenek._
-import Fnk._
-import Expr._
-import TypedExpr._
-import Expr.Ops._
-import org.joda.time.{Days, Months}
+import io.univalence.fenek.Fnk.Expr.Ops._
+import io.univalence.fenek.Fnk.Expr._
+import io.univalence.fenek.Fnk.TypedExpr._
+import io.univalence.fenek.Fnk._
+import org.joda.time.{ Days, Months }
 import org.json4s.JsonAST._
 
 import scala.collection.BitSet
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 object DebugInterpreter {
 
@@ -48,7 +46,7 @@ object DebugInterpreter {
   }
 
   object Tools {
-    def anyToJValue(any: Any): Try[JValue] = {
+    def anyToJValue(any: Any): Try[JValue] =
       Try {
         any match {
           case s: String  => JString(s)
@@ -58,16 +56,13 @@ object DebugInterpreter {
         }
       }
 
-    }
-
-    def jValueToAny(jvalue: JValue): Try[Any] = {
+    def jValueToAny(jvalue: JValue): Try[Any] =
       jvalue match {
         case JString(s) => Try(s)
         case JInt(s)    => Try(s.toInt)
         case JBool(s)   => Try(s)
         case _          => Failure(new Exception("[" + jvalue + "] can't be converted to Scala values"))
       }
-    }
 
   }
   case class TxRes[T <: JValue](result: Try[T], usedExpr: BitSet)
@@ -137,7 +132,7 @@ object DebugInterpreter {
                 val computeLhs = compute(lhs, idx)
                 val computeRhs = compute(rhs, idx + computeLhs.nbExpr)
 
-                (idx + computeLhs.nbExpr + computeRhs.nbExpr, xs :+ (computeLhs, computeRhs))
+                (idx + computeLhs.nbExpr + computeRhs.nbExpr, xs :+ (computeLhs -> computeRhs))
               }
             })
             ._2
@@ -173,7 +168,7 @@ object DebugInterpreter {
               val res: Option[TxRes[JValue]] = finalState.selected.orElse(orElse).map(compute => compute.tx(jobj))
 
               TxRes(res.map(_.result).getOrElse(Try(JNothing)),
-                usedExpr = source.usedExpr ++ finalState.set ++ res.map(_.usedExpr).getOrElse(BitSet()))
+                    usedExpr = source.usedExpr ++ finalState.set ++ res.map(_.usedExpr).getOrElse(BitSet()))
             }
           )
 
@@ -190,18 +185,18 @@ object DebugInterpreter {
     def combineOut(x: Out, name: String, y: Compute): Out = x :+ (name -> y)
 
     def finalize(out: Out): JObject => TxRes[JObject] = { jobj =>
-    {
+      {
 
-      val res:  Seq[(String, TxRes[JValue])] = out.map({ case (name, compute: Compute) => (name, compute.tx(jobj)) })
-      val sets: BitSet                       = res.map(_._2.usedExpr).reduce(_ ++ _)
+        val res: Seq[(String, TxRes[JValue])] = out.map({ case (name, compute: Compute) => (name, compute.tx(jobj)) })
+        val sets: BitSet                      = res.map(_._2.usedExpr).reduce(_ ++ _)
 
-      val nJobj = JObject((for {
-        (name, tx) <- res
-        r          <- tx.result.toOption
-        r          <- r.toSome
-      } yield (name, r)).toList)
-      TxRes(Try(nJobj), sets)
-    }
+        val nJobj = JObject((for {
+          (name, tx) <- res
+          r          <- tx.result.toOption
+          r          <- r.toSome
+        } yield (name, r)).toList)
+        TxRes(Try(nJobj), sets)
+      }
     }
 
     val res = expr.fields.foldLeft[(Int, Out)]((index + 1, zeroOut))({
@@ -221,14 +216,12 @@ object DebugInterpreter {
 
     val x = >.a caseWhen (1 -> (ab |> (_ + _)) | 2 -> (ab |> ((a, b) => { println("toto"); a - b })) | Else -> 3)
 
-
     val function = tx(struct(x = x, y = x.as[Int]))
-
 
     import org.json4s._
     import org.json4s.native.JsonMethods._
 
-    implicit def jobject(str:String):JObject = parse(str).asInstanceOf[JObject]
+    implicit def jobject(str: String): JObject = parse(str, useBigDecimalForDouble = false).asInstanceOf[JObject]
 
     println(function("""{"a":1,"b":0}"""))
 

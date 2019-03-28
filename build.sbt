@@ -1,5 +1,5 @@
-import ScalaSettings._
 import Dependencies._
+import ScalaSettings._
 
 name := "spark-tools"
 
@@ -64,6 +64,9 @@ lazy val defaultConfiguration =
 
 // ====
 
+
+lazy val sparkTools = (project in file(".")).aggregate(centrifuge, fenek, typedpath, plumbus)
+
 lazy val centrifuge = project
   .settings(projectDescription, defaultConfiguration)
   .settings(
@@ -95,8 +98,6 @@ lazy val fenek = project
     description := "Fenek",
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/fenek")),
     startYear   := Some(2018),
-  )
-  .settings(
     libraryDependencies ++= Seq("joda-time"  % "joda-time"      % libVersion.jodaTime,
                                 "org.json4s" %% "json4s-native" % libVersion.json4s),
     useSpark(libVersion.sparkScala211)("sql"),
