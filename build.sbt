@@ -59,7 +59,7 @@ lazy val defaultConfiguration =
     scalafmtOnCompile  := false,
     publishTo          := sonatypePublishTo.value,
     parallelExecution  := true,
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oNCXELOPQRMD")
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD")
   )
 
 // ====

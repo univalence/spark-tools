@@ -67,7 +67,7 @@ commands:
           command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
 
 jobs:
-  prepare_deps:
+  update_deps_in_cache:
     <<: *environment
     working_directory: ~/repo
     steps:
@@ -114,14 +114,10 @@ jobs:
 workflows:
   master:
     jobs:
-      - prepare_deps
-      - centrifuge:
-          requires: *prep
-      - typedpath:
-          requires: *prep
-      - fenek:
-          requires: *prep
-      - plumbus:
-          requires: *prep
-      - coverage:
+      - update_deps_in_cache
+      - centrifuge
+      - typedpath
+      - fenek
+      - plumbus
+      - coverage
           requires: *all_projects
