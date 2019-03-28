@@ -111,7 +111,7 @@ jobs:
 
 
 workflows:
-  version: 2
+  version: 2.1
   master:
     jobs:
       - prepare_deps
