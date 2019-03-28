@@ -116,10 +116,6 @@ workflows:
       - typedpath
       - fenek
       - plumbus
+      - update_deps_in_cache
       - coverage:
           requires: *all_projects
-  update-caches:
-    jobs:
-      - update_deps_in_cache:
-          - requires:
-            - master
