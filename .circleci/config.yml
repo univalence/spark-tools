@@ -60,7 +60,7 @@ commands:
     steps:
       - run:
           name: check
-          command: ls -R
+          command: pwd
       - run:
           name: Compile code and test code << parameters.project_name >>
           command: cat /dev/null | sbt << parameters.project_name >>/compile << parameters.project_name >>/test:compile
