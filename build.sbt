@@ -1,7 +1,6 @@
 import Dependencies._
 import ScalaSettings._
 
-name := "spark-tools"
 
 lazy val projectDescription =
   Def.settings(
@@ -65,12 +64,14 @@ lazy val defaultConfiguration =
 // ====
 
 
-lazy val sparkTools = (project in file(".")).aggregate(centrifuge, fenek, typedpath, plumbus)
+lazy val sparkTools = (project in file(".")).aggregate(centrifuge, fenek, typedpath, plumbus).settings(
+  name := "spark-tools"
+
+)
 
 lazy val centrifuge = project
   .settings(projectDescription, defaultConfiguration)
   .settings(
-    name        := "Centrifuge",
     description := "Centrifuge is for data quality",
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/centrifuge")),
     startYear   := Some(2017)
@@ -94,7 +95,6 @@ lazy val centrifuge = project
 lazy val fenek = project
   .settings(projectDescription, defaultConfiguration)
   .settings(
-    name        := "Fenek",
     description := "Fenek",
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/fenek")),
     startYear   := Some(2018),
@@ -108,7 +108,6 @@ lazy val plumbus =
   project
     .settings(projectDescription, defaultConfiguration)
     .settings(
-      name        := "Plumbus",
       description := "Collection of tools for Scala Spark",
       homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/plumbus")),
       startYear   := Some(2019)
@@ -122,7 +121,6 @@ lazy val plumbus =
 lazy val typedpath = project
   .settings(projectDescription, defaultConfiguration)
   .settings(
-    name        := "Typedpath",
     description := "Typedpath",
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/typedpath")),
     startYear   := Some(2019)
