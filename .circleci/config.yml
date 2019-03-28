@@ -17,7 +17,7 @@ aliases:
 
   - &update_dependencies
     name: "Update all the dependencies"
-    command: cat /dev/null | sbt +update
+    command: cat /dev/null | sbt coverage +update
 
   - &save_cache_dependencies
     name: "Save dependencies in the cache"
@@ -59,9 +59,9 @@ commands:
       - run:
           name: check
           command: ls -R
-      - run:
-          name: Compile code and test code << parameters.project_name >>
-          command: cat /dev/null | sbt << parameters.project_name >>/compile << parameters.project_name >>/test:compile
+      #- run:
+      #    name: Compile code and test code << parameters.project_name >>
+      #    command: cat /dev/null | sbt << parameters.project_name >>/compile << parameters.project_name >>/test:compile
       - run:
           name: Test and compute code coverage << parameters.project_name >>
           command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport

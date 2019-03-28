@@ -120,7 +120,7 @@ lazy val plumbus =
 lazy val typedpath = project
   .settings(projectDescription, defaultConfiguration)
   .settings(
-    description := "Typedpath",
+    description := "Typedpath are for refined path",
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/typedpath")),
     startYear   := Some(2019)
   )
