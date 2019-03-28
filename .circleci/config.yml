@@ -37,8 +37,6 @@ aliases:
     name: "Export code coverage report"
     command: bash <(curl -s https://codecov.io/bash)
 
-  - &prep
-    - prepare_deps
 
   - &all_projects
     - centrifuge
@@ -119,5 +117,5 @@ workflows:
       - typedpath
       - fenek
       - plumbus
-      - coverage
+      - coverage:
           requires: *all_projects
