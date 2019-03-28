@@ -50,14 +50,17 @@ lazy val projectDescription =
 
 lazy val defaultConfiguration =
   Def.settings(
-    crossScalaVersions := List(libVersion.scala2_11, libVersion.scala2_12),
     //By default projects in spark-tool work with 2.11 and are ready for 2.12
     //Spark projects are locked in 2.11 at the moment
-    scalaVersion      := crossScalaVersions.value.head,
-    scalacOptions     := stdOptions ++ extraOptions(scalaVersion.value),
-    useGpg            := true,
-    scalafmtOnCompile := false,
-    publishTo         := sonatypePublishTo.value
+    crossScalaVersions := List(libVersion.scala2_11, libVersion.scala2_12),
+    scalaVersion       := crossScalaVersions.value.head,
+    scalacOptions      := stdOptions ++ extraOptions(scalaVersion.value),
+    useGpg             := true,
+    scalafmtOnCompile  := false,
+    publishTo          := sonatypePublishTo.value,
+    parallelExecution  := true,
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oNCXELOPQRMD")
+
   )
 
 // ====
@@ -77,14 +80,13 @@ lazy val centrifuge = project
   )
   .settings(
     libraryDependencies ++= Seq(
-      "com.chuusai"   %% "shapeless"       % libVersion.shapeless,
-      "org.scalaz"    %% "scalaz-core"     % libVersion.scalaz,
-      "org.typelevel" %% "shapeless-spire" % "0.6.1",
-      //"org.typelevel" %% "shapeless-scalaz" % "0.6.1",
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      "io.monix"       %% "monix"        % libVersion.monix,
-      "org.typelevel"  %% "cats-core"    % libVersion.cats,
-      "org.typelevel"  %% "cats-laws"    % libVersion.cats
+      "com.chuusai"    %% "shapeless"       % libVersion.shapeless,
+      "org.scalaz"     %% "scalaz-core"     % libVersion.scalaz,
+      "org.typelevel"  %% "shapeless-spire" % "0.6.1",
+      "org.scala-lang" % "scala-reflect"    % scalaVersion.value,
+      "io.monix"       %% "monix"           % libVersion.monix,
+      "org.typelevel"  %% "cats-core"       % libVersion.cats,
+      "org.typelevel"  %% "cats-laws"       % libVersion.cats
     ),
     useSpark(sparkVersion = "2.1.1")(modules = "core", "sql", "mllib"),
     addTestLibs,
