@@ -257,7 +257,7 @@ object JsonInterpreter {
               case _ => res
             }
 
-        case Field(name) =>
+        case RootField(name) =>
           jobj =>
             jobj \\ name match {
               case JObject(Nil) => Result(None, MissingField(name) :: Nil)

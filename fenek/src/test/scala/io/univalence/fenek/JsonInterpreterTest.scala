@@ -1,10 +1,10 @@
 package io.univalence.fenek
 
 import io.univalence.fenek.Fnk.Expr.Ops.CaseWhen
+import io.univalence.fenek.Fnk.Expr.StructField
 import org.json4s.JsonAST._
 import org.scalatest.FunSuite
 
-import scala.language.dynamics
 import scala.language.implicitConversions
 
 class JsonInterpreterTest extends FunSuite {
@@ -19,13 +19,13 @@ class JsonInterpreterTest extends FunSuite {
     private def self: StructChecker.StructCheckerImpl =
       this.asInstanceOf[StructChecker.StructCheckerImpl]
 
-    object setInput extends Dynamic {
-      def applyDynamicNamed(method: String)(call: (String, Any)*): StructChecker =
+    object setInput {
+      def apply(call: (String, Any)*): StructChecker =
         self.copy(inputs = call.foldLeft(self.inputs)(_ + _))
     }
 
-    object setExpected extends Dynamic {
-      def applyDynamicNamed(method: String)(calls: (String, Any)*): StructChecker = {
+    object setExpected {
+      def apply(calls: (String, Any)*): StructChecker = {
 
         val keys = calls.map(_._1).toSet
 
@@ -77,15 +77,14 @@ class JsonInterpreterTest extends FunSuite {
 
   implicit class StructOps(ts: Struct) {
 
-    object setInput extends Dynamic {
-
-      def applyDynamicNamed(method: String)(call: (String, Any)*): StructChecker =
-        StructChecker.StructCheckerImpl(ts, call.foldLeft(Map.empty[String, Any])((m, kv) => m + kv), Seq.empty)
+    object setInput {
+      def apply(calls: (String, Any)*): StructChecker =
+        StructChecker.StructCheckerImpl(ts, calls.foldLeft(Map.empty[String, Any])((m, kv) => m + kv), Seq.empty)
     }
 
-    object setExpected extends Dynamic {
-      def applyDynamicNamed(method: String)(call: (String, Any)*): StructChecker =
-        StructChecker.StructCheckerImpl(ts, Map.empty, call)
+    object setExpected {
+      def apply(calls: (String, Any)*): StructChecker =
+        StructChecker.StructCheckerImpl(ts, Map.empty, calls)
     }
 
     def check(in: JObject, out: JObject): Unit = {
@@ -131,14 +130,13 @@ class JsonInterpreterTest extends FunSuite {
       .caseWhen("KTREMB" -> daValidVente | "KTREGU" -> daValidVente) orElse
       expr2
 
-    val tx =
-      struct(da_deb_periode = da_deb_periode, expr1 = expr1, expr2 = expr2)
+    val tx = struct("da_deb_periode" <<- da_deb_periode, "expr1" <<- expr1, "expr2" <<- expr2)
 
-    tx.setInput(ktInvoicingType = "MONTHLY", gppTypeProduit = "TOTO")
+    tx.setInput("ktInvoicingType" -> "MONTHLY", "gppTypeProduit" -> "TOTO")
       .setExpected(
-        expr1          = dateparution,
-        expr2          = dateparution,
-        da_deb_periode = dateparution
+        "expr1"          -> dateparution,
+        "expr2"          -> dateparution,
+        "da_deb_periode" -> dateparution
       )
       .check()
 
@@ -149,16 +147,16 @@ class JsonInterpreterTest extends FunSuite {
 
     assert(expr.asInstanceOf[CaseWhen].ifes.orElse.nonEmpty)
 
-    val tx = struct(expr = expr)
+    val tx = struct("expr" <<- expr)
 
-    tx.setInput.check(expr = 1)
+    tx.setInput().setExpected("expr" -> 1)
 
     //Test DSL
 
-    val s: StructChecker = tx.setInput(a = 2, b = 1)
+    val s: StructChecker = tx.setInput("a" -> 2, "b" -> 1)
 
-    s.setExpected(expr = 1).check()
-    s.setExpected(expr = 0).setExpected(expr = 1).check()
+    s.setExpected("expr" -> 1).check()
+    s.setExpected("expr" -> 0).setExpected("expr" -> 1).check()
 
   }
 
@@ -170,18 +168,18 @@ class JsonInterpreterTest extends FunSuite {
       (lit(13) <*> lit(12) |> (_ % _) caseWhen (Else -> false | 1 -> true))
         .as[Boolean]
 
-    struct(expr = isTR).setExpected(expr = true).check()
+    struct("expr" <<- isTR).setExpected("expr" -> true).check()
 
   }
 
   test("lit(true).as[Boolean]") {
 
-    struct(a = lit(true).as[Boolean]).setExpected(a = true).check()
+    struct.create(a = lit(true).as[Boolean]).setExpected("a" -> true).check()
 
   }
 
   test("cast str to in") {
-    struct(a = lit("1").as[Int]).setExpected(a = 1).check()
+    struct.create(a = lit("1").as[Int]).setExpected("a" -> 1).check()
   }
 
   test("<*> & |> avec int operation not working 2") {
@@ -191,18 +189,19 @@ class JsonInterpreterTest extends FunSuite {
       (factIterationNumber <*> data12 |> (_ % _) caseWhen (Else -> false | 1 -> true))
         .as[Boolean]
 
-    val tx = struct(expr = TR)
+    val tx = struct.create(expr = TR)
     val s: StructChecker = tx
-      .setInput(iterationinvoicenumber = 13)
-      .setExpected(expr = true)
+      .setInput("iterationinvoicenumber" -> 13)
+      .setExpected("expr" -> true)
 
     s.check()
   }
 
   test("""lit("1").as[Int] <*> lit("0").as[Int] |> ( _+_ )""") {
 
-    struct(a = lit("1").as[Int] <*> lit("2").as[Int] |> (_ + _))
-      .setExpected(a = 3)
+    struct
+      .create(a = lit("1").as[Int] <*> lit("2").as[Int] |> (_ + _))
+      .setExpected("a" -> 3)
       .check()
 
   }
@@ -252,7 +251,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("datediff") {
 
-    val tx = struct(interval = in.start.datediff("month", in.end))
+    val tx = struct.create(interval = in.start.datediff("month", in.end))
 
     tx.check(
       """
@@ -277,7 +276,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("niveauPack") {
 
-    val tx = struct(niveauPack = in.configuration #> {
+    val tx = struct.create(niveauPack = in.configuration #> {
       case JArray(arr) => {
         arr
           .map(x => x \\ "niveauPack")
@@ -302,7 +301,9 @@ class JsonInterpreterTest extends FunSuite {
   }
 
   test("nested") {
-    struct.create(c = in.a.>.b).check("{\"a\":{\"b\":1}}", "{\"c\":1}")
+    import io.univalence.typedpath.Path._
+
+    struct("c" <<- path"a.b").check("{\"a\":{\"b\":1}}", "{\"c\":1}")
   }
 
   test("isEmpty") {
@@ -316,6 +317,7 @@ class JsonInterpreterTest extends FunSuite {
     struct
       .create(c = in.a.caseWhen(true -> "ok" | false -> "no"))
       .check("""{"a":true}""", """{"c":"ok"}""")
+
     struct
       .create(c = in.a.caseWhen(true -> "ok" | false -> "no"))
       .check("""{"a":false}""", """{"c":"no"}""")

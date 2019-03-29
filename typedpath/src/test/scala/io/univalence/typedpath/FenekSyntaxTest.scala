@@ -23,10 +23,7 @@ object FenekSyntaxTest {
     path"source.source.source.source" as "target1",
     "target0"  <<- path"source.source.source.source",
     "target42" <<- path"source.source.source.source"
-  ) |+
-    "target2"  <<- path"source" |+
-    "target43" <<- path"source" |+
-    (path"sourceX" as "target3")
+  )
 
   val y: struct = x addField (
     "target2"  <<- path"source",

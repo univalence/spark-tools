@@ -80,7 +80,7 @@ object DebugInterpreter {
       rewrite(expr) match {
         case Lit(a, _) => Compute(1, _ => TxRes(Tools.anyToJValue(a), BitSet(index)))
 
-        case Field(name) =>
+        case RootField(name) =>
           Compute(1, jobj => {
             TxRes(jobj \\ name match {
               case JObject(Nil) => Failure(new Exception(s"missing field $name"))
@@ -211,12 +211,16 @@ object DebugInterpreter {
   def main(args: Array[String]): Unit = {
 
     import Fnk._
+    import io.univalence.typedpath.Path._
 
-    val ab: TypedExpr[Int]#Map2Builder[Int] = >.a.as[Int] <*> >.b.as[Int]
+    val a: Expr = path"a"
+    val b: Expr = path"b"
+
+    val ab: TypedExpr[Int]#Map2Builder[Int] = a.as[Int] <*> b.as[Int]
 
     val x = >.a caseWhen (1 -> (ab |> (_ + _)) | 2 -> (ab |> ((a, b) => { println("toto"); a - b })) | Else -> 3)
 
-    val function = tx(struct(x = x, y = x.as[Int]))
+    val function = tx(struct("x" <<- x, "y" <<- x.as[Int]))
 
     import org.json4s._
     import org.json4s.native.JsonMethods._

@@ -3,7 +3,7 @@ package io.univalence.fenek.beta
 import io.univalence.fenek.Fnk
 import io.univalence.fenek.Fnk.Expr
 import io.univalence.fenek.Fnk.Expr.Ops
-import io.univalence.fenek.Fnk.Expr.Ops.Field
+import io.univalence.fenek.Fnk.Expr.Ops.RootField
 import io.univalence.fenek.Fnk.TypedExpr.Lit
 import io.univalence.fenek.Fnk.TypedExpr.Map2
 import io.univalence.fenek.Fnk.TypedExpr.TypeCasted
@@ -64,8 +64,8 @@ object StaticAnalysis {
         case cw: Ops.CaseWhen =>
           Seq(Seq(cw.source), cw.ifes.pairs.flatMap(t => Seq(t._1, t._2)), cw.ifes.orElse.toList).flatten
 
-        case x: Field  => Nil
-        case l: Lit[_] => Nil
+        case x: RootField => Nil
+        case l: Lit[_]    => Nil
 
         case Map2(a, b, _, _) => Seq(a, b)
 

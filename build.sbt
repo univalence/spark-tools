@@ -58,7 +58,7 @@ lazy val defaultConfiguration =
     useGpg             := true,
     scalafmtOnCompile  := false,
     publishTo          := sonatypePublishTo.value,
-    parallelExecution  := true,
+    parallelExecution  := false,
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD")
   )
 
@@ -93,6 +93,7 @@ lazy val centrifuge = project
   )
 
 lazy val fenek = project
+  .dependsOn(typedpath)
   .settings(projectDescription, defaultConfiguration)
   .settings(
     description := "Fenek is for better mapping",

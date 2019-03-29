@@ -77,7 +77,7 @@ class ExecutorTest extends FunSuite {
 
   }
 
-  test("should work with a timeout") {
+  ignore("should work with a timeout") {
 
     val ds = ss.createDataset(List(1, 2, 5, 10, 100, 200, 500, 1000))
 

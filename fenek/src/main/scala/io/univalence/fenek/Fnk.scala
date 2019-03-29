@@ -1,19 +1,30 @@
 package io.univalence.fenek
 
-import io.univalence.fenek.Fnk.Expr.CaseWhenExpr
-import io.univalence.fenek.Fnk.Expr.CaseWhenExprTyped
-import io.univalence.fenek.Fnk.Expr.CaseWhenExprUnTyped
-import io.univalence.fenek.Fnk.Expr.StructField
-import io.univalence.fenek.Fnk.Expr
-import io.univalence.fenek.Fnk.TypedExpr
+import io.univalence.fenek.Fnk.Expr.{ CaseWhenExpr, CaseWhenExprTyped, CaseWhenExprUnTyped, StructField }
+import io.univalence.fenek.Fnk.{ Expr, TypedExpr }
+import io.univalence.typedpath.NonEmptyPath
 import org.json4s.JsonAST._
 
-import scala.language.dynamics
-import scala.language.implicitConversions
+import scala.language.{ dynamics, implicitConversions }
 import scala.util.Try
 
 object Fnk {
   type Struct = Expr.Struct
+
+  implicit def pathToExpr(path: NonEmptyPath): Expr = {
+    import io.univalence.typedpath._
+
+    path match {
+      case Field(name, Root)   => Expr.Ops.RootField(name)
+      case Field(name, parent) => Expr.Ops.SelectField(name, pathToExpr(parent.asInstanceOf[NonEmptyPath]))
+      case Array(_)            => throw new Exception("repetition path not supported in fenek")
+    }
+
+  }
+
+  implicit class fieldOps(name: String) {
+    def <<-(expr: Expr): StructField = StructField(name, expr)
+  }
 
   implicit def t2ToExp[A: Encoder, B: Encoder](t: (A, B)): CaseWhenExprTyped[B] =
     CaseWhenExprTyped(lit(t._1) -> lit(t._2) :: Nil, None)
@@ -124,6 +135,8 @@ object Fnk {
   object struct extends Dynamic {
     def applyDynamicNamed(method: String)(call: (String, Expr)*): Expr.Struct =
       Expr.Struct(call.map((Expr.StructField.apply _).tupled))
+
+    def apply(structField: StructField*): Expr.Struct = Expr.Struct(structField)
   }
 
   object Expr extends LowPriority {
@@ -190,7 +203,7 @@ object Fnk {
     object Ops {
       case class Remove(source: Expr, toRemove: Seq[Expr]) extends Expr
       case class LastElement(expr: Expr) extends Expr
-      case class Field(name: String) extends Expr
+      case class RootField(name: String) extends Expr
       case class SelectField(field: String, source: Expr) extends Ops
       case class Size(source: Expr) extends Ops
       case class DateDiff(datepart: TypedExpr[String], startdate: Expr, enddate: Expr) extends Ops
@@ -299,7 +312,7 @@ object Fnk {
     TypedExpr.Lit(t, implicitly[Encoder[T]])
 
   object > extends Dynamic {
-    def selectDynamic(fieldName: String): Expr = Expr.Ops.Field(fieldName)
+    def selectDynamic(fieldName: String): Expr = Expr.Ops.RootField(fieldName)
 
     def apply(fieldName: String): Expr = selectDynamic(fieldName)
   }
@@ -307,8 +320,7 @@ object Fnk {
 }
 
 sealed trait GenericExpr {
-  import GenericExpr.Named
-  import GenericExpr.OneOrMore
+  import GenericExpr.{ Named, OneOrMore }
   def expr: Named[Fnk.Expr]
   def sources: Seq[Named[OneOrMore[GenericExpr]]]
   def strs: Seq[Named[String]]
@@ -381,7 +393,7 @@ object Source {
       genericExpr.expr.value match {
         case Fnk.Expr.Ops.SelectField(name, source) =>
           loop(GenericExpr(source), name +: suffix)
-        case Fnk.Expr.Ops.Field(name) => Vector(Path(name +: suffix))
+        case Fnk.Expr.Ops.RootField(name) => Vector(Path(name +: suffix))
         case _ =>
           for {
             sourceline <- genericExpr.sources.toVector
