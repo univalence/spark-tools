@@ -1,13 +1,11 @@
 package io.univalence.fenek
 
 import io.univalence.fenek.Expr.Ops.CaseWhen
-import io.univalence.fenek.Expr.StructField
+import io.univalence.typedpath.Path._
 import org.json4s.JsonAST._
 import org.scalatest.FunSuite
 
 import scala.language.implicitConversions
-
-import io.univalence.typedpath.Path._
 
 class JsonInterpreterTest extends FunSuite {
   type Struct = Expr.Struct
@@ -319,14 +317,14 @@ class JsonInterpreterTest extends FunSuite {
   //TODO
   test("caseWhen") {
     struct
-      .build("c" -> in("a").caseWhen(true -> "ok" | false -> "no"))
+      .build("c" -> in("a").caseWhen(true -> "ok", false -> "no"))
       .check("""{"a":true}""", """{"c":"ok"}""")
 
     struct
-      .build("c" -> in("a").caseWhen(true -> "ok" | false -> "no"))
+      .build("c" -> in("a").caseWhen(true -> "ok", false -> "no"))
       .check("""{"a":false}""", """{"c":"no"}""")
     struct
-      .build("c" -> in("a").caseWhen(true -> "ok" | false -> "no"))
+      .build("c" -> in("a").caseWhen(true -> "ok", false -> "no"))
       .check("""{"a":1}""", """{}""")
   }
 

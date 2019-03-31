@@ -7,11 +7,11 @@ class DslTest extends FunSuite {
 
   test("basic") {
 
-    val x: Expr = lit(true).caseWhen(true -> true | false -> true)
+    val x: TypedExpr[Boolean] = (lit(true) caseWhen (true -> true, false -> true)).as[Boolean]
 
-    val y: Expr = lit(2).caseWhen(1 -> "b" | Else -> 0)
+    val y: Expr = lit(2).caseWhen(1 -> "b", Else -> 0)
 
-    val z: Expr = lit(1).caseWhen(1 -> "a" | 2 -> "b") |> (_.toUpperCase)
+    val z: Expr = lit(1).caseWhen(1 -> "a", 2 -> "b").as[String] |> (_.toUpperCase)
 
   }
 
@@ -28,9 +28,10 @@ class DslTest extends FunSuite {
 
     val rule1: Expr.CaseWhenExprTyped[Int] = true -> 2 | false -> 3
 
-    val e1: TypedExpr[Int] = lit(true) caseWhen rule1 caseWhen rule2
+    //TODO : Fix the types
+    val e1: TypedExpr[Int] = (lit(true) caseWhen rule1 caseWhen rule2).as[Int]
 
-    val e2: TypedExpr[Int] = lit(true) caseWhen 1 -> 2
+    val e2: TypedExpr[Int] = (lit(true) caseWhen 1 -> 2).as[Int]
 
     val e4: Expr = lit(true) caseWhen rule0
   }

@@ -80,6 +80,8 @@ object Expr extends LowPriority {
 
   case class StructField(name: String, source: Expr)
 
+  object StructField {}
+
   sealed trait Ops extends Expr
 
   object Ops {
@@ -98,13 +100,6 @@ object Expr extends LowPriority {
 }
 
 object Fnk {
-
-  @deprecated
-  type Expr = io.univalence.fenek.Expr
-
-  implicit class fieldOps(name: String) {
-    def <<-(expr: Expr): StructField = StructField(name, expr)
-  }
 
   implicit def t2ToExp[A: Encoder, B: Encoder](t: (A, B)): CaseWhenExprTyped[B] =
     CaseWhenExprTyped(lit(t._1) -> lit(t._2) :: Nil, None)
@@ -191,10 +186,10 @@ object Fnk {
       def #>[T: Encoder](f: PartialFunction[JValue, T]): TypedExpr[T] =
         TypedExpr.JsonMap(expr, f, implicitly[Encoder[T]])
 
-      def caseWhen(when: CaseWhenExpr): Expr = Ops.CaseWhen(expr, when)
+      def caseWhen(when: CaseWhenExpr, whens: CaseWhenExpr*): Expr = Ops.CaseWhen(expr, whens.foldLeft(when)(_ | _))
 
-      def caseWhen[X](when: CaseWhenExprTyped[X]): TypedExpr[X] =
-        TypedExpr.CaseWhenTyped(expr, when)
+      /*def caseWhen[X](when: CaseWhenExprTyped[X], whens:CaseWhenExprTyped[X]*): TypedExpr[X] =
+        TypedExpr.CaseWhenTyped(expr, whens.foldLeft(when)(_ | _))*/
 
       def dateAdd(interval: TypedExpr[String], n: TypedExpr[Int]): Expr =
         Ops.DateAdd(interval, n, expr)

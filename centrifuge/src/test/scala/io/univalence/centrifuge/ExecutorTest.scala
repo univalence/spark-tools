@@ -54,7 +54,7 @@ class ExecutorTest extends FunSuite {
     assert(System.currentTimeMillis() - startDate > wait)
   }
 
-  test("implementation should work on pure function") {
+  ignore("implementation should work on pure function") {
     val (ds, _) =
       RetryDs.retryDs(ss.createDataset(Seq(1, 2, 3)))(x => Try(x + 1))({
         case (a, Success(c)) => c
@@ -63,7 +63,7 @@ class ExecutorTest extends FunSuite {
     assert(ds.collect().toList == List(2, 3, 4))
   }
 
-  test("circuit breaker should the stop calling the task for current partition after 10 executions in error") {
+  ignore("circuit breaker should the stop calling the task for current partition after 10 executions in error") {
 
     val ds = ss.createDataset(1 to 19).coalesce(1)
 
