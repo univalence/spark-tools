@@ -19,6 +19,7 @@ aliases:
     name: "Update all the dependencies"
     #the idea is to only run a dependencies update if build.sbt have been updated
     command: |
+      echo "circle_compare: " $CIRCLE_COMPARE_URL
       COMMIT_RANGE=$(echo $CIRCLE_COMPARE_URL | sed 's:^.*/compare/::g')
       echo "Commit range: " $COMMIT_RANGE
       if [[ $(git diff $COMMIT_RANGE --name-status | grep "build.sbt") != "" ]]
