@@ -131,5 +131,3 @@ workflows:
       - fenek
       - plumbus
       - update_deps_in_cache
-      - coverage:
-          requires: *all_projects
