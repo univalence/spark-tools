@@ -1,7 +1,7 @@
 package io.univalence.fenek
 
-import io.univalence.fenek.Fnk.Expr.Ops._
-import io.univalence.fenek.Fnk.Expr._
+import io.univalence.fenek.Expr.Ops._
+import io.univalence.fenek.Expr._
 import io.univalence.fenek.Fnk.TypedExpr._
 import io.univalence.fenek.Fnk._
 import org.joda.time.{ Days, Months }
@@ -22,7 +22,7 @@ object DebugInterpreter {
 
     expr match {
 
-      case TypedExpr.CaseWhenTyped(source, cases) => Fnk.Expr.Ops.CaseWhen(source, cases)
+      case TypedExpr.CaseWhenTyped(source, cases) => Expr.Ops.CaseWhen(source, cases)
 
       case Expr.Ops.Left(source, n) => source.as[String] <*> n |> (_ take _)
       case DateAdd(interval, n, source) =>
@@ -67,7 +67,7 @@ object DebugInterpreter {
   }
   case class TxRes[T <: JValue](result: Try[T], usedExpr: BitSet)
 
-  def tx(struct: Fnk.Struct): JObject => TxRes[JObject] = {
+  def tx(struct: Struct): JObject => TxRes[JObject] = {
     //def tx(struct: Fnk.Struct): JObject => (Result[JObject], BitSet)
 
     case class Compute(nbExpr: Int, tx: JValue => TxRes[JValue])
@@ -218,7 +218,7 @@ object DebugInterpreter {
 
     val ab: TypedExpr[Int]#Map2Builder[Int] = a.as[Int] <*> b.as[Int]
 
-    val x = >.a caseWhen (1 -> (ab |> (_ + _)) | 2 -> (ab |> ((a, b) => { println("toto"); a - b })) | Else -> 3)
+    val x = >("a") caseWhen (1 -> (ab |> (_ + _)) | 2 -> (ab |> ((a, b) => { println("toto"); a - b })) | Else -> 3)
 
     val function = tx(struct("x" <<- x, "y" <<- x.as[Int]))
 

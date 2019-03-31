@@ -53,7 +53,7 @@ lazy val defaultConfiguration =
     //By default projects in spark-tool work with 2.11 and are ready for 2.12
     //Spark projects are locked in 2.11 at the moment
     crossScalaVersions := List(libVersion.scala2_11, libVersion.scala2_12),
-    scalaVersion       := crossScalaVersions.value.head,
+    scalaVersion       := libVersion.scala2_11,
     scalacOptions      := stdOptions ++ extraOptions(scalaVersion.value),
     useGpg             := true,
     scalafmtOnCompile  := false,

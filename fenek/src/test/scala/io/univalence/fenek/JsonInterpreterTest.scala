@@ -1,14 +1,16 @@
 package io.univalence.fenek
 
-import io.univalence.fenek.Fnk.Expr.Ops.CaseWhen
-import io.univalence.fenek.Fnk.Expr.StructField
+import io.univalence.fenek.Expr.Ops.CaseWhen
+import io.univalence.fenek.Expr.StructField
 import org.json4s.JsonAST._
 import org.scalatest.FunSuite
 
 import scala.language.implicitConversions
 
+import io.univalence.typedpath.Path._
+
 class JsonInterpreterTest extends FunSuite {
-  type Struct = Fnk.Expr.Struct
+  type Struct = Expr.Struct
 
   import Fnk._
 
@@ -121,14 +123,16 @@ class JsonInterpreterTest extends FunSuite {
 
     val est_annulé = lit(false)
 
-    val expr1 = >.gppTypeProduit.caseWhen("KTTR" -> >.ktStartCommitmentDate | Else -> dateparution)
-    val expr2 = >.ktInvoicingType.caseWhen(
-      "STANDARD" -> est_annulé.caseWhen(true -> dateparution | false -> >.ktStartCommitmentDate) |
+    val expr1 = >("gppTypeProduit").caseWhen("KTTR" -> >("ktStartCommitmentDate") | Else -> dateparution)
+    val expr2 = >("ktInvoicingType").caseWhen(
+      "STANDARD" -> est_annulé.caseWhen(true -> dateparution | false -> >("ktStartCommitmentDate")) |
         Else     -> expr1
     )
-    val da_deb_periode = >.gppTypeProduit
-      .caseWhen("KTREMB" -> daValidVente | "KTREGU" -> daValidVente) orElse
-      expr2
+
+    //??? : Est-ce qu'il ne faudrait pas merger typedpath avec fenek ?
+    //ou dupliquer toutes les méthodes sur le path ?
+    val value: Expr    = path"gppTypeProduit"
+    val da_deb_periode = value.caseWhen("KTREMB" -> daValidVente | "KTREGU" -> daValidVente).orElse(expr2)
 
     val tx = struct("da_deb_periode" <<- da_deb_periode, "expr1" <<- expr1, "expr2" <<- expr2)
 
@@ -174,22 +178,22 @@ class JsonInterpreterTest extends FunSuite {
 
   test("lit(true).as[Boolean]") {
 
-    struct.create(a = lit(true).as[Boolean]).setExpected("a" -> true).check()
+    struct.build("a" -> lit(true).as[Boolean]).setExpected("a" -> true).check()
 
   }
 
   test("cast str to in") {
-    struct.create(a = lit("1").as[Int]).setExpected("a" -> 1).check()
+    struct.build("a" -> lit("1").as[Int]).setExpected("a" -> 1).check()
   }
 
   test("<*> & |> avec int operation not working 2") {
-    val factIterationNumber: TypedExpr[Int] = >.iterationinvoicenumber.as[Int]
+    val factIterationNumber: TypedExpr[Int] = >("iterationinvoicenumber").as[Int]
     val data12: TypedExpr[Int]              = 12
     val TR =
       (factIterationNumber <*> data12 |> (_ % _) caseWhen (Else -> false | 1 -> true))
         .as[Boolean]
 
-    val tx = struct.create(expr = TR)
+    val tx = struct.build("expr" -> TR)
     val s: StructChecker = tx
       .setInput("iterationinvoicenumber" -> 13)
       .setExpected("expr" -> true)
@@ -200,7 +204,7 @@ class JsonInterpreterTest extends FunSuite {
   test("""lit("1").as[Int] <*> lit("0").as[Int] |> ( _+_ )""") {
 
     struct
-      .create(a = lit("1").as[Int] <*> lit("2").as[Int] |> (_ + _))
+      .build("a" -> (lit("1").as[Int] <*> lit("2").as[Int] |> (_ + _)))
       .setExpected("a" -> 3)
       .check()
 
@@ -208,7 +212,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("testTx") {
 
-    val tx = struct.create(b = in.a, c = lit(2), d = in.a)
+    val tx = struct.build("b" -> in("a"), "c" -> lit(2), "d" -> in("a"))
 
     tx.check(in = """{"a":1}""", out = """{"b":1, "c":2, "d" :1}""")
     //tx.check2("a" -> 1)("b" -> 1,"c" -> 2,"d" -> 1)
@@ -219,7 +223,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("cleanDate") {
 
-    val tx = struct.create(dt = in.dt.left(10))
+    val tx = struct.build("dt" -> in("dt").left(10))
 
     tx.check(
       """
@@ -235,7 +239,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("addDate") {
 
-    val tx = struct.create(dt = in.dt.left(10).dateAdd("day", 1))
+    val tx = struct.build("dt" -> in("dt").left(10).dateAdd("day", 1))
 
     tx.check(
       """
@@ -251,7 +255,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("datediff") {
 
-    val tx = struct.create(interval = in.start.datediff("month", in.end))
+    val tx = struct.build("interval" -> in("start").datediff("month", in("end")))
 
     tx.check(
       """
@@ -276,7 +280,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("niveauPack") {
 
-    val tx = struct.create(niveauPack = in.configuration #> {
+    val tx = struct.build("niveauPack" -> (path"configuration": Expr) #> {
       case JArray(arr) => {
         arr
           .map(x => x \\ "niveauPack")
@@ -294,7 +298,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("when") {
 
-    val tx = struct.create(toto = in.tata.caseWhen(false -> "titi"))
+    val tx = struct.build("toto" -> in("tata").caseWhen(false -> "titi"))
 
     tx.check("""{"tata":false}""", """{"toto":"titi"}""")
 
@@ -307,22 +311,22 @@ class JsonInterpreterTest extends FunSuite {
   }
 
   test("isEmpty") {
-    struct.create(c = in.a.isEmpty).check("""{"a":"1"}""", """{"c":false}""")
-    struct.create(c = in.a.isEmpty).check("""{"b":"1"}""", """{"c":true}""")
+    struct.build("c" -> in("a").isEmpty).check("""{"a":"1"}""", """{"c":false}""")
+    struct.build("c" -> in("a").isEmpty).check("""{"b":"1"}""", """{"c":true}""")
 
   }
 
   //TODO
   test("caseWhen") {
     struct
-      .create(c = in.a.caseWhen(true -> "ok" | false -> "no"))
+      .build("c" -> in("a").caseWhen(true -> "ok" | false -> "no"))
       .check("""{"a":true}""", """{"c":"ok"}""")
 
     struct
-      .create(c = in.a.caseWhen(true -> "ok" | false -> "no"))
+      .build("c" -> in("a").caseWhen(true -> "ok" | false -> "no"))
       .check("""{"a":false}""", """{"c":"no"}""")
     struct
-      .create(c = in.a.caseWhen(true -> "ok" | false -> "no"))
+      .build("c" -> in("a").caseWhen(true -> "ok" | false -> "no"))
       .check("""{"a":1}""", """{}""")
   }
 

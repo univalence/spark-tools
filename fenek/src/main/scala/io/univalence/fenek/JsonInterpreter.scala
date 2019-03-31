@@ -1,8 +1,7 @@
 package io.univalence.fenek
 
-import Fnk.Expr.CaseWhenExprUnTyped
+import Expr.{ CaseWhenExprUnTyped, Struct }
 import Fnk.Encoder
-import Fnk.Expr
 import Fnk.TypedExpr
 import org.joda.time.Days
 import org.joda.time.Months
@@ -13,7 +12,7 @@ import scala.util.Success
 import scala.util.Try
 
 object JsonInterpreter {
-  def directTx(struct: Fnk.Expr.Struct): JObject => Try[JObject] = {
+  def directTx(struct: Expr.Struct): JObject => Try[JObject] = {
     val f: JObject => Result[JObject] = tx(struct)
 
     f.andThen(x => Try(x.value.get))
@@ -58,10 +57,10 @@ object JsonInterpreter {
     }
   }
 
-  def tx(struct: Fnk.Struct): JObject => Result[JObject] = {
+  def tx(struct: Struct): JObject => Result[JObject] = {
     //def tx(struct: Fnk.Struct): JObject => (Result[JObject], BitSet)
 
-    import Fnk.Expr.Ops._
+    import Expr.Ops._
     import Fnk.TypedExpr._
 
     def anyToJValue(any: Any): Try[JValue] =
@@ -96,7 +95,7 @@ object JsonInterpreter {
       expr match {
 
         case TypedExpr.CaseWhenTyped(source, cases) =>
-          Fnk.Expr.Ops.CaseWhen(source, cases)
+          Expr.Ops.CaseWhen(source, cases)
 
         case Left(source, n) => source.as[String] <*> n |> (_ take _)
         case DateAdd(interval, n, source) =>

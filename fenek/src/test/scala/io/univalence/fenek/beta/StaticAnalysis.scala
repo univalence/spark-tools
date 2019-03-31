@@ -1,9 +1,9 @@
 package io.univalence.fenek.beta
 
 import io.univalence.fenek.Fnk
-import io.univalence.fenek.Fnk.Expr
-import io.univalence.fenek.Fnk.Expr.Ops
-import io.univalence.fenek.Fnk.Expr.Ops.RootField
+import io.univalence.fenek.Expr
+import io.univalence.fenek.Expr.Ops
+import io.univalence.fenek.Expr.Ops.RootField
 import io.univalence.fenek.Fnk.TypedExpr.Lit
 import io.univalence.fenek.Fnk.TypedExpr.Map2
 import io.univalence.fenek.Fnk.TypedExpr.TypeCasted
@@ -95,9 +95,9 @@ object StaticAnalysis {
 
     import Fnk._
 
-    val ab: TypedExpr[Int]#Map2Builder[Int] = >.a.as[Int] <*> >.b.as[Int]
+    val ab: TypedExpr[Int]#Map2Builder[Int] = >("a").as[Int] <*> >("b").as[Int]
 
-    val x = >.a caseWhen (1 -> (ab |> (_ + _)) | 2 -> (ab |> (_ - _)) | Else -> 3)
+    val x = >("a") caseWhen (1 -> (ab |> (_ + _)) | 2 -> (ab |> (_ - _)) | Else -> 3)
 
     staticAnalysis(x).foreach({
       case PosExpr(level, index, expr) =>

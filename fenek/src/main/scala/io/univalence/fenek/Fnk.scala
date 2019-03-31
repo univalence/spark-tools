@@ -1,15 +1,16 @@
 package io.univalence.fenek
 
-import io.univalence.fenek.Fnk.Expr.{ CaseWhenExpr, CaseWhenExprTyped, CaseWhenExprUnTyped, StructField }
-import io.univalence.fenek.Fnk.{ Expr, TypedExpr }
+import io.univalence.fenek.Expr.{ CaseWhenExpr, CaseWhenExprTyped, CaseWhenExprUnTyped, StructField }
+import io.univalence.fenek.Fnk.{ Encoder, LowPriority, TypedExpr }
 import io.univalence.typedpath.NonEmptyPath
 import org.json4s.JsonAST._
 
-import scala.language.{ dynamics, implicitConversions }
+import scala.language.implicitConversions
 import scala.util.Try
 
-object Fnk {
-  type Struct = Expr.Struct
+sealed trait Expr
+
+object Expr extends LowPriority {
 
   implicit def pathToExpr(path: NonEmptyPath): Expr = {
     import io.univalence.typedpath._
@@ -22,6 +23,85 @@ object Fnk {
 
   }
 
+  case class Struct(fields: Seq[StructField]) extends Expr
+
+  sealed trait CaseWhenExpr {
+
+    def pairs: Seq[(Expr, Expr)]
+    def orElse: Option[Expr]
+  }
+
+  object CaseWhenExpr {
+    def merge[B](
+      caseWhenExprTyped1: CaseWhenExprTyped[B],
+      caseWhenExprTyped2: CaseWhenExprTyped[B]
+    ): CaseWhenExprTyped[B] =
+      CaseWhenExprTyped(
+        caseWhenExprTyped1.pairs ++ caseWhenExprTyped2.pairs,
+        caseWhenExprTyped1.orElse orElse caseWhenExprTyped2.orElse
+      )
+
+    def merge(caseWhenExprTyped1: CaseWhenExpr, caseWhenExprTyped2: CaseWhenExpr): CaseWhenExpr =
+      CaseWhenExprUnTyped(
+        caseWhenExprTyped1.pairs ++ caseWhenExprTyped2.pairs,
+        caseWhenExprTyped1.orElse orElse caseWhenExprTyped2.orElse
+      )
+
+    def setDefault[A](caseWhenExprTyped: CaseWhenExprTyped[A], value: TypedExpr[A]): CaseWhenExprTyped[A] =
+      caseWhenExprTyped.copy(orElse = Some(value))
+
+    def setDefault(caseWhenExprTyped: CaseWhenExpr, value: Expr): CaseWhenExpr =
+      caseWhenExprTyped match {
+        case CaseWhenExprUnTyped(pairs, _) =>
+          CaseWhenExprUnTyped(pairs, Some(value))
+        case CaseWhenExprTyped(pairs, _) =>
+          CaseWhenExprUnTyped(pairs, Some(value))
+      }
+
+    def add[B](caseWhenExprTyped: CaseWhenExprTyped[B], expr: (Expr, TypedExpr[B])): CaseWhenExprTyped[B] =
+      caseWhenExprTyped.copy(pairs = expr +: caseWhenExprTyped.pairs)
+
+    def add(caseWhen: CaseWhenExpr, expr: (Expr, Expr)): CaseWhenExpr =
+      caseWhen match {
+        case CaseWhenExprUnTyped(pairs, orElse) =>
+          CaseWhenExprUnTyped(expr +: pairs, orElse)
+        case CaseWhenExprTyped(pairs, orElse) =>
+          CaseWhenExprUnTyped(expr +: pairs, orElse)
+      }
+
+  }
+
+  case class CaseWhenExprUnTyped(pairs: Seq[(Expr, Expr)], orElse: Option[Expr]) extends CaseWhenExpr
+
+  case class CaseWhenExprTyped[B](pairs: Seq[(Expr, TypedExpr[B])], orElse: Option[TypedExpr[B]]) extends CaseWhenExpr {
+    def enc: Encoder[B] = pairs.head._2.enc
+    //def untyped:CaseWhenExprUnTyped = CaseWhenExprUnTyped(pairs,orElse)
+  }
+
+  case class StructField(name: String, source: Expr)
+
+  sealed trait Ops extends Expr
+
+  object Ops {
+    case class Remove(source: Expr, toRemove: Seq[Expr]) extends Expr
+    case class LastElement(expr: Expr) extends Expr
+    case class RootField(name: String) extends Expr
+    case class SelectField(field: String, source: Expr) extends Ops
+    case class Size(source: Expr) extends Ops
+    case class DateDiff(datepart: TypedExpr[String], startdate: Expr, enddate: Expr) extends Ops
+    case class Left(characterExpr: Expr, n: TypedExpr[Int]) extends Ops
+    case class DateAdd(interval: TypedExpr[String], n: TypedExpr[Int], date: Expr) extends Ops
+    case class OrElse(expr: Expr, expr2: Expr) extends Ops
+    case class FirstElement(expr: Expr) extends Ops
+    case class CaseWhen(source: Expr, ifes: CaseWhenExpr) extends Ops
+  }
+}
+
+object Fnk {
+
+  @deprecated
+  type Expr = io.univalence.fenek.Expr
+
   implicit class fieldOps(name: String) {
     def <<-(expr: Expr): StructField = StructField(name, expr)
   }
@@ -29,15 +109,17 @@ object Fnk {
   implicit def t2ToExp[A: Encoder, B: Encoder](t: (A, B)): CaseWhenExprTyped[B] =
     CaseWhenExprTyped(lit(t._1) -> lit(t._2) :: Nil, None)
 
-  implicit def t2toExp2[A: Encoder](t: (A, Expr)): CaseWhenExpr =
-    CaseWhenExprUnTyped(lit(t._1) -> t._2 :: Nil, None)
-
   implicit def elseToExp1[B: Encoder](t: (Else.type, B)): CaseWhenExprTyped[B] =
     CaseWhenExprTyped(Nil, Some(t._2))
+
   implicit def elseToExp2[X](t: (Else.type, TypedExpr[X])): CaseWhenExprTyped[X] =
     CaseWhenExprTyped(Nil, Some(t._2))
+
   implicit def elseToExp3(t: (Else.type, Expr)): CaseWhenExpr =
     CaseWhenExprUnTyped(Nil, Some(t._2))
+
+  implicit def t2toExp2[A: Encoder](t: (A, Expr)): CaseWhenExpr =
+    CaseWhenExprUnTyped(lit(t._1) -> t._2 :: Nil, None)
 
   implicit class t2Ops[A: Encoder, B: Encoder](t: (A, B)) {
     val expr: (TypedExpr[A], TypedExpr[B]) = (lit(t._1), lit(t._2))
@@ -74,8 +156,6 @@ object Fnk {
       CaseWhenExpr.merge(caseWhenExpr1, caseWhenExpr2)
   }
 
-  sealed trait Expr {}
-
   trait LowPriority {
     implicit def antiArrowAssocExpr1[A: Encoder](t: (A, Expr)): (TypedExpr[A], Expr) = (lit(t._1), t._2)
 
@@ -91,8 +171,8 @@ object Fnk {
 
       import Expr._
 
-      object > extends Dynamic {
-        def selectDynamic(field: String): Expr = Ops.SelectField(field, expr)
+      object > {
+        def select(field: String): Expr = Ops.SelectField(field, expr)
       }
 
       def firstElement: Expr = Ops.FirstElement(expr)
@@ -132,87 +212,11 @@ object Fnk {
 
   object Else
 
-  object struct extends Dynamic {
-    def applyDynamicNamed(method: String)(call: (String, Expr)*): Expr.Struct =
-      Expr.Struct(call.map((Expr.StructField.apply _).tupled))
+  object struct {
+    @deprecated
+    def build(call: (String, Expr)*): Expr.Struct = Expr.Struct(call.map((Expr.StructField.apply _).tupled))
 
     def apply(structField: StructField*): Expr.Struct = Expr.Struct(structField)
-  }
-
-  object Expr extends LowPriority {
-    case class Struct(fields: Seq[StructField]) extends Expr
-
-    sealed trait CaseWhenExpr {
-
-      def pairs: Seq[(Expr, Expr)]
-      def orElse: Option[Expr]
-    }
-
-    object CaseWhenExpr {
-      def merge[B](
-        caseWhenExprTyped1: CaseWhenExprTyped[B],
-        caseWhenExprTyped2: CaseWhenExprTyped[B]
-      ): CaseWhenExprTyped[B] =
-        CaseWhenExprTyped(
-          caseWhenExprTyped1.pairs ++ caseWhenExprTyped2.pairs,
-          caseWhenExprTyped1.orElse orElse caseWhenExprTyped2.orElse
-        )
-
-      def merge(caseWhenExprTyped1: CaseWhenExpr, caseWhenExprTyped2: CaseWhenExpr): CaseWhenExpr =
-        CaseWhenExprUnTyped(
-          caseWhenExprTyped1.pairs ++ caseWhenExprTyped2.pairs,
-          caseWhenExprTyped1.orElse orElse caseWhenExprTyped2.orElse
-        )
-
-      def setDefault[A](caseWhenExprTyped: CaseWhenExprTyped[A], value: TypedExpr[A]): CaseWhenExprTyped[A] =
-        caseWhenExprTyped.copy(orElse = Some(value))
-
-      def setDefault(caseWhenExprTyped: CaseWhenExpr, value: Expr): CaseWhenExpr =
-        caseWhenExprTyped match {
-          case CaseWhenExprUnTyped(pairs, _) =>
-            CaseWhenExprUnTyped(pairs, Some(value))
-          case CaseWhenExprTyped(pairs, _) =>
-            CaseWhenExprUnTyped(pairs, Some(value))
-        }
-
-      def add[B](caseWhenExprTyped: CaseWhenExprTyped[B], expr: (Expr, TypedExpr[B])): CaseWhenExprTyped[B] =
-        caseWhenExprTyped.copy(pairs = expr +: caseWhenExprTyped.pairs)
-
-      def add(caseWhen: CaseWhenExpr, expr: (Expr, Expr)): CaseWhenExpr =
-        caseWhen match {
-          case CaseWhenExprUnTyped(pairs, orElse) =>
-            CaseWhenExprUnTyped(expr +: pairs, orElse)
-          case CaseWhenExprTyped(pairs, orElse) =>
-            CaseWhenExprUnTyped(expr +: pairs, orElse)
-        }
-
-    }
-
-    case class CaseWhenExprUnTyped(pairs: Seq[(Expr, Expr)], orElse: Option[Expr]) extends CaseWhenExpr
-
-    case class CaseWhenExprTyped[B](pairs: Seq[(Expr, TypedExpr[B])], orElse: Option[TypedExpr[B]])
-        extends CaseWhenExpr {
-      def enc: Encoder[B] = pairs.head._2.enc
-      //def untyped:CaseWhenExprUnTyped = CaseWhenExprUnTyped(pairs,orElse)
-    }
-
-    case class StructField(name: String, source: Expr)
-
-    sealed trait Ops extends Expr
-
-    object Ops {
-      case class Remove(source: Expr, toRemove: Seq[Expr]) extends Expr
-      case class LastElement(expr: Expr) extends Expr
-      case class RootField(name: String) extends Expr
-      case class SelectField(field: String, source: Expr) extends Ops
-      case class Size(source: Expr) extends Ops
-      case class DateDiff(datepart: TypedExpr[String], startdate: Expr, enddate: Expr) extends Ops
-      case class Left(characterExpr: Expr, n: TypedExpr[Int]) extends Ops
-      case class DateAdd(interval: TypedExpr[String], n: TypedExpr[Int], date: Expr) extends Ops
-      case class OrElse(expr: Expr, expr2: Expr) extends Ops
-      case class FirstElement(expr: Expr) extends Ops
-      case class CaseWhen(source: Expr, ifes: CaseWhenExpr) extends Ops
-    }
   }
 
   sealed trait Encoder[T]
@@ -311,17 +315,15 @@ object Fnk {
   def lit[T: Encoder](t: T): TypedExpr[T] =
     TypedExpr.Lit(t, implicitly[Encoder[T]])
 
-  object > extends Dynamic {
-    def selectDynamic(fieldName: String): Expr = Expr.Ops.RootField(fieldName)
-
-    def apply(fieldName: String): Expr = selectDynamic(fieldName)
+  object > {
+    def apply(fieldName: String): Expr = Expr.Ops.RootField(fieldName)
   }
 
 }
 
 sealed trait GenericExpr {
   import GenericExpr.{ Named, OneOrMore }
-  def expr: Named[Fnk.Expr]
+  def expr: Named[Expr]
   def sources: Seq[Named[OneOrMore[GenericExpr]]]
   def strs: Seq[Named[String]]
   def values: Seq[Named[Any]]
@@ -335,7 +337,7 @@ object GenericExpr {
 
   case class Named[+T](name: String, value: T)
 
-  def apply(sourceExpr: Fnk.Expr): GenericExpr = {
+  def apply(sourceExpr: Expr): GenericExpr = {
     val named = toNamedSeq(sourceExpr)
 
     new GenericExpr {
@@ -344,12 +346,12 @@ object GenericExpr {
 
       override lazy val sources: Seq[Named[OneOrMore[GenericExpr]]] = {
         val res = named.collect({
-          case Named(name, expr: Fnk.Expr) =>
+          case Named(name, expr: Expr) =>
             Named(name, OneOrMore(apply(expr)))
           // a Field could be a expression as well
           case Named(name, StructField(fname, source)) =>
             Named(name + "." + fname, OneOrMore(apply(source)))
-          case Named(name, (expr1: Fnk.Expr, expr2: Fnk.Expr)) =>
+          case Named(name, (expr1: Expr, expr2: Expr)) =>
             Named(name, OneOrMore(apply(expr1), apply(expr2)))
         })
 
@@ -387,13 +389,13 @@ object Source {
 
   case class Path(parts: Vector[String])
 
-  def getSources(expr: Fnk.Expr): Vector[Path] = {
+  def getSources(expr: Expr): Vector[Path] = {
 
     def loop(genericExpr: GenericExpr, suffix: Vector[String] = Vector.empty): Vector[Path] =
       genericExpr.expr.value match {
-        case Fnk.Expr.Ops.SelectField(name, source) =>
+        case Expr.Ops.SelectField(name, source) =>
           loop(GenericExpr(source), name +: suffix)
-        case Fnk.Expr.Ops.RootField(name) => Vector(Path(name +: suffix))
+        case Expr.Ops.RootField(name) => Vector(Path(name +: suffix))
         case _ =>
           for {
             sourceline <- genericExpr.sources.toVector
