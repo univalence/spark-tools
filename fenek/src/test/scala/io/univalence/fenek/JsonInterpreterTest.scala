@@ -1,6 +1,6 @@
 package io.univalence.fenek
 
-import io.univalence.fenek.Expr.Ops.CaseWhen
+import io.univalence.fenek.Expr.{ CaseWhen, UntypedExpr }
 import io.univalence.typedpath.Path._
 import org.json4s.JsonAST._
 import org.scalatest.FunSuite
@@ -129,8 +129,8 @@ class JsonInterpreterTest extends FunSuite {
 
     //??? : Est-ce qu'il ne faudrait pas merger typedpath avec fenek ?
     //ou dupliquer toutes les méthodes sur le path ?
-    val value: Expr    = path"gppTypeProduit"
-    val da_deb_periode = value.caseWhen("KTREMB" -> daValidVente | "KTREGU" -> daValidVente).orElse(expr2)
+    val value: UntypedExpr = path"gppTypeProduit"
+    val da_deb_periode     = value.caseWhen("KTREMB" -> daValidVente | "KTREGU" -> daValidVente).orElse(expr2)
 
     val tx = struct("da_deb_periode" <<- da_deb_periode, "expr1" <<- expr1, "expr2" <<- expr2)
 
@@ -147,7 +147,7 @@ class JsonInterpreterTest extends FunSuite {
   test("case when bug #2 reduction") {
     val expr = lit(1).caseWhen(Else -> lit(1).caseWhen(2 -> Null | Else -> 1))
 
-    assert(expr.asInstanceOf[CaseWhen].ifes.orElse.nonEmpty)
+    assert(expr.cases.orElse.nonEmpty)
 
     val tx = struct("expr" <<- expr)
 
@@ -278,7 +278,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("niveauPack") {
 
-    val tx = struct.build("niveauPack" -> (path"configuration": Expr) #> {
+    val tx = struct.build("niveauPack" -> (path"configuration": UntypedExpr) #> {
       case JArray(arr) => {
         arr
           .map(x => x \\ "niveauPack")

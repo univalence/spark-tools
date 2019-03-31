@@ -2,7 +2,7 @@ package io.univalence.fenek.beta
 
 import io.univalence.fenek.Fnk
 import io.univalence.fenek.Expr
-import io.univalence.fenek.Expr.Ops
+import io.univalence.fenek.Expr.{ CaseWhen, Ops, UntypedExpr }
 import io.univalence.fenek.Expr.Ops.RootField
 import io.univalence.fenek.Fnk.TypedExpr.Lit
 import io.univalence.fenek.Fnk.TypedExpr.Map2
@@ -55,14 +55,14 @@ object StaticAnalysis {
           - 3
    */
 
-  case class PosExpr(level: Int, index: Int, expr: Expr)
+  case class PosExpr(level: Int, index: Int, expr: UntypedExpr)
 
-  def staticAnalysis(expr: Expr): Seq[PosExpr] = {
-    def loop(expr: Expr, pos: Int, index: Int): Seq[PosExpr] = {
+  def staticAnalysis(expr: UntypedExpr): Seq[PosExpr] = {
+    def loop(expr: UntypedExpr, pos: Int, index: Int): Seq[PosExpr] = {
 
-      val toUnfold: Seq[Expr] = expr match {
-        case cw: Ops.CaseWhen =>
-          Seq(Seq(cw.source), cw.ifes.pairs.flatMap(t => Seq(t._1, t._2)), cw.ifes.orElse.toList).flatten
+      val toUnfold: Seq[UntypedExpr] = expr match {
+        case cw: CaseWhen[Any] =>
+          Seq(Seq(cw.source), cw.cases.pairs.flatMap(t => Seq(t._1, t._2)), cw.cases.orElse.toList).flatten
 
         case x: RootField => Nil
         case l: Lit[_]    => Nil
@@ -72,15 +72,14 @@ object StaticAnalysis {
         case TypeCasted(a, _) => Seq(a)
       }
 
-      def next(expr: Expr, index: Int): Seq[PosExpr] =
+      def next(expr: UntypedExpr, index: Int): Seq[PosExpr] =
         loop(expr, pos + 1, index)
 
       val res = toUnfold.foldLeft[(Seq[PosExpr], Int)]((Nil, index + 1))(
         {
-          case ((xs, i), e) => {
+          case ((xs, i), e) =>
             val ys = next(e, i)
             (xs ++ ys, i + ys.size)
-          }
         }
       )
 

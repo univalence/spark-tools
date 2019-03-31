@@ -1,6 +1,6 @@
 package io.univalence.fenek
 
-import Expr.{ CaseWhenExprUnTyped, Struct }
+import Expr.{ CaseWhenExpr, Struct, UntypedExpr }
 import Fnk.Encoder
 import Fnk.TypedExpr
 import org.joda.time.Days
@@ -91,12 +91,8 @@ object JsonInterpreter {
         Try(org.joda.time.LocalDate.parse(arg.take(10))).toOption
     }
 
-    def rewrite(expr: Expr): Expr =
+    def rewrite(expr: UntypedExpr): UntypedExpr =
       expr match {
-
-        case TypedExpr.CaseWhenTyped(source, cases) =>
-          Expr.Ops.CaseWhen(source, cases)
-
         case Left(source, n) => source.as[String] <*> n |> (_ take _)
         case DateAdd(interval, n, source) =>
           interval <*> n <*> source.as[String] |> {
@@ -117,7 +113,7 @@ object JsonInterpreter {
           }
 
         case Remove(source, toRemove) =>
-          Expr.Ops.CaseWhen(source, CaseWhenExprUnTyped(toRemove.map(_ -> Fnk.Null), Some(source)))
+          Expr.CaseWhen(source, CaseWhenExpr(toRemove.map(_ -> Fnk.Null), Some(source)))
 
         case _ => expr
       }
@@ -127,7 +123,7 @@ object JsonInterpreter {
       case Failure(e) => Result(None, CaughtException(e, Nil) :: Nil)
     }
 
-    def rawJson(source: Expr, f: JValue => JValue): JValue => Result[JValue] = {
+    def rawJson(source: UntypedExpr, f: JValue => JValue): JValue => Result[JValue] = {
       val f1 = compute(source)
       f1.andThen(
           x =>
@@ -143,7 +139,7 @@ object JsonInterpreter {
       def unapply(s: String): Option[Int] = Try(s.toInt).toOption
     }
 
-    def compute(expr: Expr): JValue => Result[JValue] = {
+    def compute(expr: UntypedExpr): JValue => Result[JValue] = {
       rewrite(expr) match {
         case IsEmpty(source) =>
           val f = compute(source)
@@ -276,7 +272,7 @@ object JsonInterpreter {
               )
             }
 
-        case Expr.Ops.CaseWhen(source, cases) =>
+        case Expr.CaseWhen(source, cases) =>
           val f1: JValue => Result[JValue] = compute(source)
 
           val elseCase: Option[JValue => Result[JValue]] =

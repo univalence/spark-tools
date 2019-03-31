@@ -12,7 +12,7 @@ import scala.util.{ Failure, Success, Try }
 
 object DebugInterpreter {
 
-  def rewrite(expr: Expr): Expr = {
+  def rewrite(expr: UntypedExpr): UntypedExpr = {
     object LocalDate {
       def unapply(arg: String): Option[org.joda.time.LocalDate] = Try(org.joda.time.LocalDate.parse(arg)).toOption
     }
@@ -21,8 +21,6 @@ object DebugInterpreter {
     }
 
     expr match {
-
-      case TypedExpr.CaseWhenTyped(source, cases) => Expr.Ops.CaseWhen(source, cases)
 
       case Expr.Ops.Left(source, n) => source.as[String] <*> n |> (_ take _)
       case DateAdd(interval, n, source) =>
@@ -39,7 +37,7 @@ object DebugInterpreter {
         }
 
       case Remove(source, toRemove) =>
-        Expr.Ops.CaseWhen(source, CaseWhenExprUnTyped(toRemove.map(_ -> Fnk.Null), Some(source)))
+        Expr.CaseWhen(source, CaseWhenExpr(toRemove.map(_ -> Fnk.Null), Some(source)))
 
       case _ => expr
     }
@@ -72,7 +70,7 @@ object DebugInterpreter {
 
     case class Compute(nbExpr: Int, tx: JValue => TxRes[JValue])
 
-    def compute(expr: Expr, index: Int): Compute = {
+    def compute(expr: UntypedExpr, index: Int): Compute = {
 
       println(index.formatted("%03d") + expr)
       val subIndex = index + 1
@@ -213,8 +211,8 @@ object DebugInterpreter {
     import Fnk._
     import io.univalence.typedpath.Path._
 
-    val a: Expr = path"a"
-    val b: Expr = path"b"
+    val a: UntypedExpr = path"a"
+    val b: UntypedExpr = path"b"
 
     val ab: TypedExpr[Int]#Map2Builder[Int] = a.as[Int] <*> b.as[Int]
 
