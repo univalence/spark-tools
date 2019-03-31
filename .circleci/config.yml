@@ -17,7 +17,17 @@ aliases:
 
   - &update_dependencies
     name: "Update all the dependencies"
-    command: cat /dev/null | sbt coverage +update
+    #the idea is to only run a dependencies update if build.sbt have been updated
+    command: |
+      COMMIT_RANGE=$(echo $CIRCLE_COMPARE_URL | sed 's:^.*/compare/::g')
+      echo "Commit range: " $COMMIT_RANGE
+      if [[ $(git diff $COMMIT_RANGE --name-status | grep "build.sbt") != "" ]]
+      then
+        echo "updating dependencies from build.sbt"
+        cat /dev/null | sbt coverage +update
+      else
+        echo "nothing to update"
+      fi
 
   - &save_cache_dependencies
     name: "Save dependencies in the cache"
@@ -54,9 +64,9 @@ commands:
     steps:
       - checkout
       - restore_cache: *restore_cache_dependencies
-      - run:
-          name: check
-          command: ls -R
+      #- run:
+      #    name: check
+      #    command: ls -R
       #- run:
       #    name: Compile code and test code << parameters.project_name >>
       #    command: cat /dev/null | sbt << parameters.project_name >>/compile << parameters.project_name >>/test:compile
