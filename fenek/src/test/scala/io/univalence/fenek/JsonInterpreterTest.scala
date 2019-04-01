@@ -1,6 +1,5 @@
 package io.univalence.fenek
 
-import io.univalence.fenek.Expr.CaseWhenExpr.{ LeftCaseWhen, RightCaseWhen }
 import io.univalence.fenek.Expr._
 import io.univalence.typedpath.Path._
 import org.json4s.JsonAST._
@@ -122,16 +121,19 @@ class JsonInterpreterTest extends FunSuite {
 
     import Expr._
 
-    val expr1 = path"gppTypeProduit".caseWhen("KTTR" -> path"ktStartCommitmentDate", Else -> dateparution)
+    import CaseWhenExpr._
+    import CaseWhenExpr.ToExpr._
 
-    val tuple: (Boolean, String) = true -> dateparution
+    val x: CaseWhenExpr[Int] = "a" -> 2
+    val y                    = x orWhen x
 
-    val t2: (String, CaseWhen[Any]) = "STANDARD" -> est_annulé.caseWhen(tuple, false -> path"ktStartCommitmentDate")
-    val t3: CaseWhenExpr[Any]       = CaseWhenExpr.t2ToExp1(t2)(LeftCaseWhen.encoder, RightCaseWhen.expr[Any])
+    val caseWhenExpr2: CaseWhenExpr[Any] = Else -> 1
+
+    val expr1 = path"gppTypeProduit".caseWhen("KTTR" -> path"ktStartCommitmentDate", Else -> dateparution, x)
 
     val expr2 = path"ktInvoicingType".caseWhen(
-      t2,
-      Else -> expr1
+      "STANDARD" -> est_annulé.caseWhen(true -> dateparution, false -> path"ktStartCommitmentDate"),
+      Else       -> expr1
     )
 
     val da_deb_periode = path"gppTypeProduit" caseWhen ("KTREMB" -> daValidVente, "KTREGU" -> daValidVente) orElse expr2
@@ -149,7 +151,7 @@ class JsonInterpreterTest extends FunSuite {
   }
 
   test("case when bug #2 reduction") {
-    val expr = lit(1).caseWhen(Else -> lit(1).caseWhen(2 -> Null, Else -> 1))
+    val expr = 1.caseWhen(Else -> 1.caseWhen(2 -> Null, Else -> 1))
 
     assert(expr.cases.orElse.nonEmpty)
 
@@ -204,7 +206,8 @@ class JsonInterpreterTest extends FunSuite {
 
   test("testTx") {
 
-    val tx = struct("b" <<- path"a", "c" <<- 2, "d" <<- path"a")
+    val a  = path"a"
+    val tx = struct(path"a" as "b", "b" <<- a, "c" <<- 2, "d" <<- a)
 
     tx.check(in = """{"a":1}""", out = """{"b":1, "c":2, "d" :1}""")
     //tx.check2("a" -> 1)("b" -> 1,"c" -> 2,"d" -> 1)
@@ -298,6 +301,9 @@ class JsonInterpreterTest extends FunSuite {
   test("nested") {
     struct("c" <<- path"a.b").check("{\"a\":{\"b\":1}}", "{\"c\":1}")
   }
+
+  //p => path
+  //j => json  {a:1, b:$b}
 
   test("isEmpty") {
     struct("c" <<- path"a".isEmpty).check("""{"a":"1"}""", """{"c":false}""")
