@@ -1,7 +1,6 @@
 package io.univalence.fenek
 
 import Expr.{ CaseWhenExpr, Struct, UntypedExpr }
-import Fnk.TypedExpr
 import org.joda.time.Days
 import org.joda.time.Months
 import org.json4s.JsonAST._

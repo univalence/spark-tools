@@ -94,10 +94,11 @@ object StaticAnalysis {
 
     import Fnk._
     import io.univalence.typedpath.Path._
+    import io.univalence.fenek.Expr._
 
-    val ab: TypedExpr[Int]#Map2Builder[Int] = >("a").as[Int] <*> >("b").as[Int]
+    val ab: TypedExpr[Int]#Map2Builder[Int] = path"a".as[Int] <*> path"b".as[Int]
 
-    val x = >("a") caseWhen (1 -> (ab |> (_ + _)), 2 -> (ab |> (_ - _)), Else -> 3)
+    val x = path"a".caseWhen(1 -> (ab |> (_ + _)), 2 -> (ab |> (_ - _)), Else -> 3)
 
     staticAnalysis(x).foreach({
       case PosExpr(level, index, expr) =>

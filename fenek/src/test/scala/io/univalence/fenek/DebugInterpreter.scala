@@ -215,7 +215,7 @@ object DebugInterpreter {
 
     val ab: TypedExpr[Int]#Map2Builder[Int] = a.as[Int] <*> b.as[Int]
 
-    val x = >("a") caseWhen (1 -> (ab |> (_ + _)), 2 -> (ab |> ((a, b) => { println("toto"); a - b })), Else -> 3)
+    val x = path"a" caseWhen (1 -> (ab |> (_ + _)), 2 -> (ab |> ((a, b) => { println("toto"); a - b })), Else -> 3)
 
     val function = tx(struct("x" <<- x, "y" <<- x.as[Int]))
 

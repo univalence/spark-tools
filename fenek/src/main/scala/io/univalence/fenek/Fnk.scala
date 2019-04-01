@@ -1,7 +1,8 @@
 package io.univalence.fenek
 
+import io.univalence.fenek.Expr.CaseWhenExpr.RightCaseWhen.Aux
 import io.univalence.fenek.Expr.{ CaseWhenExpr, StructField, UntypedExpr }
-import io.univalence.fenek.Fnk.{ Else, LowPriority, TypedExpr }
+import io.univalence.fenek.Fnk.{ Else, TypedExpr }
 import io.univalence.fenek.generic.GenericExpr
 import io.univalence.typedpath.Path
 import org.json4s.JsonAST._
@@ -23,11 +24,55 @@ object Encoder {
 
 }
 
-sealed trait Expr[+A]
+trait ExprOps[+A] {
 
-object Expr extends LowPriority {
+  protected def sourceExpr: Expr[A]
+  import Expr._
+
+  object > {
+    def select(field: String): UntypedExpr = Ops.SelectField(field, sourceExpr)
+  }
+
+  def firstElement: UntypedExpr = Ops.FirstElement(sourceExpr)
+
+  def lastElement: UntypedExpr = Ops.LastElement(sourceExpr)
+
+  def remove(values: UntypedExpr*): UntypedExpr = Ops.Remove(sourceExpr, values)
+
+  def size: UntypedExpr = Ops.Size(sourceExpr)
+
+  def as[T: Encoder]: TypedExpr[T] =
+    TypedExpr.TypeCasted(sourceExpr, implicitly[Encoder[T]])
+
+  def orElse(expr2: UntypedExpr): UntypedExpr = Ops.OrElse(sourceExpr, expr2)
+
+  def #>[T: Encoder](f: PartialFunction[JValue, T]): TypedExpr[T] =
+    TypedExpr.JsonMap(sourceExpr, f, implicitly[Encoder[T]])
+
+  //def caseWhen(when: CaseWhenExpr, whens: CaseWhenExpr*): UntypedExpr = Ops.CaseWhen(expr, whens.foldLeft(when)(_ | _))
+
+  def caseWhen[X](when: CaseWhenExpr[X], whens: CaseWhenExpr[X]*): CaseWhen[X] =
+    CaseWhen(sourceExpr, whens.foldLeft[CaseWhenExpr[X]](when)(_ orWhen _))
+
+  def dateAdd(interval: TypedExpr[String], n: TypedExpr[Int]): UntypedExpr =
+    Ops.DateAdd(interval, n, sourceExpr)
+
+  def left(n: TypedExpr[Int]): UntypedExpr = Ops.Left(sourceExpr.as[String], n)
+
+  def datediff(datepart: TypedExpr[String], enddate: UntypedExpr): UntypedExpr =
+    Ops.DateDiff(datepart, sourceExpr, enddate)
+
+  def isEmpty: TypedExpr[Boolean] = TypedExpr.IsEmpty(sourceExpr)
+}
+
+sealed class Expr[+A] extends ExprOps[A] {
+  final override protected def sourceExpr: Expr[A] = this
+}
+
+object Expr {
 
   type UntypedExpr = Expr[Any]
+
 
   implicit def pathToExpr(path: Path): UntypedExpr = {
     import io.univalence.typedpath._
@@ -53,22 +98,55 @@ object Expr extends LowPriority {
     TypedExpr.Lit(t, implicitly[Encoder[T]])
 
   object CaseWhenExpr {
+    def single[A, B](a: Expr[A], b: Expr[B]): CaseWhenExpr[B] = CaseWhenExpr((a, b) :: Nil, None)
 
     def apply[B](caseWhenExpr1: CaseWhenExpr[B],
                  caseWhenExpr2: CaseWhenExpr[B],
                  more: CaseWhenExpr[B]*): CaseWhenExpr[B] =
       (caseWhenExpr2 +: more).foldLeft(caseWhenExpr1)(_ orWhen _)
 
-    implicit def t2ToExp1[A: Encoder, B: Encoder](t: (A, B)): CaseWhenExpr[B] =
-      CaseWhenExpr(lit(t._1) -> lit(t._2) :: Nil, None)
+    implicit def t2ToExp1[A, B, C](t: (A, B))(implicit leftCaseWhen: LeftCaseWhen[A],
+                                              rightCaseWhen: RightCaseWhen.Aux[B, C]): CaseWhenExpr[C] =
+      leftCaseWhen.build(rightCaseWhen)(t._1, t._2)
 
-    implicit def t2ToExp2[A: Encoder, B](t: (A, Expr[B])): CaseWhenExpr[B] =
-      CaseWhenExpr(lit(t._1) -> t._2 :: Nil, None)
+    trait LeftCaseWhen[A] {
+      def build[B, C](rightCaseWhen: RightCaseWhen.Aux[B, C])(a: A, b: B): CaseWhenExpr[C]
+    }
 
-    implicit def elseToExp1[B: Encoder](t: (Else.type, B)): CaseWhenExpr[B] = new CaseWhenExpr(Nil, Some(t._2))
+    object LeftCaseWhen {
+      def instance[A](f: A => UntypedExpr): LeftCaseWhen[A] = new LeftCaseWhen[A] {
+        override def build[B, C](rightCaseWhen: Aux[B, C])(a: A, b: B): CaseWhenExpr[C] =
+          CaseWhenExpr.single(f(a), rightCaseWhen.expr(b))
+      }
 
-    implicit def elseToExp2[B](t: (Else.type, Expr[B])): CaseWhenExpr[B] =
-      CaseWhenExpr(Nil, Some(t._2))
+      implicit def encoder[A: Encoder]: LeftCaseWhen[A] = instance(x => lit(x))
+
+      implicit def expr[A]: LeftCaseWhen[Expr[A]] = instance(x => x)
+      implicit val path: LeftCaseWhen[Path]       = instance(x => x)
+      implicit val LeftElse: LeftCaseWhen[Else.type] = new LeftCaseWhen[Else.type] {
+        override def build[B, C](rightCaseWhen: Aux[B, C])(a: Fnk.Else.type, b: B): CaseWhenExpr[C] =
+          new CaseWhenExpr[C](Nil, Some(rightCaseWhen.expr(b)))
+      }
+    }
+
+    trait RightCaseWhen[-A] {
+      type Out
+
+      def expr(a: A): Expr[Out]
+    }
+
+    object RightCaseWhen {
+      type Aux[A, B] = RightCaseWhen[A] { type Out = B }
+
+      def instance[A, B](f: A => Expr[B]): RightCaseWhen.Aux[A, B] = new RightCaseWhen[A] {
+        type Out = B
+        override def expr(a: A): Expr[B] = f(a)
+      }
+
+      implicit def encoder[A: Encoder]: RightCaseWhen.Aux[A, A] = instance(a => lit(a))
+      implicit def expr[A]: RightCaseWhen.Aux[Expr[A], A]       = instance(a => a)
+      implicit val path: RightCaseWhen.Aux[Path, Any]           = instance(a => a)
+    }
 
     def merge[B](caseWhenExprTyped1: CaseWhenExpr[B], caseWhenExprTyped2: CaseWhenExpr[B]): CaseWhenExpr[B] =
       CaseWhenExpr(
@@ -106,49 +184,6 @@ object Expr extends LowPriority {
 }
 
 object Fnk {
-
-  trait LowPriority {
-
-    implicit class ExprOps(expr: UntypedExpr) {
-
-      import Expr._
-
-      object > {
-        def select(field: String): UntypedExpr = Ops.SelectField(field, expr)
-      }
-
-      def firstElement: UntypedExpr = Ops.FirstElement(expr)
-
-      def lastElement: UntypedExpr = Ops.LastElement(expr)
-
-      def remove(values: UntypedExpr*): UntypedExpr = Ops.Remove(expr, values)
-
-      def size: UntypedExpr = Ops.Size(expr)
-
-      def as[T: Encoder]: TypedExpr[T] =
-        TypedExpr.TypeCasted(expr, implicitly[Encoder[T]])
-
-      def orElse(expr2: UntypedExpr): UntypedExpr = Ops.OrElse(expr, expr2)
-
-      def #>[T: Encoder](f: PartialFunction[JValue, T]): TypedExpr[T] =
-        TypedExpr.JsonMap(expr, f, implicitly[Encoder[T]])
-
-      //def caseWhen(when: CaseWhenExpr, whens: CaseWhenExpr*): UntypedExpr = Ops.CaseWhen(expr, whens.foldLeft(when)(_ | _))
-
-      def caseWhen[X](when: CaseWhenExpr[X], whens: CaseWhenExpr[X]*): CaseWhen[X] =
-        CaseWhen(expr, whens.foldLeft[CaseWhenExpr[X]](when)(_ orWhen _))
-
-      def dateAdd(interval: TypedExpr[String], n: TypedExpr[Int]): UntypedExpr =
-        Ops.DateAdd(interval, n, expr)
-
-      def left(n: TypedExpr[Int]): UntypedExpr = Ops.Left(expr.as[String], n)
-
-      def datediff(datepart: TypedExpr[String], enddate: UntypedExpr): UntypedExpr =
-        Ops.DateDiff(datepart, expr, enddate)
-
-      def isEmpty: TypedExpr[Boolean] = TypedExpr.IsEmpty(expr)
-    }
-  }
 
   object Null extends UntypedExpr
 
@@ -232,10 +267,6 @@ object Fnk {
 
     case class Lit[T](value: T, enc: Encoder[T]) extends TypedExpr[T]
     case class IsEmpty(expr: UntypedExpr) extends TypedExpr[Boolean]
-  }
-
-  object > {
-    def apply(fieldName: String): UntypedExpr = Expr.Ops.RootField(fieldName)
   }
 
 }
