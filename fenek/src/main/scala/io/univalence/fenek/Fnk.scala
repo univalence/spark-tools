@@ -102,10 +102,28 @@ object Expr {
                  more: CaseWhenExpr[B]*): CaseWhenExpr[B] =
       (caseWhenExpr2 +: more).foldLeft(caseWhenExpr1)(_ orWhen _)
 
+    /**
+      * Convert implicitly values like 1 -> 1 or path"a" -> path"b" or ... to CaseWhenExpr
+      * @param t (left, right)
+      * @param left how to convert left to an Expr
+      * @param right how to convert right to an Expr
+      * @tparam A type of left
+      * @tparam B type of right
+      * @tparam C type of return
+      * @return
+      */
     implicit def t2ToCaseWhenExpr[A, B, C](t: (A, B))(implicit left: ToExpr[A],
                                                       right: ToExpr.Aux[B, C]): CaseWhenExpr[C] =
       CaseWhenExpr.single(left.expr(t._1), right.expr(t._2))
 
+    /**
+      * Convert implicitly values like Else -> 1 or Else -> path"a" or ... to CaseWhenExpr
+      * @param t (Else, right)
+      * @param toExpr how to convert right to an Expr
+      * @tparam B type of right
+      * @tparam C type of return
+      * @return
+      */
     implicit def elseCaseWhenExpr[B, C](t: (Else.type, B))(implicit toExpr: ToExpr.Aux[B, C]): CaseWhenExpr[C] =
       new CaseWhenExpr(Nil, Some(toExpr.expr(t._2)))
 
