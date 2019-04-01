@@ -10,8 +10,6 @@ import scala.language.implicitConversions
 class JsonInterpreterTest extends FunSuite {
   type Struct = Expr.Struct
 
-  import Fnk._
-
   sealed trait StructChecker {
 
     private def self: StructChecker.StructCheckerImpl =

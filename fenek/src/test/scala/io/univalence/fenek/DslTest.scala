@@ -4,15 +4,14 @@ import io.univalence.fenek.Expr._
 import org.scalatest.FunSuite
 
 class DslTest extends FunSuite {
-  import Fnk._
 
   test("basic") {
 
-    val x: TypedExpr[Boolean] = (lit(true) caseWhen (true -> true, false -> true)).as[Boolean]
+    val x: Expr[Boolean] = true caseWhen (true -> true, false -> true)
 
-    val y: UntypedExpr = lit(2).caseWhen(1 -> "b", Else -> 0)
+    val y: UntypedExpr = 2.caseWhen(1 -> "b", Else -> 0)
 
-    val z: UntypedExpr = lit(1).caseWhen(1 -> "a", 2 -> "b").as[String] |> (_.toUpperCase)
+    val z: UntypedExpr = 1.caseWhen(1 -> "a", 2 -> "b").as[String] |> (_.toUpperCase)
 
   }
 

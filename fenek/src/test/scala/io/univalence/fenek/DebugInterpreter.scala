@@ -2,7 +2,6 @@ package io.univalence.fenek
 
 import io.univalence.fenek.Expr.Ops._
 import io.univalence.fenek.Expr._
-import io.univalence.fenek.Fnk.TypedExpr._
 import org.joda.time.{ Days, Months }
 import org.json4s.JsonAST._
 
@@ -36,7 +35,7 @@ object DebugInterpreter {
         }
 
       case Remove(source, toRemove) =>
-        Expr.CaseWhen(source, CaseWhenExpr(toRemove.map(_ -> Fnk.Null), Some(source)))
+        Expr.CaseWhen(source, CaseWhenExpr(toRemove.map(_ -> Null), Some(source)))
 
       case _ => expr
     }
@@ -207,13 +206,12 @@ object DebugInterpreter {
 
   def main(args: Array[String]): Unit = {
 
-    import Fnk._
     import io.univalence.typedpath.Path._
 
     val a: UntypedExpr = path"a"
     val b: UntypedExpr = path"b"
 
-    val ab: TypedExpr[Int]#Map2Builder[Int] = a.as[Int] <*> b.as[Int]
+    val ab = a.as[Int] <*> b.as[Int]
 
     val x = path"a" caseWhen (1 -> (ab |> (_ + _)), 2 -> (ab |> ((a, b) => { println("toto"); a - b })), Else -> 3)
 

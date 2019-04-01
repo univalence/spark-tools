@@ -59,7 +59,6 @@ object JsonInterpreter {
     //def tx(struct: Fnk.Struct): JObject => (Result[JObject], BitSet)
 
     import Expr.Ops._
-    import Fnk.TypedExpr._
 
     def anyToJValue(any: Any): Try[JValue] =
       Try {
@@ -111,7 +110,7 @@ object JsonInterpreter {
           }
 
         case Remove(source, toRemove) =>
-          Expr.CaseWhen(source, new CaseWhenExpr[Any](toRemove.map(_ -> Fnk.Null), Some(source)))
+          Expr.CaseWhen(source, new CaseWhenExpr[Any](toRemove.map(_ -> Null), Some(source)))
 
         case _ => expr
       }
@@ -297,7 +296,7 @@ object JsonInterpreter {
                 )
             }
 
-        case Fnk.Null =>
+        case Null =>
           _ =>
             Result.point(JNull)
 

@@ -1,7 +1,7 @@
 package io.univalence.fenek.generic
 
+import io.univalence.fenek.Expr.Ops.Lit
 import io.univalence.fenek.Expr.{ StructField, UntypedExpr }
-import io.univalence.fenek.Fnk.TypedExpr
 
 sealed trait GenericExpr {
   import GenericExpr.{ Named, OneOrMore }
@@ -45,8 +45,8 @@ object GenericExpr {
       }
       override lazy val values: Seq[Named[Any]] = {
         expr.value match {
-          case TypedExpr.Lit(value, _) => List(Named("value", value))
-          case _                       => Nil
+          case Lit(value, _) => List(Named("value", value))
+          case _             => Nil
         }
       }
     }

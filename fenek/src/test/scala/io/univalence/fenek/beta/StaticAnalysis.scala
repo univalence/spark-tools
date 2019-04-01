@@ -1,12 +1,8 @@
 package io.univalence.fenek.beta
 
-import io.univalence.fenek.Fnk
-import io.univalence.fenek.Expr
+import io.univalence.fenek.{ Else, Expr }
 import io.univalence.fenek.Expr.{ CaseWhen, Ops, UntypedExpr }
 import io.univalence.fenek.Expr.Ops.RootField
-import io.univalence.fenek.Fnk.TypedExpr.Lit
-import io.univalence.fenek.Fnk.TypedExpr.Map2
-import io.univalence.fenek.Fnk.TypedExpr.TypeCasted
 
 object StaticAnalysis {
 
@@ -60,6 +56,7 @@ object StaticAnalysis {
   def staticAnalysis(expr: UntypedExpr): Seq[PosExpr] = {
     def loop(expr: UntypedExpr, pos: Int, index: Int): Seq[PosExpr] = {
 
+      import Expr.Ops._
       val toUnfold: Seq[UntypedExpr] = expr match {
         case cw: CaseWhen[Any] =>
           Seq(Seq(cw.source), cw.cases.pairs.flatMap(t => Seq(t._1, t._2)), cw.cases.orElse.toList).flatten
@@ -92,11 +89,10 @@ object StaticAnalysis {
 
   def main(args: Array[String]): Unit = {
 
-    import Fnk._
     import io.univalence.typedpath.Path._
     import io.univalence.fenek.Expr._
 
-    val ab: TypedExpr[Int]#Map2Builder[Int] = path"a".as[Int] <*> path"b".as[Int]
+    val ab = path"a".as[Int] <*> path"b".as[Int]
 
     val x = path"a".caseWhen(1 -> (ab |> (_ + _)), 2 -> (ab |> (_ - _)), Else -> 3)
 

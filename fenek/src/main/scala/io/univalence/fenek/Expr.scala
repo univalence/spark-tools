@@ -1,7 +1,7 @@
 package io.univalence.fenek
 
+import io.univalence.fenek.Expr.Ops.{ IsEmpty, JsonMap, Lit, Map1, Map2, Map3, TypeCasted }
 import io.univalence.fenek.Expr.{ StructField, UntypedExpr }
-import io.univalence.fenek.Fnk.{ Else, TypedExpr }
 import io.univalence.typedpath.Path
 import org.json4s.JsonAST._
 
@@ -22,49 +22,67 @@ object Encoder {
 
 }
 
-trait ExprOps[+A] {
+sealed class Expr[+A] {
+  final def self: Expr[A] = this
 
-  protected def sourceExpr: Expr[A]
   import Expr._
 
   object > {
-    def select(field: String): UntypedExpr = Ops.SelectField(field, sourceExpr)
+    def select(field: String): UntypedExpr = Ops.SelectField(field, self)
   }
 
-  def firstElement: UntypedExpr = Ops.FirstElement(sourceExpr)
+  def firstElement: UntypedExpr = Ops.FirstElement(self)
 
-  def lastElement: UntypedExpr = Ops.LastElement(sourceExpr)
+  def lastElement: UntypedExpr = Ops.LastElement(self)
 
-  def remove(values: UntypedExpr*): UntypedExpr = Ops.Remove(sourceExpr, values)
+  def remove(values: UntypedExpr*): UntypedExpr = Ops.Remove(self, values)
 
-  def size: UntypedExpr = Ops.Size(sourceExpr)
+  def size: UntypedExpr = Ops.Size(self)
 
-  def as(name: String): StructField = StructField(name, sourceExpr)
+  def as(name: String): StructField = StructField(name, self)
 
-  def as[T: Encoder]: TypedExpr[T] =
-    TypedExpr.TypeCasted(sourceExpr, implicitly[Encoder[T]])
+  def as[T: Encoder]: Expr[T] = TypeCasted(self, implicitly[Encoder[T]])
 
-  def orElse[B >: A](expr2: Expr[B]): Expr[B] = Ops.OrElse(sourceExpr, expr2)
+  def orElse[B >: A](expr2: Expr[B]): Expr[B] = Ops.OrElse(self, expr2)
 
-  def #>[T: Encoder](f: PartialFunction[JValue, T]): TypedExpr[T] =
-    TypedExpr.JsonMap(sourceExpr, f, implicitly[Encoder[T]])
+  def #>[T: Encoder](f: PartialFunction[JValue, T]): Expr[T] = JsonMap(self, f, implicitly[Encoder[T]])
 
   def caseWhen[X](when: CaseWhenExpr[X], whens: CaseWhenExpr[X]*): CaseWhen[X] =
-    CaseWhen(sourceExpr, whens.foldLeft[CaseWhenExpr[X]](when)(_ orWhen _))
+    CaseWhen(self, whens.foldLeft[CaseWhenExpr[X]](when)(_ orWhen _))
 
-  def dateAdd(interval: TypedExpr[String], n: TypedExpr[Int]): Expr[String] =
-    Ops.DateAdd(interval, n, sourceExpr)
+  def dateAdd(interval: Expr[String], n: Expr[Int]): Expr[String] =
+    Ops.DateAdd(interval, n, self)
 
-  def left(n: TypedExpr[Int]): Expr[String] = Ops.Left(sourceExpr.as[String], n)
+  def left(n: Expr[Int]): Expr[String] = Ops.Left(self.as[String], n)
 
-  def datediff(datepart: TypedExpr[String], enddate: UntypedExpr): UntypedExpr =
-    Ops.DateDiff(datepart, sourceExpr, enddate)
+  def datediff(datepart: Expr[String], enddate: UntypedExpr): UntypedExpr =
+    Ops.DateDiff(datepart, self, enddate)
 
-  def isEmpty: TypedExpr[Boolean] = TypedExpr.IsEmpty(sourceExpr)
-}
+  def isEmpty: Expr[Boolean] = IsEmpty(self)
 
-sealed class Expr[+A] extends ExprOps[A] {
-  final override protected def sourceExpr: Expr[A] = this
+  def |>[B](f: A => B)(implicit enc: Encoder[B]): Expr[B] = Map1[A, B](this, f, enc)
+
+  trait Map2Builder[B] {
+    def |>[C: Encoder](f: (A, B) => C): Expr[C]
+    def <*>[C: Encoder](typedExpr: Expr[C]): Map3Builder[C]
+
+    trait Map3Builder[C] {
+      def |>[D: Encoder](f: (A, B, C) => D): Expr[D]
+    }
+  }
+
+  def <*>[B](expr2: Expr[B]): Map2Builder[B] = {
+    val expr1 = this
+    new Map2Builder[B] {
+      override def |>[C: Encoder](f: (A, B) => C) = Map2(expr1, expr2, f, implicitly[Encoder[C]])
+      override def <*>[C: Encoder](expr3: Expr[C]): Map3Builder[C] =
+        new Map3Builder[C] {
+          override def |>[D: Encoder](f: (A, B, C) => D): Expr[D] =
+            Map3[A, B, C, D](expr1, expr2, expr3, f, implicitly[Encoder[D]])
+        }
+    }
+  }
+
 }
 
 object Expr {
@@ -91,8 +109,7 @@ object Expr {
     def orWhen[C >: B](caseWhenExpr: CaseWhenExpr[C]): CaseWhenExpr[C] = CaseWhenExpr.merge(this, caseWhenExpr)
   }
 
-  implicit def lit[T: Encoder](t: T): TypedExpr[T] =
-    TypedExpr.Lit(t, implicitly[Encoder[T]])
+  implicit def lit[T: Encoder](t: T): Expr[T] = Lit(t, implicitly[Encoder[T]])
 
   object CaseWhenExpr {
     def single[A, B](a: Expr[A], b: Expr[B]): CaseWhenExpr[B] = CaseWhenExpr((a, b) :: Nil, None)
@@ -151,18 +168,11 @@ object Expr {
         caseWhenExprTyped1.orElse orElse caseWhenExprTyped2.orElse
       )
 
-    def setDefault[A](caseWhenExprTyped: CaseWhenExpr[A], value: TypedExpr[A]): CaseWhenExpr[A] =
-      caseWhenExprTyped.copy(orElse = Some(value))
-
-    def add[B](caseWhen: CaseWhenExpr[B], expr: (UntypedExpr, Expr[B])): CaseWhenExpr[B] =
-      CaseWhenExpr(expr +: caseWhen.pairs, caseWhen.orElse)
   }
-
-  //case class CaseWhenExprUnTyped(pairs: Seq[(UntypedExpr, UntypedExpr)], orElse: Option[UntypedExpr]) extends CaseWhenExpr
 
   case class StructField(name: String, source: UntypedExpr)
 
-  object StructField {}
+  object StructField
 
   sealed trait Ops extends UntypedExpr
 
@@ -172,93 +182,52 @@ object Expr {
     case class RootField(name: String) extends UntypedExpr
     case class SelectField(field: String, source: UntypedExpr) extends Ops
     case class Size(source: UntypedExpr) extends Ops
-    case class DateDiff(datepart: TypedExpr[String], startdate: UntypedExpr, enddate: UntypedExpr) extends Ops
-    case class Left(characterExpr: Expr[String], n: TypedExpr[Int]) extends Expr[String]
-    case class DateAdd(interval: TypedExpr[String], n: TypedExpr[Int], date: UntypedExpr) extends Expr[String]
+    case class DateDiff(datepart: Expr[String], startdate: UntypedExpr, enddate: UntypedExpr) extends Ops
+    case class Left(characterExpr: Expr[String], n: Expr[Int]) extends Expr[String]
+    case class DateAdd(interval: Expr[String], n: Expr[Int], date: UntypedExpr) extends Expr[String]
     case class OrElse[B](expr: Expr[B], expr2: Expr[B]) extends Expr[B]
     case class FirstElement(expr: UntypedExpr) extends Ops
-  }
-}
+    case class TypeCasted[A](source: UntypedExpr, enc: Encoder[A]) extends Expr[A]
 
-object Fnk {
+    case class JsonMap[O](source: UntypedExpr, f: JValue => O, enc: Encoder[O]) extends Expr[O]
 
-  object Null extends UntypedExpr
-
-  object Else
-
-  object struct {
-    @deprecated("use struct(\"a\" <<- expr) directly", "0.3")
-    def build(call: (String, UntypedExpr)*): Expr.Struct = Expr.Struct(call.map((Expr.StructField.apply _).tupled))
-
-    def apply(structField: StructField*): Expr.Struct = Expr.Struct(structField)
-  }
-
-  object interval {
-    def day: TypedExpr[String] = Expr.lit("day")
-  }
-
-  sealed abstract class TypedExpr[+A <: Any] extends Expr[A] {
-    //def enc: Encoder[A]
-
-    import TypedExpr._
-    def |>[B](f: A => B)(implicit enc: Encoder[B]): TypedExpr[B] =
-      Map1[A, B](this, f, enc)
-
-    trait Map2Builder[B] {
-      def |>[C: Encoder](f: (A, B) => C): TypedExpr[C]
-      def <*>[C: Encoder](typedExpr: TypedExpr[C]): Map3Builder[C]
-      trait Map3Builder[C] {
-        def |>[D: Encoder](f: (A, B, C) => D): TypedExpr[D]
-      }
-    }
-
-    def <*>[B](typedExpr: TypedExpr[B]): Map2Builder[B] = {
-      val t = this
-      new Map2Builder[B] {
-        override def |>[C: Encoder](f: (A, B) => C): TypedExpr[C] =
-          TypedExpr.Map2(t, typedExpr, f, implicitly[Encoder[C]])
-
-        override def <*>[C: Encoder](typedExpr2: TypedExpr[C]): Map3Builder[C] =
-          new Map3Builder[C] {
-            override def |>[D: Encoder](f: (A, B, C) => D): TypedExpr[D] =
-              Map3[A, B, C, D](t, typedExpr, typedExpr2, f, implicitly[Encoder[D]])
-          }
-      }
-    }
-
-  }
-
-  object TypedExpr {
-
-    case class TypedOrElse[T](value: TypedExpr[T], value1: TypedExpr[T], enc: Encoder[T]) extends TypedExpr[T]
-
-    case class TypeCasted[A](source: UntypedExpr, enc: Encoder[A]) extends TypedExpr[A]
-
-    case class JsonMap[O](source: UntypedExpr, f: JValue => O, enc: Encoder[O]) extends TypedExpr[O]
-
-    case class Map1[S, O](source: TypedExpr[S], f: S => O, enc: Encoder[O]) extends TypedExpr[O] {
+    case class Map1[S, O](source: Expr[S], f: S => O, enc: Encoder[O]) extends Expr[O] {
       def tryApply(a: Any): Try[O] = Try(f(a.asInstanceOf[S]))
     }
 
-    case class Map2[A, B, C](first: TypedExpr[A], second: TypedExpr[B], f: (A, B) => C, enc: Encoder[C])
-        extends TypedExpr[C] {
+    case class Map2[A, B, C](first: Expr[A], second: Expr[B], f: (A, B) => C, enc: Encoder[C]) extends Expr[C] {
       def tryApply(a: Any, b: Any): Try[C] =
         Try(f(a.asInstanceOf[A], b.asInstanceOf[B]))
     }
 
     case class Map3[A, B, C, D](
-      first: TypedExpr[A],
-      second: TypedExpr[B],
-      third: TypedExpr[C],
+      first: Expr[A],
+      second: Expr[B],
+      third: Expr[C],
       f: (A, B, C) => D,
       enc: Encoder[D]
-    ) extends TypedExpr[D] {
+    ) extends Expr[D] {
       def tryApply(a: Any, b: Any, c: Any): Try[D] =
         Try(f(a.asInstanceOf[A], b.asInstanceOf[B], c.asInstanceOf[C]))
     }
 
-    case class Lit[T](value: T, enc: Encoder[T]) extends TypedExpr[T]
-    case class IsEmpty(expr: UntypedExpr) extends TypedExpr[Boolean]
+    case class Lit[T](value: T, enc: Encoder[T]) extends Expr[T]
+    case class IsEmpty(expr: UntypedExpr) extends Expr[Boolean]
+
+  }
+
+  object interval {
+    def day: Expr[String] = Expr.lit("day")
   }
 
 }
+object Null extends UntypedExpr
+
+object struct {
+  @deprecated("use struct(\"a\" <<- expr) directly", "0.3")
+  def build(call: (String, UntypedExpr)*): Expr.Struct = Expr.Struct(call.map((Expr.StructField.apply _).tupled))
+
+  def apply(structField: StructField*): Expr.Struct = Expr.Struct(structField)
+}
+
+object Else
