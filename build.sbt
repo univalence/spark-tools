@@ -36,7 +36,6 @@ def useSpark(sparkVersion: String)(modules: String*): SettingsDefinition =
     modules.map(name => "org.apache.spark" %% s"spark-$name" % bumpedVersion % Provided)
   }
 
-
 lazy val projectDescription =
   Def.settings(
     organization         := "io.univalence",

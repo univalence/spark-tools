@@ -4,12 +4,12 @@ object FenekSyntaxTest {
 
   import io.univalence.typedpath.Path._
 
-  case class Field(path: Path, name: String)
+  case class Field(path: PathOrRoot, name: String)
 
   implicit class StringOps(val name: String) {
-    def <<-(path: Path): Field = ???
+    def <<-(path: PathOrRoot): Field = ???
   }
-  implicit class PathOps(val path: Path) {
+  implicit class PathOps(val path: PathOrRoot) {
     def as(name: String): Field = ???
   }
 

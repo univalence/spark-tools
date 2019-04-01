@@ -18,9 +18,8 @@ object PathMacro {
     go(xa, xb, Vector.empty)
   }
 
-  def pathMacro(c: whitebox.Context)(args: c.Expr[Path]*): c.Expr[NonEmptyPath] = {
+  def pathMacro(c: whitebox.Context)(args: c.Expr[PathOrRoot]*): c.Expr[Path] = {
     import c.universe._
-    import Path.Token
 
     def lit(s: String): c.Expr[String] = c.Expr[String](Literal(Constant(s)))
 
@@ -33,12 +32,13 @@ object PathMacro {
       })
     }
 
-    val allParts: Seq[Either[String, c.Expr[Path]]] = interleave(strings, args)
+    val allParts: Seq[Either[String, c.Expr[PathOrRoot]]] = interleave(strings, args)
 
-    def create(string: String, base: c.Expr[Path]): c.Expr[Path] =
+    def create(string: String, base: c.Expr[PathOrRoot]): c.Expr[PathOrRoot] =
       if (string.isEmpty) base
       else {
 
+        import Path._
         val tokens: Seq[Token] = Token.tokenize(string)
         if (tokens.exists(_.isInstanceOf[Path.ErrorToken])) {
 
@@ -48,15 +48,15 @@ object PathMacro {
 
           val validTokens: Seq[Path.ValidToken] = tokens.collect({ case s: Path.ValidToken => s })
 
-          validTokens.foldLeft[c.Expr[Path]](
+          validTokens.foldLeft[c.Expr[PathOrRoot]](
             base
           )({
             case (parent, Path.NamePart(name)) =>
               //improve checks on name
               reify(Field(lit(name).splice, parent.splice).get)
             case (parent, Path.Dot) => parent
-            case (parent, Path.Slash) if c.typecheck(parent.tree).tpe <:< typeOf[NonEmptyPath] =>
-              reify(Array(parent.splice.asInstanceOf[NonEmptyPath]))
+            case (parent, Path.Slash) if c.typecheck(parent.tree).tpe <:< typeOf[Path] =>
+              reify(Array(parent.splice.asInstanceOf[Path]))
 
             case (parent, Path.Slash) =>
               c.abort(
@@ -74,7 +74,7 @@ object PathMacro {
 
     if (!allParts.exists({
           case Left(x)  => x.nonEmpty
-          case Right(p) => p.actualType <:< typeOf[NonEmptyPath]
+          case Right(p) => p.actualType <:< typeOf[Path]
         })) {
       c.abort(
         c.enclosingPosition,
@@ -82,7 +82,7 @@ object PathMacro {
       )
     }
 
-    val res = allParts.foldLeft[c.Expr[Path]](reify(Root))({
+    val res = allParts.foldLeft[c.Expr[PathOrRoot]](reify(Root))({
       case (base, Left("")) => base
       case (base, Left(x))  => create(x, base)
       case (base, Right(x)) => {} match {
@@ -95,7 +95,7 @@ object PathMacro {
       }
     })
 
-    res.asInstanceOf[c.Expr[NonEmptyPath]]
+    res.asInstanceOf[c.Expr[Path]]
     //c.warning(c.enclosingPosition,res.toString())
 
     //pour les args, récupérer le vrai type en dessus de Path (Path, NonEmpty)
@@ -106,7 +106,7 @@ object PathMacro {
   }
 }
 
-sealed trait Path
+sealed trait PathOrRoot
 
 object Path {
 
@@ -178,25 +178,25 @@ object Path {
       })
       .mkString
 
-  def combineToPath(prefix: Path, suffix: Path): Path =
+  def combineToPath(prefix: PathOrRoot, suffix: PathOrRoot): PathOrRoot =
     suffix match {
       case Root     => prefix
       case f: Field => combineToField(prefix, f)
       case a: Array => combineToArray(prefix, a)
     }
 
-  def combineToArray(prefix: Path, suffix: Array): Array =
-    Array(combineToPath(prefix, suffix.parent).asInstanceOf[NonEmptyPath])
+  def combineToArray(prefix: PathOrRoot, suffix: Array): Array =
+    Array(combineToPath(prefix, suffix.parent).asInstanceOf[Path])
 
-  def combineToField(prefix: Path, suffix: Field): Field =
+  def combineToField(prefix: PathOrRoot, suffix: Field): Field =
     suffix.copy(parent = combineToPath(prefix, suffix.parent))
 
   implicit class PathHelper(val sc: StringContext) extends AnyVal {
-    def path(args: Path*): NonEmptyPath = macro PathMacro.pathMacro
+    def path(args: PathOrRoot*): Path = macro PathMacro.pathMacro
 
   }
 
-  def create(string: String): Try[Path] = {
+  def create(string: String): Try[PathOrRoot] = {
     val tokens = Token.tokenize(string)
     if (tokens.exists(_.isInstanceOf[ErrorToken])) {
 
@@ -209,13 +209,13 @@ object Path {
     } else {
       val validToken = tokens.collect({ case v: ValidToken => v })
 
-      validToken.foldLeft[Try[Path]](Try(Root))({
+      validToken.foldLeft[Try[PathOrRoot]](Try(Root))({
         case (parent, NamePart(name)) => parent.flatMap(Field(name, _))
         case (parent, Dot)            => parent //Meh c'est un peu étrange, mais par construction
         case (parent, Slash) =>
           parent.flatMap({
-            case n: NonEmptyPath => Try(Array(n))
-            case _               => Failure(new Exception(s"cannot create an array at the root $string"))
+            case n: Path => Try(Array(n))
+            case _       => Failure(new Exception(s"cannot create an array at the root $string"))
           })
 
       })
@@ -224,11 +224,11 @@ object Path {
   }
 }
 
-case object Root extends Path
+case object Root extends PathOrRoot
 
-sealed trait NonEmptyPath extends Path
+sealed trait Path extends PathOrRoot
 
-case class Field(name: String with Field.Name, parent: Path) extends NonEmptyPath
+case class Field(name: String with Field.Name, parent: PathOrRoot) extends Path
 
 object Field {
   sealed trait Name
@@ -242,8 +242,8 @@ object Field {
       )
   }
 
-  def apply(name: String, parent: Path): Try[Field] =
+  def apply(name: String, parent: PathOrRoot): Try[Field] =
     createName(name).map(new Field(_, parent))
 }
 
-case class Array(parent: NonEmptyPath) extends NonEmptyPath
+case class Array(parent: Path) extends Path

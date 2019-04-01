@@ -1,6 +1,6 @@
 package io.univalence.fenek
 
-import io.univalence.fenek.Expr.UntypedExpr
+import io.univalence.fenek.Expr._
 import org.scalatest.FunSuite
 
 class DslTest extends FunSuite {
@@ -17,17 +17,17 @@ class DslTest extends FunSuite {
   }
 
   test("simple") {
-    val expr: UntypedExpr = Fnk.lit(0)
+    val expr: UntypedExpr = Expr.lit(0)
 
-    val rule0: Expr.CaseWhenExpr[Any] = 1 -> "a" | 2 -> 1 | 3 -> true
+    val rule0: Expr.CaseWhenExpr[Any] = CaseWhenExpr(1 -> "a", 2 -> 1, 3 -> true)
 
-    val rule4: Expr.CaseWhenExpr[Any] = 1 -> 1 | 2 -> 2 | 3 -> "a"
+    val rule4: Expr.CaseWhenExpr[Any] = CaseWhenExpr(1 -> 1, 2 -> 2, 3 -> "a")
 
-    val rule5: Expr.CaseWhenExpr[Any] = 1 -> 1 | 2 -> 2 | Else -> expr
+    val rule5: Expr.CaseWhenExpr[Any] = CaseWhenExpr(1 -> 1, 2 -> 2, Else -> expr)
 
-    val rule2: Expr.CaseWhenExpr[Int] = 1 -> 2 | 2 -> 3 | Else -> 4
+    val rule2: Expr.CaseWhenExpr[Int] = CaseWhenExpr(1 -> 2, 2 -> 3, Else -> 4)
 
-    val rule1: Expr.CaseWhenExpr[Int] = true -> 2 | false -> 3
+    val rule1: Expr.CaseWhenExpr[Int] = CaseWhenExpr(true -> 2, false -> 3)
 
     val e1: Expr[Int] = lit(true) caseWhen rule1 caseWhen rule2
 

@@ -1,6 +1,6 @@
 package io.univalence.fenek
 
-import io.univalence.fenek.Expr.{ CaseWhen, UntypedExpr }
+import io.univalence.fenek.Expr._
 import io.univalence.typedpath.Path._
 import org.json4s.JsonAST._
 import org.scalatest.FunSuite
@@ -121,16 +121,16 @@ class JsonInterpreterTest extends FunSuite {
 
     val est_annulé = lit(false)
 
-    val expr1 = >("gppTypeProduit").caseWhen("KTTR" -> >("ktStartCommitmentDate") | Else -> dateparution)
+    val expr1 = >("gppTypeProduit").caseWhen("KTTR" -> >("ktStartCommitmentDate"), Else -> dateparution)
     val expr2 = >("ktInvoicingType").caseWhen(
-      "STANDARD" -> est_annulé.caseWhen(true -> dateparution | false -> >("ktStartCommitmentDate")) |
-        Else     -> expr1
+      "STANDARD" -> est_annulé.caseWhen(true -> dateparution, false -> >("ktStartCommitmentDate")),
+      Else       -> expr1
     )
 
     //??? : Est-ce qu'il ne faudrait pas merger typedpath avec fenek ?
     //ou dupliquer toutes les méthodes sur le path ?
     val value: UntypedExpr = path"gppTypeProduit"
-    val da_deb_periode     = value.caseWhen("KTREMB" -> daValidVente | "KTREGU" -> daValidVente).orElse(expr2)
+    val da_deb_periode     = value caseWhen ("KTREMB" -> daValidVente, "KTREGU" -> daValidVente) orElse expr2
 
     val tx = struct("da_deb_periode" <<- da_deb_periode, "expr1" <<- expr1, "expr2" <<- expr2)
 
@@ -145,7 +145,7 @@ class JsonInterpreterTest extends FunSuite {
   }
 
   test("case when bug #2 reduction") {
-    val expr = lit(1).caseWhen(Else -> lit(1).caseWhen(2 -> Null | Else -> 1))
+    val expr = lit(1).caseWhen(Else -> lit(1).caseWhen(2 -> Null, Else -> 1))
 
     assert(expr.cases.orElse.nonEmpty)
 
@@ -167,7 +167,7 @@ class JsonInterpreterTest extends FunSuite {
     val data12: TypedExpr[Int]              = 12
 
     val isTR: TypedExpr[Boolean] =
-      (lit(13) <*> lit(12) |> (_ % _) caseWhen (Else -> false | 1 -> true))
+      (lit(13) <*> lit(12) |> (_ % _) caseWhen (Else -> false, 1 -> true))
         .as[Boolean]
 
     struct("expr" <<- isTR).setExpected("expr" -> true).check()
@@ -188,7 +188,7 @@ class JsonInterpreterTest extends FunSuite {
     val factIterationNumber: TypedExpr[Int] = >("iterationinvoicenumber").as[Int]
     val data12: TypedExpr[Int]              = 12
     val TR =
-      (factIterationNumber <*> data12 |> (_ % _) caseWhen (Else -> false | 1 -> true))
+      (factIterationNumber <*> data12 |> (_ % _) caseWhen (Else -> false, 1 -> true))
         .as[Boolean]
 
     val tx = struct.build("expr" -> TR)

@@ -3,7 +3,6 @@ package io.univalence.fenek
 import io.univalence.fenek.Expr.Ops._
 import io.univalence.fenek.Expr._
 import io.univalence.fenek.Fnk.TypedExpr._
-import io.univalence.fenek.Fnk._
 import org.joda.time.{ Days, Months }
 import org.json4s.JsonAST._
 
@@ -216,7 +215,7 @@ object DebugInterpreter {
 
     val ab: TypedExpr[Int]#Map2Builder[Int] = a.as[Int] <*> b.as[Int]
 
-    val x = >("a") caseWhen (1 -> (ab |> (_ + _)) | 2 -> (ab |> ((a, b) => { println("toto"); a - b })) | Else -> 3)
+    val x = >("a") caseWhen (1 -> (ab |> (_ + _)), 2 -> (ab |> ((a, b) => { println("toto"); a - b })), Else -> 3)
 
     val function = tx(struct("x" <<- x, "y" <<- x.as[Int]))
 

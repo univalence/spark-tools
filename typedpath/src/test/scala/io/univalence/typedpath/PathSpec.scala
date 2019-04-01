@@ -1,11 +1,12 @@
 package io.univalence.typedpath
 
-import io.univalence.typedpath.Path.{ ErrorToken, NamePart, Slash, Token }
 import org.scalatest.FunSuite
 
 import scala.util.{ Failure, Try }
 
 class PathSpec extends FunSuite {
+
+  import Path._
 
   test("tokenize") {
 
@@ -105,10 +106,9 @@ class PathSpec extends FunSuite {
     assert(Path.create("").get == Root)
     assert(Path.create("abc") == Field("abc", Root))
     assert(Path.create("abc.def/").get == Array(Field("def", Field("abc", Root).get).get))
+
     /*
-
-   {:abc {:def 1}}   abc.def
-
+    {:abc {:def 1}}   abc.def
     {:abc {:def [{:ghi 1} {:ghi 2}]}}  abc.def/ghi
    */
 

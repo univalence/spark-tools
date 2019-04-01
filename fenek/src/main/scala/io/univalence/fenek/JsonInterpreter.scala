@@ -1,7 +1,6 @@
 package io.univalence.fenek
 
 import Expr.{ CaseWhenExpr, Struct, UntypedExpr }
-import Fnk.Encoder
 import Fnk.TypedExpr
 import org.joda.time.Days
 import org.joda.time.Months
@@ -113,7 +112,7 @@ object JsonInterpreter {
           }
 
         case Remove(source, toRemove) =>
-          Expr.CaseWhen(source, CaseWhenExpr(toRemove.map(_ -> Fnk.Null), Some(source)))
+          Expr.CaseWhen(source, new CaseWhenExpr[Any](toRemove.map(_ -> Fnk.Null), Some(source)))
 
         case _ => expr
       }
