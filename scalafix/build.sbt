@@ -1,0 +1,56 @@
+
+
+lazy val V = _root_.scalafix.sbt.BuildInfo
+inThisBuild(
+  List(
+    organization := "io.univalence",
+    homepage := Some(url("https://github.com/com/example")),
+    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers := List(
+      Developer(
+        "ahoy-jon",
+        "Jonathan WINANDY",
+        "jonathan@univalence.io",
+        url("https://univalence.io")
+      )
+    ),
+    scalaVersion := V.scala211,
+    addCompilerPlugin(scalafixSemanticdb),
+    scalacOptions ++= List(
+      "-Yrangepos"
+    )
+  )
+)
+
+skip in publish := true
+
+lazy val rules = project.settings(
+  moduleName := "scalafix",
+  libraryDependencies += "ch.epfl.scala" %% "scalafix-core" % V.scalafixVersion
+)
+
+lazy val input = project.settings(
+  skip in publish := true,
+  libraryDependencies += "io.univalence"  %% "fenek"   % "0.2"
+)
+
+lazy val output = project.settings(
+  skip in publish := true,
+  libraryDependencies +=  "io.univalence"  %% "fenek"   % "0.3-SNAPSHOT"
+)
+
+lazy val tests = project
+  .settings(
+    skip in publish := true,
+    libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % V.scalafixVersion % Test cross CrossVersion.full,
+    compile.in(Compile) := 
+      compile.in(Compile).dependsOn(compile.in(input, Compile)).value,
+    scalafixTestkitOutputSourceDirectories :=
+      sourceDirectories.in(output, Compile).value,
+    scalafixTestkitInputSourceDirectories :=
+      sourceDirectories.in(input, Compile).value,
+    scalafixTestkitInputClasspath :=
+      fullClasspath.in(input, Compile).value,
+  )
+  .dependsOn(rules)
+  .enablePlugins(ScalafixTestkitPlugin)

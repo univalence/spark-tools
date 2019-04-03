@@ -195,15 +195,15 @@ object Expr {
       def tryApply(a: Any): Try[O] = Try(f(a.asInstanceOf[S]))
     }
 
-    case class Map2[A, B, C](first: Expr[A], second: Expr[B], f: (A, B) => C, enc: Encoder[C]) extends Expr[C] {
+    case class Map2[A, B, C](expr1: Expr[A], expr2: Expr[B], f: (A, B) => C, enc: Encoder[C]) extends Expr[C] {
       def tryApply(a: Any, b: Any): Try[C] =
         Try(f(a.asInstanceOf[A], b.asInstanceOf[B]))
     }
 
     case class Map3[A, B, C, D](
-      first: Expr[A],
-      second: Expr[B],
-      third: Expr[C],
+      expr1: Expr[A],
+      expr2: Expr[B],
+      expr3: Expr[C],
       f: (A, B, C) => D,
       enc: Encoder[D]
     ) extends Expr[D] {
