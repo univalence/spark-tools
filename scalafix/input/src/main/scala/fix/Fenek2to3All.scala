@@ -31,4 +31,6 @@ object Fenek2to3All {
   val dm = >.dm
 
   val code = dm.>.pack.>.code
+
+  val combo: Struct = struct(abc = >.toto)
 }

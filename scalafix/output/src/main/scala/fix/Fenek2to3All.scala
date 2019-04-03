@@ -26,4 +26,6 @@ object Fenek2to3All {
   val dm = path"dm"
 
   val code = path"$dm.pack.code"
+
+  val combo: Struct = struct("abc"  <<- path"toto")
 }
