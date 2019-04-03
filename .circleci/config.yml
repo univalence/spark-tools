@@ -119,9 +119,9 @@ jobs:
   sparkzio:
     <<: *environment
     working_directory: ~/repo
-      steps:
-          - build_project:
-            project_name: spark-zio
+    steps:
+      - build_project:
+          project_name: spark-zio
 
   coverage:
     <<: *environment
