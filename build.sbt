@@ -100,9 +100,22 @@ lazy val defaultConfiguration =
 // ====
 
 lazy val sparkTools = (project in file("."))
-  .aggregate(centrifuge, fenek, typedpath, plumbus)
+  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio)
   .settings(
     name := "spark-tools"
+  )
+
+lazy val sparkZio = (project in file("spark-zio"))
+  .settings(
+    name        := "spark-zio",
+    description := "Spark Zio is to use Zio with Spark",
+    startYear   := Some(2019),
+    homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/spark-zio"))
+  )
+  .settings(projectDescription, defaultConfiguration)
+  .settings(
+    useSpark(sparkVersion = "2.1.1")(modules = "sql"),
+    libraryDependencies += "org.scalaz" %% "scalaz-zio" % "0.19"
   )
 
 lazy val centrifuge = project
