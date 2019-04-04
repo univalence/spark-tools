@@ -4,6 +4,7 @@ import io.univalence.fenek.Expr.Ops._
 import io.univalence.fenek.Expr._
 import org.joda.time.{ Days, Months }
 import org.json4s.JsonAST._
+import io.univalence.typedpath._
 
 import scala.collection.BitSet
 import scala.util.{ Failure, Success, Try }

@@ -2,21 +2,19 @@ package io.univalence.typedpath
 
 object FenekSyntaxTest {
 
-  import io.univalence.typedpath.Path._
-
-  case class Field(path: PathOrRoot, name: String)
+  trait StrucField
 
   implicit class StringOps(val name: String) {
-    def <<-(path: PathOrRoot): Field = ???
+    def <<-(path: Path): StrucField = ???
   }
-  implicit class PathOps(val path: PathOrRoot) {
-    def as(name: String): Field = ???
+  implicit class PathOps(val path: Path) {
+    def as(name: String): StrucField = ???
   }
 
-  case class struct(field: Field*) {
-    def addField(field: Field*): struct = ???
+  case class struct(field: StrucField*) {
+    def addField(field: StrucField*): struct = ???
 
-    def |+(field: Field): struct = ???
+    def |+(field: StrucField): struct = ???
   }
 
   val x: struct = struct(

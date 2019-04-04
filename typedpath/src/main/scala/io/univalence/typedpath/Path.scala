@@ -53,10 +53,10 @@ object PathMacro {
           )({
             case (parent, Path.NamePart(name)) =>
               //improve checks on name
-              reify(Field(lit(name).splice, parent.splice).get)
+              reify(FieldPath(lit(name).splice, parent.splice).get)
             case (parent, Path.Dot) => parent
             case (parent, Path.Slash) if c.typecheck(parent.tree).tpe <:< typeOf[Path] =>
-              reify(Array(parent.splice.asInstanceOf[Path]))
+              reify(ArrayPath(parent.splice.asInstanceOf[Path]))
 
             case (parent, Path.Slash) =>
               c.abort(
@@ -86,10 +86,10 @@ object PathMacro {
       case (base, Left("")) => base
       case (base, Left(x))  => create(x, base)
       case (base, Right(x)) => {} match {
-        case _ if x.actualType == typeOf[Array] =>
-          reify(Path.combineToArray(base.splice, x.splice.asInstanceOf[Array]))
-        case _ if x.actualType == typeOf[Field] =>
-          reify(Path.combineToField(base.splice, x.splice.asInstanceOf[Field]))
+        case _ if x.actualType == typeOf[ArrayPath] =>
+          reify(Path.combineToArray(base.splice, x.splice.asInstanceOf[ArrayPath]))
+        case _ if x.actualType == typeOf[FieldPath] =>
+          reify(Path.combineToField(base.splice, x.splice.asInstanceOf[FieldPath]))
         case _ =>
           reify(Path.combineToPath(base.splice, x.splice))
       }
@@ -181,20 +181,16 @@ object Path {
   def combineToPath(prefix: PathOrRoot, suffix: PathOrRoot): PathOrRoot =
     suffix match {
       case Root     => prefix
-      case f: Field => combineToField(prefix, f)
-      case a: Array => combineToArray(prefix, a)
+      case f: FieldPath => combineToField(prefix, f)
+      case a: ArrayPath => combineToArray(prefix, a)
     }
 
-  def combineToArray(prefix: PathOrRoot, suffix: Array): Array =
-    Array(combineToPath(prefix, suffix.parent).asInstanceOf[Path])
+  def combineToArray(prefix: PathOrRoot, suffix: ArrayPath): ArrayPath =
+    ArrayPath(combineToPath(prefix, suffix.parent).asInstanceOf[Path])
 
-  def combineToField(prefix: PathOrRoot, suffix: Field): Field =
+  def combineToField(prefix: PathOrRoot, suffix: FieldPath): FieldPath =
     suffix.copy(parent = combineToPath(prefix, suffix.parent))
 
-  implicit class PathHelper(val sc: StringContext) extends AnyVal {
-    def path(args: PathOrRoot*): Path = macro PathMacro.pathMacro
-
-  }
 
   def create(string: String): Try[PathOrRoot] = {
     val tokens = Token.tokenize(string)
@@ -210,11 +206,11 @@ object Path {
       val validToken = tokens.collect({ case v: ValidToken => v })
 
       validToken.foldLeft[Try[PathOrRoot]](Try(Root))({
-        case (parent, NamePart(name)) => parent.flatMap(Field(name, _))
+        case (parent, NamePart(name)) => parent.flatMap(FieldPath(name, _))
         case (parent, Dot)            => parent //Meh c'est un peu étrange, mais par construction
         case (parent, Slash) =>
           parent.flatMap({
-            case n: Path => Try(Array(n))
+            case n: Path => Try(ArrayPath(n))
             case _       => Failure(new Exception(s"cannot create an array at the root $string"))
           })
 
@@ -228,15 +224,15 @@ case object Root extends PathOrRoot
 
 sealed trait Path extends PathOrRoot
 
-case class Field(name: String with Field.Name, parent: PathOrRoot) extends Path {
+case class FieldPath(name: String with FieldPath.Name, parent: PathOrRoot) extends Path {
   override def toString: String = parent match {
     case Root => name
-    case f:Field => s"$f.$name"
-    case a:Array => s"$a$name"
+    case f:FieldPath => s"$f.$name"
+    case a:ArrayPath => s"$a$name"
   }
 }
 
-object Field {
+object FieldPath {
   sealed trait Name
 
   def createName(string: String): Try[String with Name] = {
@@ -248,10 +244,10 @@ object Field {
       )
   }
 
-  def apply(name: String, parent: PathOrRoot): Try[Field] =
-    createName(name).map(new Field(_, parent))
+  def apply(name: String, parent: PathOrRoot): Try[FieldPath] =
+    createName(name).map(new FieldPath(_, parent))
 }
 
-case class Array(parent: Path) extends Path {
+case class ArrayPath(parent: Path) extends Path {
   override def toString: String = s"$parent/"
 }

@@ -2,7 +2,7 @@ package io.univalence.fenek
 
 import io.univalence.fenek.Expr.Ops.{IsEmpty, JsonMap, Lit, Map1, Map2, Map3, SelectField, TypeCasted}
 import io.univalence.fenek.Expr.{StructField, UntypedExpr}
-import io.univalence.typedpath.{Field, Path}
+import io.univalence.typedpath.{FieldPath, Path}
 import org.json4s.JsonAST._
 
 import scala.language.implicitConversions
@@ -27,7 +27,7 @@ sealed class Expr[+A] {
 
   import Expr._
 
-  def select(path:Field) = SelectField(path, this)
+  def select(path:FieldPath) = SelectField(path, this)
 
 
   def firstElement: UntypedExpr = Ops.FirstElement(self)
@@ -92,8 +92,8 @@ object Expr {
     import io.univalence.typedpath._
 
     path match {
-      case f:Field => Expr.Ops.RootField(f)
-      case Array(_)            => throw new Exception("repetition path (array) not supported in fenek")
+      case f:FieldPath => Expr.Ops.RootField(f)
+      case ArrayPath(_)            => throw new Exception("repetition path (array) not supported in fenek")
     }
 
   }
@@ -177,8 +177,8 @@ object Expr {
   object Ops {
     case class Remove[B](source: Expr[B], toRemove: Seq[Expr[B]]) extends Expr[B]
     case class LastElement(expr: UntypedExpr) extends UntypedExpr
-    case class RootField(path: Field) extends UntypedExpr
-    case class SelectField(path: Field, source: UntypedExpr) extends Ops
+    case class RootField(path: FieldPath) extends UntypedExpr
+    case class SelectField(path: FieldPath, source: UntypedExpr) extends Ops
     case class Size(source: UntypedExpr) extends Ops
     case class DateDiff(datepart: Expr[String], startdate: UntypedExpr, enddate: UntypedExpr) extends Ops
     case class Left(characterExpr: Expr[String], n: Expr[Int]) extends Expr[String]

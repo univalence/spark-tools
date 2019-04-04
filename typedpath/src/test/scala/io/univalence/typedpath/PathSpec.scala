@@ -46,29 +46,30 @@ class PathSpec extends FunSuite {
     //check Illtyped
     //val r1 = path"$r/"
 
-    val r2: Array = path"$r.def/"
+    //check Illtyped
+    //val r2: ArrayPath = path"$r.def/"
 
-    val abc: Field = path"abc"
+    val abc: FieldPath = path"abc"
 
     assert(abc.name == "abc")
     assert(abc.parent == Root)
 
-    val ghi: Field = path"$abc.ghi"
+    val ghi: FieldPath = path"$abc.ghi"
 
     assert(ghi.name == "ghi")
     assert(ghi.parent == abc)
 
-    val lol: Field  = path"lol" //
-    val comp: Field = path"$abc/$lol"
+    val lol: FieldPath  = path"lol" //
+    val comp: FieldPath = path"$abc/$lol"
 
     assert(comp.name == "lol")
-    assert(comp.parent == Array(abc))
+    assert(comp.parent == ArrayPath(abc))
 
-    val comp2: Array = path"$comp/"
+    val comp2: ArrayPath = path"$comp/"
 
     assert(comp2.parent == comp)
 
-    val comp3: Array = path"$comp2"
+    val comp3: ArrayPath = path"$comp2"
 
     assert(comp3 == comp2)
 
@@ -78,10 +79,10 @@ class PathSpec extends FunSuite {
   test("createPath") {
     assert(
       Path.create("abcd.edfg//hijk") ==
-        Field("hijk", Array(Array(Field("edfg", Field("abcd", Root).get).get)))
+        FieldPath("hijk", ArrayPath(ArrayPath(FieldPath("edfg", FieldPath("abcd", Root).get).get)))
     )
 
-    assert(Path.create("abc///") == Try(Array(Array(Array(Field("abc", Root).get)))))
+    assert(Path.create("abc///") == Try(ArrayPath(ArrayPath(ArrayPath(FieldPath("abc", Root).get)))))
     /*
 
     //TO TEST
@@ -104,8 +105,8 @@ class PathSpec extends FunSuite {
   test("follow up") {
 
     assert(Path.create("").get == Root)
-    assert(Path.create("abc") == Field("abc", Root))
-    assert(Path.create("abc.def/").get == Array(Field("def", Field("abc", Root).get).get))
+    assert(Path.create("abc") == FieldPath("abc", Root))
+    assert(Path.create("abc.def/").get == ArrayPath(FieldPath("def", FieldPath("abc", Root).get).get))
 
     /*
     {:abc {:def 1}}   abc.def

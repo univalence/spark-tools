@@ -1,7 +1,7 @@
 package io.univalence.fenek
 
 import io.univalence.fenek.Expr._
-import io.univalence.typedpath.Path._
+import io.univalence.typedpath._
 import org.json4s.JsonAST._
 import org.scalatest.FunSuite
 

@@ -1,7 +1,7 @@
 package io.univalence.fenek
 
 import Expr.{CaseWhenExpr, Struct, UntypedExpr}
-import io.univalence.typedpath.Path
+import io.univalence.typedpath._
 import org.joda.time.Days
 import org.joda.time.Months
 import org.json4s.JsonAST._
