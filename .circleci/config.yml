@@ -155,25 +155,25 @@ workflows:
   master:
     jobs:
       - update_deps_in_cache
-#      - centrifuge:
-#          requires:
-#            - update_deps_in_cache
-#      - typedpath:
-#          requires:
-#            - update_deps_in_cache
-#      - fenek:
-#          requires:
-#            - update_deps_in_cache
-#      - plumbus:
-#          requires:
-#            - update_deps_in_cache
+      - centrifuge:
+          requires:
+            - update_deps_in_cache
+      - typedpath:
+          requires:
+            - update_deps_in_cache
+      - fenek:
+          requires:
+            - update_deps_in_cache
+      - plumbus:
+          requires:
+            - update_deps_in_cache
       - sparkzio:
           requires:
             - update_deps_in_cache
-#      - coverage:
-#          requires:
-#            - centrifuge
-#            - typedpath
-#            - fenek
-#            - plumbus
-#            - sparkzio
+      - coverage:
+          requires:
+            - centrifuge
+            - typedpath
+            - fenek
+            - plumbus
+            - sparkzio
