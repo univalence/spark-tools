@@ -51,6 +51,7 @@ aliases:
     working_directory: ~/repo
     command: bash <(curl -s https://codecov.io/bash)
 
+
 commands:
   build_project:
     description: build a sub-project
@@ -69,7 +70,7 @@ commands:
       - run:
           name: Test and compute code coverage << parameters.project_name >>
           command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
-      -run:
+      - run:
           name: Deploy << parameters.project_name >> to maven central
           command: cat /dev/null | sbt << parameters.project_name >>/releaseEarly
 
