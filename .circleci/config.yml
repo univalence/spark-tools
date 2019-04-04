@@ -59,7 +59,6 @@ commands:
       - run:
           name: Configure GPG private key for signing project artifacts in OSS Sonatype
           command: |
-            export GPG_TTY=$(tty)
             echo $SECR_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
 
   build_project:
@@ -82,7 +81,9 @@ commands:
           command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
       - run:
           name: Deploy << parameters.project_name >> to maven central
-          command: cat /dev/null | sbt << parameters.project_name >>/releaseEarly
+          command: |
+            export GPG_TTY=$(tty)
+            cat /dev/null | sbt << parameters.project_name >>/releaseEarly
 
 
 jobs:
