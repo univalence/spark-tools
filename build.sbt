@@ -177,11 +177,12 @@ lazy val defaultConfiguration =
     crossScalaVersions := List(libVersion.scala2_11, libVersion.scala2_12),
     scalaVersion       := libVersion.scala2_11,
     scalacOptions      := stdOptions ++ extraOptions(scalaVersion.value),
-    useGpg             := true,
+//    useGpg             := true,
     scalafmtOnCompile  := false,
-    publishTo          := sonatypePublishTo.value,
     parallelExecution  := false,
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD")
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+    publishTo          := sonatypePublishTo.value,
+    releaseEarlyWith in Global := SonatypePublisher
   )
 
 def addTestLibs: SettingsDefinition =
@@ -208,8 +209,8 @@ addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
 resolvers ++= Seq(
-  "sonatype-oss"      at "http://oss.sonatype.org/content/repositories/snapshots",
-  "OSS"               at "http://oss.sonatype.org/content/repositories/releases",
+  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/",
   "Conjars"           at "http://conjars.org/repo",
   "Clojars"           at "http://clojars.org/repo",

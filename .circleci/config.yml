@@ -47,10 +47,9 @@ aliases:
     command: cat /dev/null | sbt check
 
   - &export_coverage
-    working_directory: ~/repo
     name: "Export code coverage report"
+    working_directory: ~/repo
     command: bash <(curl -s https://codecov.io/bash)
-
 
 commands:
   build_project:
@@ -70,6 +69,10 @@ commands:
       - run:
           name: Test and compute code coverage << parameters.project_name >>
           command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
+      -run:
+          name: Deploy << parameters.project_name >> to maven central
+          command: cat /dev/null | sbt releaseEarly
+
 
 jobs:
   update_deps_in_cache:
@@ -132,3 +135,4 @@ workflows:
       - plumbus
       - sparkzio
       - update_deps_in_cache
+      - coverage
