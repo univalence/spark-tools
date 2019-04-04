@@ -2,6 +2,7 @@ package fix
 
 import scalafix.v1._
 
+import scala.collection.immutable
 import scala.meta._
 
 object SelectField {
@@ -46,21 +47,40 @@ class Fenek2to3Path extends SemanticRule("Fenek2to3Path") {
 
 }
 
+class Fenek2to3Import extends SemanticRule("Fenek2to3Import") {
+  override def fix(implicit doc: SemanticDocument): Patch = {
+    val patches = doc.tree.collect({
+      case i @ Importer(ref, xs) if ref.toString.contains("Fnk") || ref.toString.contains("TypedExpr") =>
+        xs.map(Patch.removeImportee)
+
+    })
+
+    if (patches.nonEmpty) {
+      patches.flatten.reduce(_ + _) +
+        Patch.addGlobalImport(importer"io.univalence.fenek.Expr._") +
+        Patch.addGlobalImport(importer"io.univalence.typedpath.Path._") +
+        Patch.addGlobalImport(importer"io.univalence.typedpath.Path") +
+        Patch.addGlobalImport(importer"io.univalence.fenek.Expr")
+    } else Patch.empty
+  }
+}
+
 class Fenek2to3Rest extends SemanticRule("Fenek2to3Rest") {
 
   override def fix(implicit doc: SemanticDocument): Patch = {
+    //println("Tree.structureLabeled: " + doc.tree.structureLabeled)
 
-    val patches = doc.tree.collect({
-      case i @ Importer(ref, xs) if ref.toString.contains("Fnk") || ref.toString.contains("TypedExpr") =>
-        xs.map(Patch.removeImportee) :+
-          Patch.addGlobalImport(importer"io.univalence.fenek.Expr._") :+
-          Patch.addGlobalImport(importer"io.univalence.typedpath.Path._")
+    val patches: Seq[Seq[Patch]] = doc.tree.collect({
 
       case t @ Type.Name("Expr") =>
         Seq(Patch.replaceTree(t, "Expr[Any]"))
 
       case t @ Type.Apply(Type.Name("TypedExpr"), x :: Nil) =>
         Seq(Patch.replaceTree(t, s"Expr[$x]"))
+
+
+      case  t @ Type.Select(Term.Name("Fnk"), _) =>
+        Seq(Patch.removeTokens(t.tokens.take(2)))
 
       case s @ Term.Apply(Term.Name("struct"), args) if args.forall(x => x.isInstanceOf[Term.Assign]) =>
         val assigns = args.asInstanceOf[Seq[Term.Assign]]
@@ -79,7 +99,7 @@ class Fenek2to3Rest extends SemanticRule("Fenek2to3Rest") {
 
     //println("Tree.syntax: " + doc.tree.syntax)
     //println("Tree.structure: " + doc.tree.structure)
-    //println("Tree.structureLabeled: " + doc.tree.structureLabeled)
+
 
     patches.flatten.fold(Patch.empty)(_ + _)
   }

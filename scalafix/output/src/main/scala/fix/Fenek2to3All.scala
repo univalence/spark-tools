@@ -1,7 +1,9 @@
 package fix
 
 import io.univalence.fenek._
+import io.univalence.fenek.Expr
 import io.univalence.fenek.Expr._
+import io.univalence.typedpath.Path
 import io.univalence.typedpath.Path._
 
 object Fenek2to3All {
@@ -28,4 +30,6 @@ object Fenek2to3All {
   val code = path"$dm.pack.code"
 
   val combo: Struct = struct("abc"  <<- path"toto")
+
+  type T3 = Expr[Any]
 }

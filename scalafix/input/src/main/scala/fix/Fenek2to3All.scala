@@ -1,5 +1,6 @@
 /*
 rules = [
+  "Fenek2to3Import"
   "Fenek2to3Path"
   "Fenek2to3Rest"
 ]
@@ -8,6 +9,7 @@ package fix
 
 import io.univalence.fenek._
 import io.univalence.fenek.Fnk._
+import TypedExpr._
 
 object Fenek2to3All {
 
@@ -33,4 +35,6 @@ object Fenek2to3All {
   val code = dm.>.pack.>.code
 
   val combo: Struct = struct(abc = >.toto)
+
+  type T3 = Fnk.Expr
 }
