@@ -71,7 +71,7 @@ commands:
           command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
       -run:
           name: Deploy << parameters.project_name >> to maven central
-          command: cat /dev/null | sbt releaseEarly
+          command: cat /dev/null | sbt << parameters.project_name >>/releaseEarly
 
 
 jobs:
