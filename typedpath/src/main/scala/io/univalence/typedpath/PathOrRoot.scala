@@ -228,7 +228,13 @@ case object Root extends PathOrRoot
 
 sealed trait Path extends PathOrRoot
 
-case class Field(name: String with Field.Name, parent: PathOrRoot) extends Path
+case class Field(name: String with Field.Name, parent: PathOrRoot) extends Path {
+  override def toString: String = parent match {
+    case Root => name
+    case f:Field => s"$f.$name"
+    case a:Array => s"$a$name"
+  }
+}
 
 object Field {
   sealed trait Name
@@ -246,4 +252,6 @@ object Field {
     createName(name).map(new Field(_, parent))
 }
 
-case class Array(parent: Path) extends Path
+case class Array(parent: Path) extends Path {
+  override def toString: String = s"$parent/"
+}

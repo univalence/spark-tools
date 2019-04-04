@@ -78,7 +78,7 @@ object DebugInterpreter {
 
         case RootField(name) =>
           Compute(1, jobj => {
-            TxRes(jobj \\ name match {
+            TxRes(jobj \\ name.toString match {
               case JObject(Nil) => Failure(new Exception(s"missing field $name"))
               case x            => Success(x)
             }, BitSet(index))

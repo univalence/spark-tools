@@ -3,13 +3,14 @@ package io.univalence.fenek.analysis
 import io.univalence.fenek.Expr
 import io.univalence.fenek.Expr.UntypedExpr
 import io.univalence.fenek.generic.GenericExpr
+import io.univalence.typedpath.Path
 
 object Sources {
 
-  case class Path(parts: Vector[String])
-
+  //TODO Test and redo
   def getSources(expr: UntypedExpr): Vector[Path] = {
 
+    /*
     def loop(genericExpr: GenericExpr, suffix: Vector[String] = Vector.empty): Vector[Path] =
       genericExpr.expr.value match {
         case Expr.Ops.SelectField(name, source) =>
@@ -24,6 +25,7 @@ object Sources {
 
       }
 
-    loop(GenericExpr(expr))
+    loop(GenericExpr(expr))*/
+    ???
   }
 }

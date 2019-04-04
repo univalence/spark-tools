@@ -1,6 +1,7 @@
 package io.univalence.fenek
 
-import Expr.{ CaseWhenExpr, Struct, UntypedExpr }
+import Expr.{CaseWhenExpr, Struct, UntypedExpr}
+import io.univalence.typedpath.Path
 import org.joda.time.Days
 import org.joda.time.Months
 import org.json4s.JsonAST._
@@ -251,8 +252,9 @@ object JsonInterpreter {
 
         case RootField(name) =>
           jobj =>
-            jobj \\ name match {
-              case JObject(Nil) => Result(None, MissingField(name) :: Nil)
+          val names = name.toString.split('.')
+            names.tail.foldLeft(jobj \\ names.head)(_ \\ _) match {
+              case JObject(Nil) => Result(None, MissingField(name.toString) :: Nil)
               case x            => Result(Some(x), Nil)
             }
 
@@ -262,8 +264,8 @@ object JsonInterpreter {
             {
               f1(jvalue).flatMap(
                 y =>
-                  y \ name match {
-                    case JObject(Nil) => Result(None, MissingField(name) :: Nil)
+                  y \ name.toString match {
+                    case JObject(Nil) => Result(None, MissingField(name.toString) :: Nil)
                     case x            => Result.point(x)
                 }
               )
