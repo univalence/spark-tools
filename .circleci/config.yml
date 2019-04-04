@@ -52,16 +52,9 @@ aliases:
     command: bash <(curl -s https://codecov.io/bash)
 
 
-  - &all_projects
-    - centrifuge
-    - fenek
-    - typedpath
-    - plumbus
-
-
 commands:
   build_project:
-    description: build a sub-project #<< parameters.project_name >>
+    description: build a sub-project
     parameters:
       project_name:
         type: string
@@ -137,4 +130,5 @@ workflows:
       - typedpath
       - fenek
       - plumbus
+      - sparkzio
       - update_deps_in_cache
