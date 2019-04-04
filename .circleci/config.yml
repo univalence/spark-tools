@@ -7,7 +7,7 @@ aliases:
     environment:
       JVM_OPTS: -Xmx3200m
       TERM: dumb
-      GNUPGHOME: ~/tmp/.gnupg
+      GNUPGHOME: ~/.gnupg
 
   - &restore_cache_dependencies
     name: "Restore dependencies from the cache"
@@ -58,13 +58,21 @@ commands:
     description: configure GPG
     steps:
       - run:
-          name: Configure GPG private key for signing project artifacts in OSS Sonatype
+          name: Create GPG conf dir
+          command: mkdir -p $GNUPGHOME
+      - run:
+          name: Create gpg.conf
           command: |
-            mkdir -p $GNUPGHOME
             echo "charset utf-8" > $GNUPGHOME/gpg.conf
             echo "use-agent" >> $GNUPGHOME/gpg.conf
             echo "pinentry-mode loopback" >> $GNUPGHOME/gpg.conf
+      - run:
+          name: Create gpg-agent.conf
+          command: |
             echo "allow-loopback-pinentry" > $GNUPGHOME/gpg-agent.conf
+      - run:
+          name: Configure GPG private key for signing project artifacts in OSS Sonatype
+          command: |
             echo $SECR_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
 
   build_project:
