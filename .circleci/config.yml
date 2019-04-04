@@ -143,19 +143,19 @@ workflows:
     jobs:
       - update_deps_in_cache
       - centrifuge:
-          requiires:
+          requires:
             - update_deps_in_cache
       - typedpath:
-          requiires:
+          requires:
             - update_deps_in_cache
       - fenek:
-          requiires:
+          requires:
             - update_deps_in_cache
       - plumbus:
-          requiires:
+          requires:
             - update_deps_in_cache
       - sparkzio:
-          requiires:
+          requires:
             - update_deps_in_cache
       - coverage:
           requires:
