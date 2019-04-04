@@ -61,7 +61,9 @@ commands:
           command: |
             export GNUPGHOME=~/repo/.gnupg
             mkdir -p $GNUPGHOME
-            echo "charset utf-8\nuse-agent\npinentry-mode loopback" > $GNUPGHOME/gpg.conf
+            echo "charset utf-8" > $GNUPGHOME/gpg.conf
+            echo "use-agent" >> $GNUPGHOME/gpg.conf
+            echo "pinentry-mode loopback" >> $GNUPGHOME/gpg.conf
             echo "allow-loopback-pinentry" > $GNUPGHOME/gpg-agent.conf
             echo $SECR_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
 
