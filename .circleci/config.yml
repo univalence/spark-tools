@@ -59,10 +59,9 @@ commands:
       - run:
           name: Configure GPG private key for signing project artifacts in OSS Sonatype
           command: |
-            echo ">>> ~/.gnupg/gpg.conf"
-            cat ~/.gnupg/gpg.conf
-            echo ">>> ~/.gnupg/gpg-agent.conf"
-            cat ~/.gnupg/gpg-agent.conf
+            mkdir -p ~/.gnupg
+            echo "use-agent\npinentry-mode loopback" > ~/.gnupg/gpg.conf
+            echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
             echo $SECR_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
 
   build_project:
