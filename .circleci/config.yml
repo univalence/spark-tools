@@ -140,10 +140,26 @@ jobs:
 workflows:
   master:
     jobs:
-      - centrifuge
-      - typedpath
-      - fenek
-      - plumbus
-      - sparkzio
       - update_deps_in_cache
-      - coverage
+      - centrifuge:
+          requiires:
+            - update_deps_in_cache
+      - typedpath:
+          requiires:
+            - update_deps_in_cache
+      - fenek:
+          requiires:
+            - update_deps_in_cache
+      - plumbus:
+          requiires:
+            - update_deps_in_cache
+      - sparkzio:
+          requiires:
+            - update_deps_in_cache
+      - coverage:
+          requires:
+            - centrifuge
+            - typedpath
+            - fenek
+            - plumbus
+            - sparkzio
