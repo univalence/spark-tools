@@ -131,6 +131,25 @@ lazy val typedpath = project
     addTestLibs
   )
 
+lazy val site = project
+  .enablePlugins(MicrositesPlugin)
+//  .dependsOn(centrifuge, plumbus, typedpath, fenek)
+  .settings(
+    name := "spark-tools-site"
+  )
+  .settings(
+    micrositeName := "Spark tools",
+    micrositeDescription := "Tools for Spark to simplify the life of data engineers",
+    micrositeAuthor := "Spark tools contributors",
+    micrositeOrganizationHomepage := "https://github.com/univalence/spark-tools",
+    micrositeGitHostingUrl := "https://github.com/univalence/spark-tools",
+    micrositeFooterText := Some(
+      """
+        |<p>&copy; 2017-2019 <a href="https://github.com/univalence/spark-tools">Spark tools Maintainers</a></p>
+        |""".stripMargin
+    ),
+  )
+
 // ====
 
 val libVersion =
