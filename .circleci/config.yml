@@ -7,7 +7,6 @@ aliases:
     environment:
       JVM_OPTS: -Xmx3200m
       TERM: dumb
-      GNUPGHOME: ~/.gnupg
 
   - &restore_cache_dependencies
     name: "Restore dependencies from the cache"
@@ -81,7 +80,7 @@ commands:
       project_name:
         type: string
     steps:
-      - configure_gpg
+#      - configure_gpg
       - checkout
       - restore_cache: *restore_cache_dependencies
       #- run:
@@ -93,10 +92,10 @@ commands:
       - run:
           name: Test and compute code coverage << parameters.project_name >>
           command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
-      - run:
-          name: Deliver << parameters.project_name >> to maven central
-          command: |
-            cat /dev/null | sbt << parameters.project_name >>/releaseEarly
+#      - run:
+#          name: Deliver << parameters.project_name >> to maven central
+#          command: |
+#            cat /dev/null | sbt << parameters.project_name >>/releaseEarly
 
 
 jobs:
