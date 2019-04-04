@@ -59,9 +59,9 @@ commands:
       - run:
           name: Configure GPG private key for signing project artifacts in OSS Sonatype
           command: |
-            mkdir -p ~/.gnupg
-            echo "use-agent\npinentry-mode loopback" > ~/.gnupg/gpg.conf
-            echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+#            mkdir -p ~/.gnupg
+#            echo "use-agent\npinentry-mode loopback" > ~/.gnupg/gpg.conf
+#            echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
             echo $SECR_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
 
   build_project:
@@ -82,10 +82,10 @@ commands:
       - run:
           name: Test and compute code coverage << parameters.project_name >>
           command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
-      - run:
-          name: Deploy << parameters.project_name >> to maven central
-          command: |
-            cat /dev/null | sbt << parameters.project_name >>/releaseEarly
+#      - run:
+#          name: Deliver << parameters.project_name >> to maven central
+#          command: |
+#            cat /dev/null | sbt << parameters.project_name >>/releaseEarly
 
 
 jobs:
@@ -144,25 +144,25 @@ workflows:
   master:
     jobs:
       - update_deps_in_cache
-#      - centrifuge:
-#          requires:
-#            - update_deps_in_cache
-#      - typedpath:
-#          requires:
-#            - update_deps_in_cache
-#      - fenek:
-#          requires:
-#            - update_deps_in_cache
-#      - plumbus:
-#          requires:
-#            - update_deps_in_cache
+      - centrifuge:
+          requires:
+            - update_deps_in_cache
+      - typedpath:
+          requires:
+            - update_deps_in_cache
+      - fenek:
+          requires:
+            - update_deps_in_cache
+      - plumbus:
+          requires:
+            - update_deps_in_cache
       - sparkzio:
           requires:
             - update_deps_in_cache
-#      - coverage:
-#          requires:
-#            - centrifuge
-#            - typedpath
-#            - fenek
-#            - plumbus
-#            - sparkzio
+      - coverage:
+          requires:
+            - centrifuge
+            - typedpath
+            - fenek
+            - plumbus
+            - sparkzio
