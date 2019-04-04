@@ -53,12 +53,21 @@ aliases:
 
 
 commands:
+  configure_gpg:
+    description: configure GPG
+    steps:
+      - run:
+          name: Configure GPG private key for signing project artifacts in OSS Sonatype
+          command: |
+            echo $SECR_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
+
   build_project:
     description: build a sub-project
     parameters:
       project_name:
         type: string
     steps:
+      - configure_gpg
       - checkout
       - restore_cache: *restore_cache_dependencies
       #- run:
