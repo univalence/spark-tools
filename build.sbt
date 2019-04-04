@@ -71,9 +71,10 @@ lazy val sparkZio = (project in file("spark-zio"))
 lazy val centrifuge = project
   .settings(projectDescription, defaultConfiguration)
   .settings(
-    description := "Centrifuge is for data quality",
-    homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/centrifuge")),
-    startYear   := Some(2017)
+    description        := "Centrifuge is for data quality",
+    homepage           := Some(url("https://github.com/univalence/spark-tools/tree/master/centrifuge")),
+    startYear          := Some(2017),
+    crossScalaVersions := List(libVersion.scala2_11),
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -138,11 +139,11 @@ lazy val site = project
     name := "spark-tools-site"
   )
   .settings(
-    micrositeName := "Spark tools",
-    micrositeDescription := "Tools for Spark to simplify the life of data engineers",
-    micrositeAuthor := "Spark tools contributors",
+    micrositeName                 := "Spark tools",
+    micrositeDescription          := "Tools for Spark to simplify the life of data engineers",
+    micrositeAuthor               := "Spark tools contributors",
     micrositeOrganizationHomepage := "https://github.com/univalence/spark-tools",
-    micrositeGitHostingUrl := "https://github.com/univalence/spark-tools",
+    micrositeGitHostingUrl        := "https://github.com/univalence/spark-tools",
     micrositeFooterText := Some(
       """
         |<p>&copy; 2017-2019 <a href="https://github.com/univalence/spark-tools">Spark tools Maintainers</a></p>
