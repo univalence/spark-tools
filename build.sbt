@@ -1,41 +1,5 @@
 import ScalaSettings._
 
-val libVersion =
-  new {
-    val cats          = "1.0.0"
-    val jodaTime      = "2.10"
-    val json4s        = "3.2.11"
-    val magnolia      = "0.10.0"
-    val monix         = "2.3.3"
-    val scala2_12     = "2.12.8"
-    val scala2_11     = "2.11.12"
-    val scalacheck    = "1.13.5"
-    val scalatest     = "3.0.5"
-    val scalaz        = "7.2.27"
-    val shapeless     = "2.3.3"
-    val sparkScala211 = "2.0.0"
-    val sparkScala212 = "2.4.0"
-  }
-
-def addTestLibs: SettingsDefinition =
-  libraryDependencies ++= Seq(
-    "org.scalatest"  %% "scalatest"  % libVersion.scalatest  % Test,
-    "org.scalacheck" %% "scalacheck" % libVersion.scalacheck % Test
-  )
-
-def useSpark(sparkVersion: String)(modules: String*): SettingsDefinition =
-  libraryDependencies ++= {
-    val minVersion: String =
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, 11)) => libVersion.sparkScala211
-        case Some((2, 12)) => libVersion.sparkScala212
-        case x             => throw new Exception(s"unsupported scala version $x for Spark")
-      }
-    val bumpedVersion = Seq(sparkVersion, minVersion).max
-
-    modules.map(name => "org.apache.spark" %% s"spark-$name" % bumpedVersion % Provided)
-  }
-
 lazy val projectDescription =
   Def.settings(
     organization         := "io.univalence",
@@ -81,20 +45,6 @@ lazy val projectDescription =
         url   = url("https://github.com/HarrisonCheng")
       )
     )
-  )
-
-lazy val defaultConfiguration =
-  Def.settings(
-    //By default projects in spark-tool work with 2.11 and are ready for 2.12
-    //Spark projects are locked in 2.11 at the moment
-    crossScalaVersions := List(libVersion.scala2_11, libVersion.scala2_12),
-    scalaVersion       := libVersion.scala2_11,
-    scalacOptions      := stdOptions ++ extraOptions(scalaVersion.value),
-    useGpg             := true,
-    scalafmtOnCompile  := false,
-    publishTo          := sonatypePublishTo.value,
-    parallelExecution  := false,
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD")
   )
 
 // ====
@@ -182,6 +132,56 @@ lazy val typedpath = project
   )
 
 // ====
+
+val libVersion =
+  new {
+    val cats          = "1.0.0"
+    val jodaTime      = "2.10"
+    val json4s        = "3.2.11"
+    val magnolia      = "0.10.0"
+    val monix         = "2.3.3"
+    val scala2_12     = "2.12.8"
+    val scala2_11     = "2.11.12"
+    val scalacheck    = "1.13.5"
+    val scalatest     = "3.0.5"
+    val scalaz        = "7.2.27"
+    val shapeless     = "2.3.3"
+    val sparkScala211 = "2.0.0"
+    val sparkScala212 = "2.4.0"
+  }
+
+lazy val defaultConfiguration =
+  Def.settings(
+    //By default projects in spark-tool work with 2.11 and are ready for 2.12
+    //Spark projects are locked in 2.11 at the moment
+    crossScalaVersions := List(libVersion.scala2_11, libVersion.scala2_12),
+    scalaVersion       := libVersion.scala2_11,
+    scalacOptions      := stdOptions ++ extraOptions(scalaVersion.value),
+    useGpg             := true,
+    scalafmtOnCompile  := false,
+    publishTo          := sonatypePublishTo.value,
+    parallelExecution  := false,
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD")
+  )
+
+def addTestLibs: SettingsDefinition =
+  libraryDependencies ++= Seq(
+    "org.scalatest"  %% "scalatest"  % libVersion.scalatest  % Test,
+    "org.scalacheck" %% "scalacheck" % libVersion.scalacheck % Test
+  )
+
+def useSpark(sparkVersion: String)(modules: String*): SettingsDefinition =
+  libraryDependencies ++= {
+    val minVersion: String =
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 11)) => libVersion.sparkScala211
+        case Some((2, 12)) => libVersion.sparkScala212
+        case x             => throw new Exception(s"unsupported scala version $x for Spark")
+      }
+    val bumpedVersion = Seq(sparkVersion, minVersion).max
+
+    modules.map(name => "org.apache.spark" %% s"spark-$name" % bumpedVersion % Provided)
+  }
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 
