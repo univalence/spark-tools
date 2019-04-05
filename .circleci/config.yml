@@ -54,11 +54,11 @@ aliases:
   - &configure_gpg
     name: configure GPG
     command: |
-      mkdir -p $GNUPGHOME
-      echo "charset utf-8" > $GNUPGHOME/gpg.conf
-      echo "use-agent" >> $GNUPGHOME/gpg.conf
-      echo "pinentry-mode loopback" >> $GNUPGHOME/gpg.conf
-      echo "allow-loopback-pinentry" > $GNUPGHOME/gpg-agent.conf
+      mkdir -p ~/.gnupg
+      echo "charset utf-8" > ~/.gnupg/gpg.conf
+      echo "use-agent" >> ~/.gnupg/gpg.conf
+      echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+      echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
 
 
 commands:
