@@ -54,6 +54,7 @@ lazy val sparkTools = (project in file("."))
   .settings(
     name := "spark-tools"
   )
+  .settings(projectDescription, defaultConfiguration)
 
 lazy val sparkZio = (project in file("spark-zio"))
   .settings(
@@ -172,17 +173,20 @@ val libVersion =
 
 lazy val defaultConfiguration =
   Def.settings(
-    //By default projects in spark-tool work with 2.11 and are ready for 2.12
-    //Spark projects are locked in 2.11 at the moment
+    // By default projects in spark-tool work with 2.11 and are ready for 2.12
+    // Spark projects are locked in 2.11 at the moment
     crossScalaVersions := List(libVersion.scala2_11, libVersion.scala2_12),
     scalaVersion       := libVersion.scala2_11,
     scalacOptions      := stdOptions ++ extraOptions(scalaVersion.value),
-//    useGpg             := true,
     scalafmtOnCompile  := false,
     parallelExecution  := false,
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
-    publishTo          := sonatypePublishTo.value,
-    releaseEarlyWith in Global := SonatypePublisher
+    publishTo                  := sonatypePublishTo.value,
+    releaseEarlyWith in Global := SonatypePublisher,
+    sonatypeProfileName        := "io.univalence",
+    isSnapshot                 := false,
+    // XXX: set the value below to true if you really wish to deliver from your machine
+    releaseEarlyEnableLocalReleases := false,
   )
 
 def addTestLibs: SettingsDefinition =
