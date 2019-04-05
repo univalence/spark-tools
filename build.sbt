@@ -183,7 +183,7 @@ lazy val defaultConfiguration =
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
     publishTo                  := sonatypePublishTo.value,
     releaseEarlyWith in Global := SonatypePublisher,
-    sonatypeProfileName        := organization.value + "." + name.value,
+    sonatypeProfileName in ThisBuild := organization.value + "." + name.value,
     isSnapshot                 := false,
     // XXX: set the value below to true if you really wish to deliver from your machine
     releaseEarlyEnableLocalReleases := false
