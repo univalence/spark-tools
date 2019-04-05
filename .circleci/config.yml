@@ -51,24 +51,20 @@ aliases:
     working_directory: ~/repo
     command: bash <(curl -s https://codecov.io/bash)
 
+  - &configure_gpg
+    name: configure GPG
+    command: |
+      mkdir -p $GNUPGHOME
+      echo "charset utf-8" > $GNUPGHOME/gpg.conf
+      echo "use-agent" >> $GNUPGHOME/gpg.conf
+      echo "pinentry-mode loopback" >> $GNUPGHOME/gpg.conf
+      echo "allow-loopback-pinentry" > $GNUPGHOME/gpg-agent.conf
+
 
 commands:
-  configure_gpg:
-    description: configure GPG
+  import_gpg_key:
+    description: import GPG key
     steps:
-      - run:
-          name: Create GPG conf dir
-          command: mkdir -p $GNUPGHOME
-      - run:
-          name: Create gpg.conf
-          command: |
-            echo "charset utf-8" > $GNUPGHOME/gpg.conf
-            echo "use-agent" >> $GNUPGHOME/gpg.conf
-            echo "pinentry-mode loopback" >> $GNUPGHOME/gpg.conf
-      - run:
-          name: Create gpg-agent.conf
-          command: |
-            echo "allow-loopback-pinentry" > $GNUPGHOME/gpg-agent.conf
       - run:
           name: Configure GPG private key for signing project artifacts in OSS Sonatype
           command: |
@@ -80,7 +76,7 @@ commands:
       project_name:
         type: string
     steps:
-#      - configure_gpg
+      - import_gpg_key
       - checkout
       - restore_cache: *restore_cache_dependencies
       #- run:
@@ -92,10 +88,11 @@ commands:
       - run:
           name: Test and compute code coverage << parameters.project_name >>
           command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
-#      - run:
-#          name: Deliver << parameters.project_name >> to maven central
-#          command: |
-#            cat /dev/null | sbt << parameters.project_name >>/releaseEarly
+      - run: *configure_gpg
+      - run:
+          name: Deliver << parameters.project_name >> to maven central
+          command: |
+            cat /dev/null | sbt << parameters.project_name >>/releaseEarly
 
 
 jobs:
@@ -154,25 +151,8 @@ workflows:
   master:
     jobs:
       - update_deps_in_cache
-      - centrifuge:
-          requires:
-            - update_deps_in_cache
-      - typedpath:
-          requires:
-            - update_deps_in_cache
-      - fenek:
-          requires:
-            - update_deps_in_cache
-      - plumbus:
-          requires:
-            - update_deps_in_cache
-      - sparkzio:
-          requires:
-            - update_deps_in_cache
-      - coverage:
-          requires:
-            - centrifuge
-            - typedpath
-            - fenek
-            - plumbus
-            - sparkzio
+      - centrifuge
+      - typedpath
+      - fenek
+      - plumbus
+      - sparkzio
