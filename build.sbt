@@ -75,7 +75,7 @@ lazy val centrifuge = project
     description        := "Centrifuge is for data quality",
     homepage           := Some(url("https://github.com/univalence/spark-tools/tree/master/centrifuge")),
     startYear          := Some(2017),
-    crossScalaVersions := List(libVersion.scala2_11),
+    crossScalaVersions := List(libVersion.scala2_11)
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -149,7 +149,7 @@ lazy val site = project
       """
         |<p>&copy; 2017-2019 <a href="https://github.com/univalence/spark-tools">Spark tools Maintainers</a></p>
         |""".stripMargin
-    ),
+    )
   )
 
 // ====
@@ -183,10 +183,10 @@ lazy val defaultConfiguration =
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
     publishTo                  := sonatypePublishTo.value,
     releaseEarlyWith in Global := SonatypePublisher,
-    sonatypeProfileName        := "io.univalence",
+    sonatypeProfileName        := organization.value + "." + name.value,
     isSnapshot                 := false,
     // XXX: set the value below to true if you really wish to deliver from your machine
-    releaseEarlyEnableLocalReleases := false,
+    releaseEarlyEnableLocalReleases := false
   )
 
 def addTestLibs: SettingsDefinition =
