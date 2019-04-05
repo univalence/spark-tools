@@ -152,7 +152,11 @@ workflows:
     jobs:
       - update_deps_in_cache
       - centrifuge
-      - typedpath
-      - fenek
-      - plumbus
-      - sparkzio
+      - typedpath:
+          requires: centrifuge
+      - fenek:
+          requires: typedpath
+      - plumbus:
+          requires: fenek
+      - sparkzio:
+          requires: plumbus
