@@ -180,7 +180,7 @@ object Path {
 
   def combineToPath(prefix: PathOrRoot, suffix: PathOrRoot): PathOrRoot =
     suffix match {
-      case Root     => prefix
+      case Root         => prefix
       case f: FieldPath => combineToField(prefix, f)
       case a: ArrayPath => combineToArray(prefix, a)
     }
@@ -190,7 +190,6 @@ object Path {
 
   def combineToField(prefix: PathOrRoot, suffix: FieldPath): FieldPath =
     suffix.copy(parent = combineToPath(prefix, suffix.parent))
-
 
   def create(string: String): Try[PathOrRoot] = {
     val tokens = Token.tokenize(string)
@@ -226,9 +225,9 @@ sealed trait Path extends PathOrRoot
 
 case class FieldPath(name: String with FieldPath.Name, parent: PathOrRoot) extends Path {
   override def toString: String = parent match {
-    case Root => name
-    case f:FieldPath => s"$f.$name"
-    case a:ArrayPath => s"$a$name"
+    case Root         => name
+    case f: FieldPath => s"$f.$name"
+    case a: ArrayPath => s"$a$name"
   }
 }
 

@@ -1,8 +1,8 @@
 package io.univalence.fenek
 
-import io.univalence.fenek.Expr.Ops.{IsEmpty, JsonMap, Lit, Map1, Map2, Map3, SelectField, TypeCasted}
-import io.univalence.fenek.Expr.{StructField, UntypedExpr}
-import io.univalence.typedpath.{FieldPath, Path}
+import io.univalence.fenek.Expr.Ops.{ IsEmpty, JsonMap, Lit, Map1, Map2, Map3, SelectField, TypeCasted }
+import io.univalence.fenek.Expr.{ StructField, UntypedExpr }
+import io.univalence.typedpath.{ FieldPath, Path }
 import org.json4s.JsonAST._
 
 import scala.language.implicitConversions
@@ -27,8 +27,7 @@ sealed class Expr[+A] {
 
   import Expr._
 
-  def select(path:FieldPath) = SelectField(path, this)
-
+  def select(path: FieldPath) = SelectField(path, this)
 
   def firstElement: UntypedExpr = Ops.FirstElement(self)
 
@@ -92,8 +91,8 @@ object Expr {
     import io.univalence.typedpath._
 
     path match {
-      case f:FieldPath => Expr.Ops.RootField(f)
-      case ArrayPath(_)            => throw new Exception("repetition path (array) not supported in fenek")
+      case f: FieldPath => Expr.Ops.RootField(f)
+      case ArrayPath(_) => throw new Exception("repetition path (array) not supported in fenek")
     }
 
   }

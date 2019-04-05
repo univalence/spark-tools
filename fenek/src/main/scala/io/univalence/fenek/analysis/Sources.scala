@@ -8,8 +8,7 @@ import io.univalence.typedpath.Path
 object Sources {
 
   //TODO Test and redo
-  def getSources(expr: UntypedExpr): Vector[Path] = {
-
+  def getSources(expr: UntypedExpr): Vector[Path] =
     /*
     def loop(genericExpr: GenericExpr, suffix: Vector[String] = Vector.empty): Vector[Path] =
       genericExpr.expr.value match {
@@ -27,5 +26,4 @@ object Sources {
 
     loop(GenericExpr(expr))*/
     ???
-  }
 }
