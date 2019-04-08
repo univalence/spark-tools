@@ -28,5 +28,5 @@ object cogroup {
     }
   }
 
-  def cogroup[A,B,K](left:Dataset[A],right: Dataset[B])(keyLeft:A => K, keyRight:B => K)(encA:Encoder[A],encB:Encoder[B],encC:Encoder[K] /* ... */):Dataset[(K,Seq[A],Seq[B])] = ???
+  def apply[A,B,K](left:Dataset[A],right: Dataset[B])(keyLeft:A => K, keyRight:B => K)(encA:Encoder[A],encB:Encoder[B],encC:Encoder[K] /* ... */):Dataset[(K,Seq[A],Seq[B])] = ???
 }
