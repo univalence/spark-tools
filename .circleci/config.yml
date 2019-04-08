@@ -150,12 +150,12 @@ workflows:
       - plumbus
       - sparkzio
   deliver:
-    triggers:
-      - schedule:
-          cron: "0 * * * *"
-          filters:
-            branches:
-              only:
-                - master
+#    triggers:
+#      - schedule:
+#          cron: "0 * * * *"
+#          filters:
+#            branches:
+#              only:
+#                - master
     jobs:
       - release
