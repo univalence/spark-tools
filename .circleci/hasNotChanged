@@ -4,7 +4,7 @@ LAST_SUCCESSFUL_BUILD_URL="https://circleci.com/api/v1.1/project/github/$CIRCLE_
 
 echo "LAST_SUCCESSFUL_BUILD_URL: " $LAST_SUCCESSFUL_BUILD_URL
 
-LAST_SUCCESSFUL_COMMIT=`curl -Ss $LAST_SUCCESSFUL_BUILD_URL | jq -r '.[0]["vcs_revision"]'`
+LAST_SUCCESSFUL_COMMIT=`curl -Ss $LAST_SUCCESSFUL_BUILD_URL |jq -r ".[]|select(.build_parameters.CIRCLE_JOB == \"$CIRCLE_JOB\")|.[\"vcs_revision\"]" |head -n 1
 echo "LAST_SUCCESSFUL_COMMIT: " $LAST_SUCCESSFUL_COMMIT
 
 
