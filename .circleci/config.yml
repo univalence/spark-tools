@@ -17,7 +17,7 @@ aliases:
 
   - &update_dependencies
     name: "Update all the dependencies"
-    command: bash -x .circle/hasNotChanged "build.sbt" && echo "SKIPPING DEPS UPDATE" || cat /dev/null | sbt coverage +update
+    command: bash -x .circleci/hasNotChanged "build.sbt" && echo "SKIPPING DEPS UPDATE" || cat /dev/null | sbt coverage +update
 
 
   - &save_cache_dependencies
