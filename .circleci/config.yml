@@ -63,6 +63,7 @@ commands:
       project_name:
         type: string
       extra_fs_deps:
+        default:  ""
         type: string
     steps:
       - checkout
