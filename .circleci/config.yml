@@ -46,6 +46,9 @@ aliases:
       echo "use-agent" >> ~/.gnupg/gpg.conf
       echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
       echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+      chown -R $(whoami) ~/.gnupg/
+      find ~/.gnupg -type f -exec chmod 600 {} \;
+      find ~/.gnupg -type d -exec chmod 700 {} \;
       echo $SECR_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
 
 
