@@ -53,7 +53,10 @@ lazy val projectDescription =
 lazy val sparkTools = (project in file("."))
   .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio)
   .settings(
-    name := "spark-tools"
+    name        := "spark-tools",
+    description := "Spark tools",
+    startYear   := Some(2019),
+    homepage    := Some(url("https://github.com/univalence/spark-tools"))
   )
   .settings(projectDescription, defaultConfiguration)
 
@@ -184,7 +187,7 @@ lazy val defaultConfiguration =
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
     publishTo                  := sonatypePublishTo.value,
     releaseEarlyWith in Global := SonatypePublisher,
-    sonatypeProfileName := organization.value,
+    sonatypeProfileName        := organization.value,
     isSnapshot                 := false,
     // XXX: set the value below to true if you really wish to deliver from your machine
     releaseEarlyEnableLocalReleases := false
