@@ -1,6 +1,9 @@
 package io.univalence.plumbus
 
+import org.apache.spark.rdd.{PairRDDFunctions, RDD}
 import org.apache.spark.sql.{Dataset, Encoder, KeyValueGroupedDataset}
+
+import scala.reflect.ClassTag
 
 object cogroup {
 
@@ -28,5 +31,9 @@ object cogroup {
     }
   }
 
-  def apply[A,B,K](left:Dataset[A],right: Dataset[B])(keyLeft:A => K, keyRight:B => K)(encA:Encoder[A],encB:Encoder[B],encC:Encoder[K] /* ... */):Dataset[(K,Seq[A],Seq[B])] = ???
+  def apply[A,B,K](left:Dataset[A],right: Dataset[B])(keyLeft:A => K, keyRight:B => K)(implicit encA:Encoder[A],encB:Encoder[B],encC:Encoder[K], enc: Encoder[(K, Seq[A], Seq[B])],
+                                                                                       ca:ClassTag[A], ck:ClassTag[K], cb:ClassTag[B]):Dataset[(K,Seq[A],Seq[B])] = {
+    left.sparkSession.implicits.rddToDatasetHolder(RDD.rddToPairRDDFunctions(
+      left.rdd.keyBy(keyLeft)).cogroup(right.rdd.keyBy(keyRight)).map({case (k,(ia,ib)) => (k,ia.toSeq,ib.toSeq)})).toDS
+  }
 }
