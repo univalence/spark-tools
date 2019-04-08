@@ -1,4 +1,5 @@
 import ScalaSettings._
+import java.util.UUID
 
 lazy val projectDescription =
   Def.settings(
@@ -171,6 +172,8 @@ val libVersion =
     val sparkScala212 = "2.4.0"
   }
 
+val buildUuid = UUID.randomUUID().toString
+
 lazy val defaultConfiguration =
   Def.settings(
     // By default projects in spark-tool work with 2.11 and are ready for 2.12
@@ -183,7 +186,7 @@ lazy val defaultConfiguration =
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
     publishTo                  := sonatypePublishTo.value,
     releaseEarlyWith in Global := SonatypePublisher,
-    sonatypeProfileName := organization.value,
+    sonatypeProfileName := organization.value + "-" + buildUuid,
     isSnapshot                 := false,
     // XXX: set the value below to true if you really wish to deliver from your machine
     releaseEarlyEnableLocalReleases := false
