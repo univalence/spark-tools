@@ -146,4 +146,12 @@ workflows:
       - fenek
       - plumbus
       - sparkzio
+  deliver:
+    triggers:
+      - schedule:
+          cron: "0 * * * *"
+          filters:
+            only:
+              - master
+    jobs:
       - release
