@@ -1,6 +1,6 @@
 package io.univalence.plumbus
 
-import org.apache.spark.sql.{Dataset, KeyValueGroupedDataset}
+import org.apache.spark.sql.{Dataset, Encoder, KeyValueGroupedDataset}
 
 object cogroup {
 
@@ -13,7 +13,7 @@ object cogroup {
     * val persons:Dataset[Person] = ???
     * val addresses:Dataset[Address] = ???
     *
-    * persons.keyBy(_.id).cogroup(addresses.keyBy(_.personId))
+    * persons.groupByKey(_.id).cogroup(addresses.groupByKey(_.personId))
     * }}}
     *
     * @param kvgd
@@ -27,4 +27,6 @@ object cogroup {
       ???
     }
   }
+
+  def cogroup[A,B,K](left:Dataset[A],right: Dataset[B])(keyLeft:A => K, keyRight:B => K)(encA:Encoder[A],encB:Encoder[B],encC:Encoder[K] /* ... */):Dataset[(K,Seq[A],Seq[B])] = ???
 }
