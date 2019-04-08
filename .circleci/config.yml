@@ -76,7 +76,6 @@ commands:
       project_name:
         type: string
     steps:
-      - import_gpg_key
       - checkout
       - restore_cache: *restore_cache_dependencies
       #- run:
@@ -88,11 +87,18 @@ commands:
       - run:
           name: Test and compute code coverage << parameters.project_name >>
           command: cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
-      - run: *configure_gpg
-      - run:
-          name: Deliver << parameters.project_name >> to maven central
-          command: |
-            cat /dev/null | sbt << parameters.project_name >>/releaseEarly
+
+  release_all:
+    description: release all sub-project
+    steps:
+        - import_gpg_key
+        - checkout
+        - restore_cache: *restore_cache_dependencies
+        - run: *configure_gpg
+        - run:
+            name: Deliver all projects to maven central
+            command: |
+              cat /dev/null | sbt releaseEarly
 
 
 jobs:
@@ -140,11 +146,11 @@ jobs:
       - build_project:
           project_name: sparkZio
 
-  coverage:
+  release:
     <<: *environment
     working_directory: ~/repo
     steps:
-      - run: *export_coverage
+      - release_all
 
 
 workflows:
@@ -152,15 +158,8 @@ workflows:
     jobs:
       - update_deps_in_cache
       - centrifuge
-      - typedpath:
-          requires:
-            - centrifuge
-      - fenek:
-          requires:
-            - typedpath
-      - plumbus:
-          requires:
-            - fenek
-      - sparkzio:
-          requires:
-            - plumbus
+      - typedpath
+      - fenek
+      - plumbus
+      - sparkzio
+      - release
