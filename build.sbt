@@ -67,14 +67,14 @@ lazy val sparkZio = (project in file("spark-zio"))
     startYear   := Some(2019),
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/spark-zio"))
   )
-  .settings(projectDescription, defaultConfiguration)
+  .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     useSpark(sparkVersion = "2.1.1")(modules = "sql"),
     libraryDependencies += "org.scalaz" %% "scalaz-zio" % "0.19"
   )
 
 lazy val centrifuge = project
-  .settings(projectDescription, defaultConfiguration)
+  .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     description        := "Centrifuge is for data quality",
     homepage           := Some(url("https://github.com/univalence/spark-tools/tree/master/centrifuge")),
@@ -98,7 +98,7 @@ lazy val centrifuge = project
 
 lazy val fenek = project
   .dependsOn(typedpath)
-  .settings(projectDescription, defaultConfiguration)
+  .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     description := "Fenek is for better mapping",
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/fenek")),
@@ -111,7 +111,7 @@ lazy val fenek = project
 
 lazy val plumbus =
   project
-    .settings(projectDescription, defaultConfiguration)
+    .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
     .settings(
       description := "Collection of tools for Scala Spark",
       homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/plumbus")),
@@ -124,7 +124,7 @@ lazy val plumbus =
     )
 
 lazy val typedpath = project
-  .settings(projectDescription, defaultConfiguration)
+  .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     description := "Typedpath are for refined path",
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/typedpath")),
@@ -185,9 +185,12 @@ lazy val defaultConfiguration =
     scalafmtOnCompile  := false,
     parallelExecution  := false,
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+  )
+
+lazy val deliveryConfiguration =
+  Def.settings(
     publishTo                  := sonatypePublishTo.value,
     releaseEarlyWith in Global := SonatypePublisher,
-    sonatypeProfileName        := organization.value,
     isSnapshot                 := false,
     // XXX: set the value below to true if you really wish to deliver from your machine
     releaseEarlyEnableLocalReleases := false
