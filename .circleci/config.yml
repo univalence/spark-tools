@@ -46,17 +46,10 @@ aliases:
       echo "use-agent" >> ~/.gnupg/gpg.conf
       echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
       echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+      echo $SECR_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
 
 
 commands:
-  import_gpg_key:
-    description: import GPG key
-    steps:
-      - run:
-          name: Configure GPG private key for signing project artifacts in OSS Sonatype
-          command: |
-            echo $SECR_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
-
   build_project:
     description: build a sub-project
     parameters:
@@ -81,7 +74,6 @@ commands:
   release_all:
     description: release all sub-project
     steps:
-        - import_gpg_key
         - checkout
         - restore_cache: *restore_cache_dependencies
         - run: *configure_gpg
