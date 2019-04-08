@@ -70,18 +70,18 @@ object PathMacro {
 
       }
 
-    //c.warning(c.enclosingPosition,s"$allParts \n ${head::tail} \n $args")
-
     if (!allParts.exists({
           case Left(x)  => x.nonEmpty
           case Right(p) => p.actualType <:< typeOf[Path]
         })) {
+      val text = "can't turn into a NonEmptyPath. Use case object Root instead if you want to target the Root."
       c.abort(
         c.enclosingPosition,
-        s"path [${allParts.filterNot(_.left.exists(_.isEmpty)).map(_.fold(identity, _.tree)).mkString(" - ")}] can't turn into a NonEmptyPath. Use case object Root instead if you want to target the Root."
+        s"path [${allParts.filterNot(_.left.exists(_.isEmpty)).map(_.fold(identity, _.tree)).mkString(" - ")}] $text"
       )
     }
 
+    //.foldLeft[c.Expr[Path]] ...
     val res = allParts.foldLeft[c.Expr[PathOrRoot]](reify(Root))({
       case (base, Left("")) => base
       case (base, Left(x))  => create(x, base)
@@ -96,13 +96,6 @@ object PathMacro {
     })
 
     res.asInstanceOf[c.Expr[Path]]
-    //c.warning(c.enclosingPosition,res.toString())
-
-    //pour les args, récupérer le vrai type en dessus de Path (Path, NonEmpty)
-
-    /*
-    c.abort(c.enclosingPosition,"j'ai pas fini")
-   */
   }
 }
 
