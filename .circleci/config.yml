@@ -88,7 +88,7 @@ commands:
         - run:
             name: Deliver all projects to maven central
             command: |
-              cat /dev/null | sbt releaseEarly
+              cat /dev/null | sbt releaseEarly ||echo "NO RELEASE TODAY, DOESN'T WORK, HERE IS A 🧸!"
 
 
 jobs:
