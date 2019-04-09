@@ -83,7 +83,7 @@ commands:
         - run:
             name: Deliver all projects to maven central
             command: |
-              cat /dev/null | sbt releaseEarly ||echo "NO RELEASE TODAY, DOESN'T WORK, HERE IS A 🧸!"
+              cat /dev/null | sbt centrifuge/releaseEarly sparkZio/releaseEarly plumbus/releaseEarly typedpath/releaseEarly fenek/releaseEarly ||echo "NO RELEASE TODAY, DOESN'T WORK, HERE IS A 🧸!"
 
 
 jobs:
@@ -149,13 +149,4 @@ workflows:
       - fenek
       - plumbus
       - sparkzio
-  deliver:
-#    triggers:
-#      - schedule:
-#          cron: "0 * * * *"
-#          filters:
-#            branches:
-#              only:
-#                - master
-    jobs:
       - release
