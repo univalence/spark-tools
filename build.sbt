@@ -119,9 +119,13 @@ lazy val plumbus =
     )
     .settings(
       useSpark(libVersion.sparkScala212)("sql"),
-      libraryDependencies ++= Seq("com.propensive" %% "magnolia" % libVersion.magnolia),
+      libraryDependencies ++= Seq(
+        "com.propensive" %% "magnolia" % libVersion.magnolia,
+        "MrPowers" % "spark-fast-tests" % "2.3.1_0.15.0" % Test
+      ),
       addTestLibs
     )
+    .settings(resolvers += "Spark Packages Repo" at "http://dl.bintray.com/spark-packages/maven")
 
 lazy val typedpath = project
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
@@ -184,7 +188,7 @@ lazy val defaultConfiguration =
     scalacOptions      := stdOptions ++ extraOptions(scalaVersion.value),
     scalafmtOnCompile  := false,
     parallelExecution  := false,
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD")
   )
 
 lazy val deliveryConfiguration =
