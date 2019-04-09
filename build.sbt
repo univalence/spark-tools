@@ -120,8 +120,8 @@ lazy val plumbus =
     .settings(
       useSpark(libVersion.sparkScala212)("sql"),
       libraryDependencies ++= Seq(
-        "com.propensive" %% "magnolia" % libVersion.magnolia,
-        "MrPowers" % "spark-fast-tests" % "2.3.1_0.15.0" % Test
+        "com.propensive" %% "magnolia"        % libVersion.magnolia,
+        "MrPowers"       % "spark-fast-tests" % "2.3.1_0.15.0" % Test
       ),
       addTestLibs
     )
