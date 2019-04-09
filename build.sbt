@@ -1,12 +1,11 @@
 import ScalaSettings._
-import java.util.UUID
 
 lazy val projectDescription =
   Def.settings(
     organization         := "io.univalence",
     organizationName     := "Univalence",
     organizationHomepage := Some(url("https://univalence.io/")),
-    licenses             := Seq("The Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+    licenses             := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
     scmInfo := Some(
       ScmInfo(
         url("https://github.com/univalence/spark-tools"),
@@ -51,7 +50,7 @@ lazy val projectDescription =
 // ====
 
 lazy val sparkTools = (project in file("."))
-  .dependsOn(centrifuge, fenek, typedpath, plumbus, sparkZio)
+  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio)
   .settings(
     name        := "spark-tools",
     description := "Spark tools",
@@ -194,6 +193,8 @@ lazy val defaultConfiguration =
 lazy val deliveryConfiguration =
   Def.settings(
     publishTo                  := sonatypePublishTo.value,
+    releaseEarlyEnableSyncToMaven := true,
+//    releaseEarlyWith in Global := BintrayPublisher,
     releaseEarlyWith in Global := SonatypePublisher,
     isSnapshot                 := false,
     // XXX: set the value below to true if you really wish to deliver from your machine
