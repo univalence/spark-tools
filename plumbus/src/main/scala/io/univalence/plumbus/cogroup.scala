@@ -23,10 +23,9 @@ object cogroup {
     * @tparam A
     */
   implicit class KVGD[K, A](val kvgd: KeyValueGroupedDataset[K, A]) {
-    def cogroup[B](right: KeyValueGroupedDataset[K, B]): Dataset[(K, Seq[A], Seq[B])] = {
+    def cogroup[B](right: KeyValueGroupedDataset[K, B]): Dataset[(K, Seq[A], Seq[B])] =
       //Use SparkAddOn ?
       ???
-    }
   }
 
   def apply[A, B, K](left: Dataset[A], right: Dataset[B])(keyLeft: A => K, keyRight: B => K)(

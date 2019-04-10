@@ -193,7 +193,7 @@ lazy val defaultConfiguration =
 
 lazy val deliveryConfiguration =
   Def.settings(
-    publishTo                  := sonatypePublishTo.value,
+    publishTo                     := sonatypePublishTo.value,
     releaseEarlyEnableSyncToMaven := true,
 //    releaseEarlyWith in Global := BintrayPublisher,
     releaseEarlyWith in Global := SonatypePublisher,
