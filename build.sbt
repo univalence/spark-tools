@@ -69,6 +69,7 @@ lazy val sparkZio = (project in file("spark-zio"))
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     useSpark(sparkVersion = "2.1.1")(modules = "sql"),
+    addTestLibs,
     libraryDependencies += "org.scalaz" %% "scalaz-zio" % "0.19"
   )
 
