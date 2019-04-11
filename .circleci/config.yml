@@ -81,9 +81,12 @@ commands:
         - restore_cache: *restore_cache_dependencies
         - run: *configure_gpg
         - run:
+            name: Check no staging repo is opened on OSS Sonatype
+            command: cat /dev/null | sbt sonatypeLog | ((grep "No staging log is found" > /dev/null && echo "No staging repo found. We can deliver.") || (echo "A staging repo has been opened. Another job might be delivering."; false))
+        - run:
             name: Deliver all projects to maven central
             command: |
-              cat /dev/null | sbt centrifuge/releaseEarly sparkZio/releaseEarly plumbus/releaseEarly typedpath/releaseEarly fenek/releaseEarly ||echo "NO RELEASE TODAY, DOESN'T WORK, HERE IS A 🧸!"
+              cat /dev/null | sbt centrifuge/releaseEarly sparkZio/releaseEarly plumbus/releaseEarly typedpath/releaseEarly fenek/releaseEarly
 
 
 jobs:
