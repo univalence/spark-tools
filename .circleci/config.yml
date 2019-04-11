@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  queue: eddiewebb/queue@1.1.2
+
 aliases:
   - &environment
     docker:
@@ -77,16 +80,19 @@ commands:
   release_all:
     description: release all sub-project
     steps:
-        - checkout
-        - restore_cache: *restore_cache_dependencies
-        - run: *configure_gpg
-        - run:
-            name: Check no staging repo is opened on OSS Sonatype
-            command: cat /dev/null | sbt sonatypeLog | ((grep "No staging log is found" > /dev/null && echo "No staging repo found. We can deliver.") || (echo "A staging repo has been opened. Another job might be delivering."; false))
-        - run:
-            name: Deliver all projects to maven central
-            command: |
-              cat /dev/null | sbt centrifuge/releaseEarly sparkZio/releaseEarly plumbus/releaseEarly typedpath/releaseEarly fenek/releaseEarly
+      - queue/until_front_of_line:
+          # wait 1 hour max
+          time: "60"
+      - checkout
+      - restore_cache: *restore_cache_dependencies
+      - run: *configure_gpg
+      - run:
+          name: Check no staging repo is opened on OSS Sonatype
+          command: cat /dev/null | sbt sonatypeLog | ((grep "No staging log is found" > /dev/null && echo "No staging repo found. We can deliver.") || (echo "A staging repo has been opened. Another job might be delivering."; false))
+      - run:
+          name: Deliver all projects to maven central
+          command: |
+            cat /dev/null | sbt centrifuge/releaseEarly sparkZio/releaseEarly plumbus/releaseEarly typedpath/releaseEarly fenek/releaseEarly
 
 
 jobs:
