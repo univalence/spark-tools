@@ -36,11 +36,6 @@ aliases:
     name: "Check code format"
     command: cat /dev/null | sbt check
 
-  - &export_coverage
-    name: "Export code coverage report"
-    working_directory: ~/repo
-    command: bash <(curl -s https://codecov.io/bash)
-
   - &configure_gpg
     name: configure GPG
     command: |
