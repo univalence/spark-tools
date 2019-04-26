@@ -1,9 +1,10 @@
 package io.univalence.fenek
 
-import Expr.{ CaseWhenExpr, Struct, UntypedExpr }
+import Expr.{CaseWhenExpr, Struct, UntypedExpr}
 import io.univalence.typedpath._
 import org.joda.time.Days
 import org.joda.time.Months
+import org.json4s
 import org.json4s.JsonAST._
 
 import scala.util.Failure
@@ -252,8 +253,9 @@ object JsonInterpreter {
 
         case RootField(name) =>
           jobj =>
-            val names = name.toString.split('.')
-            names.tail.foldLeft(jobj \\ names.head)(_ \\ _) match {
+            val names: Array[String] = name.toString.split('.')
+            val z: json4s.JValue = jobj \ names.head
+            names.tail.foldLeft(z)(_ \ _) match {
               case JObject(Nil) => Result(None, MissingField(name.toString) :: Nil)
               case x            => Result(Some(x), Nil)
             }
@@ -263,10 +265,13 @@ object JsonInterpreter {
           jvalue =>
             {
               f1(jvalue).flatMap(
-                y =>
-                  y \ name.toString match {
+                jobj => {
+                  val names: Array[String] = name.toString.split('.')
+                  val z: json4s.JValue = jobj \ names.head
+                  names.tail.foldLeft(z)(_ \ _)match {
                     case JObject(Nil) => Result(None, MissingField(name.toString) :: Nil)
-                    case x            => Result.point(x)
+                    case x => Result.point(x)
+                  }
                 }
               )
             }
