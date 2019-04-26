@@ -3,8 +3,7 @@ package fix
 import io.univalence.fenek._
 import io.univalence.fenek.Expr
 import io.univalence.fenek.Expr._
-import io.univalence.typedpath.Path
-import io.univalence.typedpath.Path._
+import io.univalence.typedpath._
 
 object Fenek2to3All {
 

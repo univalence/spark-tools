@@ -49,17 +49,15 @@ class Fenek2to3Path extends SemanticRule("Fenek2to3Path") {
 
 class Fenek2to3Import extends SemanticRule("Fenek2to3Import") {
   override def fix(implicit doc: SemanticDocument): Patch = {
-    val patches = doc.tree.collect({
+    val patches: Seq[Seq[Patch]] = doc.tree.collect({
       case i @ Importer(ref, xs) if ref.toString.contains("Fnk") || ref.toString.contains("TypedExpr") =>
         xs.map(Patch.removeImportee)
-
     })
 
     if (patches.nonEmpty) {
       patches.flatten.reduce(_ + _) +
         Patch.addGlobalImport(importer"io.univalence.fenek.Expr._") +
-        Patch.addGlobalImport(importer"io.univalence.typedpath.Path._") +
-        Patch.addGlobalImport(importer"io.univalence.typedpath.Path") +
+        Patch.addGlobalImport(importer"io.univalence.typedpath._") +
         Patch.addGlobalImport(importer"io.univalence.fenek.Expr")
     } else Patch.empty
   }

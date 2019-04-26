@@ -1,5 +1,6 @@
 
 
+
 lazy val V = _root_.scalafix.sbt.BuildInfo
 inThisBuild(
   List(
@@ -34,10 +35,14 @@ lazy val input = project.settings(
   libraryDependencies += "io.univalence"  %% "fenek"   % "0.2"
 )
 
+val version =  "0.2+156-76b5475c"
+
 lazy val output = project.settings(
-  skip in publish := true,
-  libraryDependencies +=  "io.univalence"  %% "fenek"   % "0.3-SNAPSHOT"
-)
+    skip in publish := true,
+    libraryDependencies += "io.univalence" %% "typedpath" % version,
+    libraryDependencies +=  "io.univalence"  %% "fenek"   % version
+  )
+
 
 lazy val tests = project
   .settings(
