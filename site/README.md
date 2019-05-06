@@ -17,7 +17,7 @@ then use `gem` to get Jekyll.
 
 To build the Web site:
 
-    $ sbt site/makeMicrosite
+    $ sbt makeMicrosite
 
 # Local visualization
 
@@ -26,3 +26,7 @@ Once the Web site is built, go to `site/target/site` and launch Jekyll.
     $ jekyll serve
 
 The Web site will open on http://localhost:4000/.
+
+# Publish
+
+    $ sbt publishMicrosite

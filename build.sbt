@@ -50,7 +50,7 @@ lazy val projectDescription =
 // ====
 
 lazy val sparkTools = (project in file("."))
-  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio)
+  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio, site)
   .settings(
     name        := "spark-tools",
     description := "Spark tools",
@@ -144,20 +144,9 @@ lazy val typedpath = project
 lazy val site = project
   .enablePlugins(MicrositesPlugin)
 //  .dependsOn(centrifuge, plumbus, typedpath, fenek)
+  .settings(minisiteConfiguration)
   .settings(
     name := "spark-tools-site"
-  )
-  .settings(
-    micrositeName                 := "Spark tools",
-    micrositeDescription          := "Tools for Spark to simplify the life of data engineers",
-    micrositeAuthor               := "Spark tools contributors",
-    micrositeOrganizationHomepage := "https://github.com/univalence/spark-tools",
-    micrositeGitHostingUrl        := "https://github.com/univalence/spark-tools",
-    micrositeFooterText := Some(
-      """
-        |<p>&copy; 2017-2019 <a href="https://github.com/univalence/spark-tools">Spark tools Maintainers</a></p>
-        |""".stripMargin
-    )
   )
 
 // ====
@@ -200,6 +189,22 @@ lazy val deliveryConfiguration =
     isSnapshot                 := false,
     // XXX: set the value below to true if you really wish to deliver from your machine
     releaseEarlyEnableLocalReleases := false
+  )
+
+lazy val minisiteConfiguration =
+  Def.settings(
+    micrositeName                 := "Spark tools",
+    micrositeDescription          := "Tools for Spark to simplify the life of data engineers",
+    micrositeAuthor               := "Spark tools contributors",
+    micrositeOrganizationHomepage := "https://github.com/univalence/spark-tools",
+    micrositeGitHostingUrl        := "https://github.com/univalence/spark-tools",
+    micrositeGithubOwner          := "univalence",
+    micrositeGithubRepo           := "spark-tools",
+    micrositeFooterText := Some(
+      """
+        |<p>&copy; 2017-2019 <a href="https://github.com/univalence/spark-tools">Spark tools Maintainers</a></p>
+        |""".stripMargin
+    )
   )
 
 def addTestLibs: SettingsDefinition =
