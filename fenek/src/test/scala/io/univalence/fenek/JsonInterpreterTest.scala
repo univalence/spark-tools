@@ -130,7 +130,7 @@ class UnionTest extends FunSuite {
 
   import JsonInterpreterTest._
 
-  test("union") {
+  ignore("union") {
     val x = struct("c" <<- path"a")
     val y = struct("c" <<- path"b")
 
