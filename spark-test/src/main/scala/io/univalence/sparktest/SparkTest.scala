@@ -2,16 +2,15 @@ package io.univalence.sparktest
 
 import org.apache.spark.sql.DataFrame
 
-
 trait SparkTest {
   trait Read {
     def dfFromJson(path: String): DataFrame
   }
 
   trait Contains {
-    def containsOnly(df: DataFrame): Boolean
+    def containsOnly(df: DataFrame, element: Any): Boolean
 
-    def containsAtLeast(df: DataFrame): Boolean
+    def containsAtLeast(df: DataFrame, element: Any): Boolean
   }
 
   trait Comparisons {
@@ -27,9 +26,11 @@ object DFLoad extends SparkTest with SparkTestSession {
 
 object DFContentTest extends SparkTest {
   def contains: Contains = new Contains {
-    override def containsOnly(df: DataFrame): Boolean = ???
+    override def containsOnly(df: DataFrame, element: Any): Boolean = ???
 
-    override def containsAtLeast(df: DataFrame): Boolean = ???
+    override def containsAtLeast(df: DataFrame, element: Any): Boolean =
+      // TODO: element = Case class
+      df.columns.exists(name => df.filter(s"$name == '$element'").head(1).nonEmpty)
   }
 }
 
