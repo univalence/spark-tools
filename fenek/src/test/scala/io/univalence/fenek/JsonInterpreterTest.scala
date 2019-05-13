@@ -1,5 +1,6 @@
 package io.univalence.fenek
 
+import com.fasterxml.jackson.core.JsonParser
 import io.univalence.fenek.Expr._
 import io.univalence.typedpath._
 import org.json4s.JsonAST._
@@ -7,7 +8,9 @@ import org.scalatest.FunSuite
 
 import scala.language.implicitConversions
 
-class JsonInterpreterTest extends FunSuite {
+
+
+object JsonInterpreterTest {
   type Struct = Expr.Struct
 
   sealed trait StructChecker {
@@ -67,7 +70,7 @@ class JsonInterpreterTest extends FunSuite {
   object StructChecker {
 
     case class StructCheckerImpl(struct: Struct, inputs: Map[String, Any], outputs: Seq[(String, Any)])
-        extends StructChecker
+      extends StructChecker
 
   }
 
@@ -83,14 +86,22 @@ class JsonInterpreterTest extends FunSuite {
         StructChecker.StructCheckerImpl(ts, Map.empty, calls)
     }
 
-    def check(in: JObject, out: JObject): Unit = {
+    /**
+      *
+      * @param in l'entrée sous forme de JObject
+      * @param outs la ou les sorties attendues de la transformation.
+      *             * 0 sortie lors de l'utilisation d'un filtre
+      *             * 1 en général
+      *             * N lors de l'utilisation d'une union
+      */
+    def check(in: JObject, outs:JObject*): Unit = {
       val res = ts.tx(in)
 
       val obj: JObject = res.value.get
 
       //res.annotations.foreach(println)
 
-      out.obj.foreach(x => {
+      outs.head.obj.foreach(x => {
         val found = obj.obj.find(_._1 == x._1)
 
         assert(found.nonEmpty, x)
@@ -105,10 +116,36 @@ class JsonInterpreterTest extends FunSuite {
   }
 
   implicit def jsonConversionToStringInTheContextOfThisFile(str: String): JObject = {
-    import org.json4s.native.JsonMethods._
+    import org.json4s.jackson.JsonMethods._
+
+    mapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
     parse(str, useBigDecimalForDouble = true).asInstanceOf[JObject]
   }
 
+
+}
+
+
+class UnionTest extends FunSuite {
+
+  import JsonInterpreterTest._
+
+  ignore("union") {
+    val x = struct("c" <<- path"a")
+    val y = struct("c" <<- path"b")
+
+    val z:Struct = Expr.union(x,y)
+
+    z.check("""{a:1, b:2}""", """{c:1}""", """"{c:2}""")
+
+  }
+
+}
+
+
+class JsonInterpreterTest extends FunSuite {
+
+  import JsonInterpreterTest._
   test("casewhen bug #2") {
 
     val daValidVente = lit("2019-01-01")
@@ -140,8 +177,8 @@ class JsonInterpreterTest extends FunSuite {
 
     tx.setInput("ktInvoicingType" -> "MONTHLY", "gppTypeProduit" -> "TOTO")
       .setExpected(
-        "expr1"          -> dateparution,
-        "expr2"          -> dateparution,
+        "expr1"           -> dateparution,
+        "expr2"           -> dateparution,
         "da_deb_periode" -> dateparution
       )
       .check()
@@ -180,7 +217,7 @@ class JsonInterpreterTest extends FunSuite {
   }
 
   test("cast str to in") {
-    struct("a" <<- lit("1").as[Int]).setExpected("a" -> 1).check()
+    struct("a" <<- "1".as[Int]).setExpected("a" -> 1).check()
   }
 
   test("<*> & |> avec int operation not working 2") {
@@ -207,7 +244,7 @@ class JsonInterpreterTest extends FunSuite {
     val a  = path"a"
     val tx = struct(path"a" as "b", "b" <<- a, "c" <<- 2, "d" <<- a)
 
-    tx.check(in = """{"a":1}""", out = """{"b":1, "c":2, "d" :1}""")
+    tx.check(in = """{a:1}""", """{b:1, c:2, d:1}""")
     //tx.check2("a" -> 1)("b" -> 1,"c" -> 2,"d" -> 1)
 
     //tx.check2(a = 1)(b = 1,c = 2,d = 1)
@@ -219,15 +256,11 @@ class JsonInterpreterTest extends FunSuite {
     val tx = struct("dt" <<- path"dt".left(10))
 
     tx.check(
-      """
-   {"dt" : "2018-10-25T15:00:31+00:00"}
-""",
-      """
-{"dt" : "2018-10-25"}
-"""
+      """{dt : "2018-10-25T15:00:31+00:00"}""",
+      """{dt : "2018-10-25"}"""
     )
 
-    tx.check("""{"a":0}""", """{}""")
+    tx.check("""{a:0}""", """{}""")
   }
 
   test("addDate") {
@@ -235,15 +268,11 @@ class JsonInterpreterTest extends FunSuite {
     val tx = struct("dt" <<- path"dt".left(10).dateAdd("day", 1))
 
     tx.check(
-      """
-   {"dt" : "2018-10-25T15:00:31+00:00"}
-""",
-      """
-{"dt" : "2018-10-26"}
-"""
+      """{dt : "2018-10-25T15:00:31+00:00"}""",
+      """{dt : "2018-10-26"}"""
     )
 
-    tx.check("""{"a":0}""", """{}""")
+    tx.check("""{a:0}""", """{}""")
   }
 
   test("datediff") {
@@ -251,23 +280,13 @@ class JsonInterpreterTest extends FunSuite {
     val tx = struct("interval" <<- path"start".datediff("month", path"end"))
 
     tx.check(
-      """
-   {"end" : "2018-10-25", "start" : "2018-10-24"}
-""",
-      """
-   {"interval" : 0}
-
-"""
+      """{end : "2018-10-25", start : "2018-10-24"}""",
+      """{interval : 0}"""
     )
 
     tx.check(
-      """
-   {"end" : "2019-01-11", "start" : "2017-02-12"}
-""",
-      """
-   {"interval" : 22}
-
-"""
+      """{end : "2019-01-11", start : "2017-02-12"}""",
+      """{interval : 22}"""
     )
   }
 
@@ -282,41 +301,39 @@ class JsonInterpreterTest extends FunSuite {
     }))
 
     tx.check(
-      """{ "configuration" : [{"niveauPack": "PACK_2"},{"niveauPack":"PACK_3"}]}""",
-      """{"niveauPack": "PACK_2, PACK_3"}"""
+      """{configuration: [{niveauPack: "PACK_2"},{niveauPack:"PACK_3"}]}""",
+      """{niveauPack: "PACK_2, PACK_3"}"""
     )
 
   }
 
   test("when") {
-
     val tx = struct("toto" <<- path"tata".caseWhen(false -> "titi"))
 
-    tx.check("""{"tata":false}""", """{"toto":"titi"}""")
-
+    tx.check("""{tata:false}""", """{toto:"titi"}""")
   }
 
   test("nested") {
-    struct("c" <<- path"a.b").check("{\"a\":{\"b\":1}}", "{\"c\":1}")
+    struct("c" <<- path"a.b").check("{a:{b:1}}", "{c:1}")
   }
 
   //p => path
   //j => json  {a:1, b:$b}
 
   test("isEmpty") {
-    struct("c" <<- path"a".isEmpty).check("""{"a":"1"}""", """{"c":false}""")
-    struct("c" <<- path"a".isEmpty).check("""{"b":"1"}""", """{"c":true}""")
+    struct("c" <<- path"a".isEmpty).check("""{a:1}""", """{c:false}""")
 
+    struct("c" <<- path"a".isEmpty).check("""{b:1}""", """{c:true}""")
   }
 
   test("caseWhen") {
     struct("c" <<- path"a".caseWhen(true -> "ok", false -> "no"))
-      .check("""{"a":true}""", """{"c":"ok"}""")
+      .check("""{a:true}""", """{c:"ok"}""")
 
     struct("c" <<- path"a".caseWhen(true -> "ok", false -> "no"))
-      .check("""{"a":false}""", """{"c":"no"}""")
+      .check("""{a:false}""", """{"c":"no"}""")
+
     struct("c" <<- path"a".caseWhen(true -> "ok", false -> "no"))
-      .check("""{"a":1}""", """{}""")
+      .check("""{a:1}""", """{}""")
   }
-
 }

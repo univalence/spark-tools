@@ -143,9 +143,12 @@ lazy val typedpath = project
 
 lazy val site = project
   .enablePlugins(MicrositesPlugin)
-//  .dependsOn(centrifuge, plumbus, typedpath, fenek)
+  //  .dependsOn(centrifuge, plumbus, typedpath, fenek)
   .settings(minisiteConfiguration)
   .settings(
+    micrositeGithubOwner := "univalence",
+    micrositeGithubRepo := "spark-tools",
+    micrositeBaseUrl := "/spark-tools",
     name := "spark-tools-site"
   )
 
