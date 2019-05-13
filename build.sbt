@@ -50,7 +50,7 @@ lazy val projectDescription =
 // ====
 
 lazy val sparkTools = (project in file("."))
-  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio, site)
+  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio, site, sparkTest)
   .settings(
     name        := "spark-tools",
     description := "Spark tools",
@@ -147,6 +147,19 @@ lazy val site = project
   .settings(minisiteConfiguration)
   .settings(
     name := "spark-tools-site"
+  )
+
+lazy val sparkTest = (project in file("spark-test"))
+  .settings(
+    name        := "spark-test",
+    description := "Spark Test are tools to easily make Spark tests",
+    startYear   := Some(2019),
+    homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/spark-test"))
+  )
+  .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
+  .settings(
+    useSpark(sparkVersion = "2.1.1")(modules = "sql"),
+    addTestLibs
   )
 
 // ====
