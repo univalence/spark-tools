@@ -49,6 +49,10 @@ aliases:
       find ~/.gnupg -type d -exec chmod 700 {} \;
       echo $SECR_GPG_ASC_BASE64 | base64 --decode | gpg --batch --no-tty --import --yes
 
+  - &only_master
+        filters:
+            branches:
+                ignore: gh-pages
 
 commands:
   build_project:
@@ -155,14 +159,11 @@ jobs:
 workflows:
   master:
     jobs:
-      - update_deps_in_cache
-      - centrifuge
-      - typedpath
-      - fenek
-      - plumbus
-      - sparkzio
-      - sparktest
-      - release:
-          filters:
-            branches:
-              ignore: gh-pages
+      - update_deps_in_cache: *only_master
+      - centrifuge: *only_master
+      - typedpath: *only_master
+      - fenek: *only_master
+      - plumbus: *only_master
+      - sparkzio: *only_master
+      - sparktest: *only_master
+      - release: *only_master
