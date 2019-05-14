@@ -32,6 +32,11 @@ object DFContentTest extends SparkTest {
       // TODO: element = Case class
       df.columns.exists(name => df.filter(s"$name == '$element'").head(1).nonEmpty)
   }
+
+  implicit class ContainsOps (df: DataFrame) {
+    def containsAtLeast(element: Any): Boolean = contains.containsAtLeast(df, element)
+    def containsOnly(element: Any): Boolean = contains.containsOnly(df, element)
+  }
 }
 
 object DFComparisons extends SparkTest with SparkTestSession {

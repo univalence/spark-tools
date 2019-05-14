@@ -19,12 +19,8 @@ class SparkTestTest extends FunSuite {
     val wrongAgeExpected = 17
     val nameExpected = "Andy"
 
-    val containsAtLeastAge = contains.containsAtLeast(df, ageExpected)
-    val wrongContainsAtLeastAge = contains.containsAtLeast(df, wrongAgeExpected)
-    val containsAtLeastName = contains.containsAtLeast(df, nameExpected)
-
-    assert(containsAtLeastAge)
-    assert(!wrongContainsAtLeastAge)
-    assert(containsAtLeastName)
+    assert(df.containsAtLeast(ageExpected))
+    assert(!df.containsAtLeast(wrongAgeExpected))
+    assert(df.containsAtLeast(nameExpected))
   }
 }
