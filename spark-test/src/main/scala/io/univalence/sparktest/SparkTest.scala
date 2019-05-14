@@ -1,46 +1,49 @@
 package io.univalence.sparktest
 
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql._
 
-trait SparkTest {
-  trait Read {
-    def dfFromJson(path: String): DataFrame
-  }
 
-  trait Contains {
-    def containsOnly(df: DataFrame, element: Any): Boolean
 
-    def containsAtLeast(df: DataFrame, element: Any): Boolean
+trait SparkTest extends SQLImplicits with SparkTest.ReadOps {
+
+  object contains {
+    def containsOnly(df: DataFrame, element: Any): Boolean = ???
+    def containsAtLeast(df: DataFrame, element: Any): Boolean = ???
+    // df.columns.exists(name => df.filter(s"$name == '$element'").head(1).nonEmpty)
   }
 
   trait Comparisons {
     def assertEquality(df: DataFrame, expectedDF: DataFrame): Boolean
   }
-}
 
-object DFLoad extends SparkTest with SparkTestSession {
-  def read: Read = new Read {
-    override def dfFromJson(path: String): DataFrame = spark.read.json(path)
-  }
-}
+  lazy val ss: SparkSession = SparkTestSession.spark
+  protected def _sqlContext: SQLContext = ss.sqlContext
 
-object DFContentTest extends SparkTest {
-  def contains: Contains = new Contains {
-    override def containsOnly(df: DataFrame, element: Any): Boolean = ???
+  implicit class SparkTestDsOps[T:Encoder](_ds:Dataset[T]) {
+    def shouldExists(pred:T => Boolean):Unit = ??? //TODO throws exception if false
+    def shouldForAll(pred:T => Boolean):Unit = ??? //TODO throws exception if false
 
-    override def containsAtLeast(df: DataFrame, element: Any): Boolean =
-      // TODO: element = Case class
-      df.columns.exists(name => df.filter(s"$name == '$element'").head(1).nonEmpty)
+    def assertEquals(ds:Dataset[T]):Unit = ???
+
+    def assertEquals(seq:Seq[T]):Unit = ???
+
   }
 
-  implicit class ContainsOps (df: DataFrame) {
+  implicit class SparkTestDfOps(df: DataFrame) {
+    def showCaseClass():Unit = ??? //PrintCaseClass Definition from Dataframe inspection
+
     def containsAtLeast(element: Any): Boolean = contains.containsAtLeast(df, element)
     def containsOnly(element: Any): Boolean = contains.containsOnly(df, element)
   }
 }
 
-object DFComparisons extends SparkTest with SparkTestSession {
-  def comparisons: Comparisons = new Comparisons {
-    override def assertEquality(df: DataFrame, expectedDF: DataFrame): Boolean = ???
+object SparkTest {
+  trait HasSparkSession {
+    def ss:SparkSession
   }
+  trait ReadOps extends HasSparkSession {
+    def dfFromJsonString(json:String):DataFrame = ???
+    def dfFromJsonFile(path: String): DataFrame = ss.read.json(path)
+  }
+
 }

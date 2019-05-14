@@ -1,19 +1,18 @@
 package io.univalence.sparktest
 import org.scalatest.FunSuite
 
-class SparkTestTest extends FunSuite {
-  import io.univalence.sparktest.DFLoad._
-  import io.univalence.sparktest.DFContentTest._
+//I would be nicer to extends the trait and have all the feature instead of importing things
+class SparkTestTest extends FunSuite with SparkTest {
 
   test("load Json") {
     val path = "spark-test/src/test/resources/jsonTest.json"
-    val df = read.dfFromJson(path)
+    val df = dfFromJsonFile(path)
     df.show()
   }
 
   test("contains at least") {
     val path = "spark-test/src/test/resources/jsonTest.json"
-    val df = read.dfFromJson(path)
+    val df = dfFromJsonFile(path)
 
     val ageExpected = 30
     val wrongAgeExpected = 17
