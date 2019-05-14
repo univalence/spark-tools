@@ -1,10 +1,13 @@
 package io.univalence.sparktest
 
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
 
 
 
-trait SparkTest extends SQLImplicits with SparkTest.ReadOps {
+
+trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   object contains {
     def containsOnly(df: DataFrame, element: Any): Boolean = ???
@@ -22,6 +25,8 @@ trait SparkTest extends SQLImplicits with SparkTest.ReadOps {
   implicit class SparkTestDsOps[T:Encoder](_ds:Dataset[T]) {
     def shouldExists(pred:T => Boolean):Unit = ??? //TODO throws exception if false
     def shouldForAll(pred:T => Boolean):Unit = ??? //TODO throws exception if false
+
+    def assertContains(values:T*):Unit = ???
 
     def assertEquals(ds:Dataset[T]):Unit = ???
 
