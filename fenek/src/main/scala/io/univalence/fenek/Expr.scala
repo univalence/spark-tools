@@ -85,10 +85,6 @@ sealed class Expr[+A] {
 
 object Expr {
 
-  def union(x: Struct, y: Struct): Struct = ???
-
-  def union[T](x: Expr[T], y: Expr[T]): Expr[T] = ???
-
   type UntypedExpr = Expr[Any]
 
   implicit def pathToExpr(path: Path): UntypedExpr = {
@@ -101,7 +97,11 @@ object Expr {
 
   }
 
-  case class Struct(fields: Seq[StructField]) extends UntypedExpr
+  case class Struct(fields: Seq[StructField]) extends UntypedExpr {
+
+    def where(expr: Expr[Boolean]): Query = Select(this)
+    def union(query: Query): Query        = Union(this, query)
+  }
 
   case class CaseWhen[B](source: UntypedExpr, cases: CaseWhenExpr[B]) extends Expr[B]
 
@@ -178,6 +178,7 @@ object Expr {
   sealed trait Ops extends UntypedExpr
 
   object Ops {
+
     case class Remove[B](source: Expr[B], toRemove: Seq[Expr[B]]) extends Expr[B]
     case class LastElement(expr: UntypedExpr) extends UntypedExpr
     case class RootField(path: FieldPath) extends UntypedExpr
@@ -223,6 +224,7 @@ object Expr {
 
 }
 object Null extends UntypedExpr
+case object True extends Expr[Boolean]
 
 object struct {
   @deprecated("use struct(\"a\" <<- expr) directly", "0.3")

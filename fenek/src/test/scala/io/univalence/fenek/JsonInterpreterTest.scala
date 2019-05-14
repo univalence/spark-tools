@@ -126,13 +126,21 @@ class UnionTest extends FunSuite {
 
   import JsonInterpreterTest._
 
+  ignore("build query") {
+
+    val q: Query = struct("tata" <<- path"toto") where ((path"age".as[Int] |> (_ > 10)) or path"age".isEmpty)
+
+    //TODO TEST
+
+  }
+
   ignore("union") {
     val x = struct("c" <<- path"a")
     val y = struct("c" <<- path"b")
 
-    val z: Struct = Expr.union(x, y)
+    val z: Query = x union y
 
-    z.check("""{a:1, b:2}""", """{c:1}""", """"{c:2}""")
+    //z.check("""{a:1, b:2}""", """{c:1}""", """"{c:2}""")
 
   }
 

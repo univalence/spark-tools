@@ -8,4 +8,9 @@ package object fenek {
     def <<-(expr: UntypedExpr): StructField = StructField(name, expr)
     //def <<-(path: Path): StructField        = StructField(name, path)
   }
+
+  implicit class booleanOps(_expr: Expr[Boolean]) {
+    def or(expr: Expr[Boolean]): Expr[Boolean]  = _expr <*> expr |> (_ || _)
+    def and(expr: Expr[Boolean]): Expr[Boolean] = _expr <*> expr |> (_ && _)
+  }
 }
