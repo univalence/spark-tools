@@ -30,6 +30,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   }
 
   implicit class SparkTestDfOps(df: DataFrame) {
+    def assertEquals(df: DataFrame): Unit = ???
+
     def showCaseClass(): Unit = ??? //PrintCaseClass Definition from Dataframe inspection
 
     def containsAtLeast(element: Any): Boolean = contains.containsAtLeast(df, element)

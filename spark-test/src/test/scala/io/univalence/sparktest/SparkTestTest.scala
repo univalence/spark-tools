@@ -10,6 +10,12 @@ class SparkTestTest extends FunSuite with SparkTest {
     val df = dfFromJsonString("[{a:1},{a:2}]")
 
     df.as[Int].assertEquals(Seq(1, 2))
+
+    df.as[Int].assertContains(1, 2)
+    df.as[Int].assertContains(1)
+    df.as[Int].assertContains(2)
+
+    df.assertEquals(df)
   }
 
   ignore("load Json from String2") {
