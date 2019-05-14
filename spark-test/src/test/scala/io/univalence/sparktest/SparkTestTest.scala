@@ -9,7 +9,7 @@ class SparkTestTest extends FunSuite with SparkTest {
     //manage json option for jackson
     val df = dfFromJsonString("[{a:1},{a:2}]")
 
-    df.as[Int].assertEquals(Seq(1,2))
+    df.as[Int].assertEquals(Seq(1, 2))
   }
 
   ignore("load Json from String2") {
@@ -20,7 +20,7 @@ class SparkTestTest extends FunSuite with SparkTest {
     case class A(a:Int)
 
     df.as[A].assertContains(A(1),A(2))
-    */
+   */
   }
 
   /*
@@ -30,17 +30,17 @@ class SparkTestTest extends FunSuite with SparkTest {
 
   test("load Json") {
     val path = "spark-test/src/test/resources/jsonTest.json"
-    val df = dfFromJsonFile(path)
+    val df   = dfFromJsonFile(path)
     assert(df.count == 3)
   }
 
   ignore("contains at least") {
     val path = "spark-test/src/test/resources/jsonTest.json"
-    val df = dfFromJsonFile(path)
+    val df   = dfFromJsonFile(path)
 
-    val ageExpected = 30
+    val ageExpected      = 30
     val wrongAgeExpected = 17
-    val nameExpected = "Andy"
+    val nameExpected     = "Andy"
 
     assert(df.containsAtLeast(ageExpected))
     assert(!df.containsAtLeast(wrongAgeExpected))

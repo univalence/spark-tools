@@ -1,7 +1,6 @@
 package io.univalence.sparktest
 
-import org.apache.spark.sql.{Column, ColumnName, Dataset, DatasetHolder, Encoder, Encoders, SQLContext}
-
+import org.apache.spark.sql.{ Column, ColumnName, Dataset, DatasetHolder, Encoder, Encoders, SQLContext }
 
 trait SparkTestSQLImplicits /* SQLImplicits */ {
 
@@ -19,13 +18,12 @@ trait SparkTestSQLImplicits /* SQLImplicits */ {
     * @since 2.0.0
     */
   implicit class StringToColumn(val sc: StringContext) {
-    def $(args: Any*): ColumnName = {
+    def $(args: Any*): ColumnName =
       new ColumnName(sc.s(args: _*))
-    }
   }
 
   /** @since 1.6.0 */
-  implicit def newProductEncoder[T <: Product : TypeTag]: Encoder[T] = Encoders.product[T]
+  implicit def newProductEncoder[T <: Product: TypeTag]: Encoder[T] = Encoders.product[T]
 
   // Primitives
 
@@ -103,7 +101,7 @@ trait SparkTestSQLImplicits /* SQLImplicits */ {
   implicit def newStringSeqEncoder: Encoder[Seq[String]] = ExpressionEncoder()
 
   /** @since 1.6.1 */
-  implicit def newProductSeqEncoder[A <: Product : TypeTag]: Encoder[Seq[A]] = ExpressionEncoder()
+  implicit def newProductSeqEncoder[A <: Product: TypeTag]: Encoder[Seq[A]] = ExpressionEncoder()
 
   // Arrays
 
@@ -132,7 +130,7 @@ trait SparkTestSQLImplicits /* SQLImplicits */ {
   implicit def newStringArrayEncoder: Encoder[Array[String]] = ExpressionEncoder()
 
   /** @since 1.6.1 */
-  implicit def newProductArrayEncoder[A <: Product : TypeTag]: Encoder[Array[A]] =
+  implicit def newProductArrayEncoder[A <: Product: TypeTag]: Encoder[Array[A]] =
     ExpressionEncoder()
 
   /**
@@ -140,17 +138,15 @@ trait SparkTestSQLImplicits /* SQLImplicits */ {
     *
     * @since 1.6.0
     */
-  implicit def rddToDatasetHolder[T : Encoder](rdd: RDD[T]): DatasetHolder[T] = {
+  implicit def rddToDatasetHolder[T: Encoder](rdd: RDD[T]): DatasetHolder[T] =
     DatasetHolder(_sqlContext.createDataset(rdd))
-  }
 
   /**
     * Creates a [[Dataset]] from a local Seq.
     * @since 1.6.0
     */
-  implicit def localSeqToDatasetHolder[T : Encoder](s: Seq[T]): DatasetHolder[T] = {
+  implicit def localSeqToDatasetHolder[T: Encoder](s: Seq[T]): DatasetHolder[T] =
     DatasetHolder(_sqlContext.createDataset(s))
-  }
 
   /**
     * An implicit conversion that turns a Scala `Symbol` into a [[Column]].
