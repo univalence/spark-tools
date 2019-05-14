@@ -85,12 +85,9 @@ sealed class Expr[+A] {
 
 object Expr {
 
-
-
   def union(x: Struct, y: Struct): Struct = ???
 
-  def union[T](x:Expr[T],y:Expr[T]):Expr[T] = ???
-
+  def union[T](x: Expr[T], y: Expr[T]): Expr[T] = ???
 
   type UntypedExpr = Expr[Any]
 

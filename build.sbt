@@ -147,9 +147,9 @@ lazy val site = project
   .settings(minisiteConfiguration)
   .settings(
     micrositeGithubOwner := "univalence",
-    micrositeGithubRepo := "spark-tools",
-    micrositeBaseUrl := "/spark-tools",
-    name := "spark-tools-site"
+    micrositeGithubRepo  := "spark-tools",
+    micrositeBaseUrl     := "/spark-tools",
+    name                 := "spark-tools-site"
   )
 
 lazy val sparkTest = (project in file("spark-test"))

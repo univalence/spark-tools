@@ -8,8 +8,6 @@ import org.scalatest.FunSuite
 
 import scala.language.implicitConversions
 
-
-
 object JsonInterpreterTest {
   type Struct = Expr.Struct
 
@@ -70,7 +68,7 @@ object JsonInterpreterTest {
   object StructChecker {
 
     case class StructCheckerImpl(struct: Struct, inputs: Map[String, Any], outputs: Seq[(String, Any)])
-      extends StructChecker
+        extends StructChecker
 
   }
 
@@ -94,7 +92,7 @@ object JsonInterpreterTest {
       *             * 1 en général
       *             * N lors de l'utilisation d'une union
       */
-    def check(in: JObject, outs:JObject*): Unit = {
+    def check(in: JObject, outs: JObject*): Unit = {
       val res = ts.tx(in)
 
       val obj: JObject = res.value.get
@@ -122,9 +120,7 @@ object JsonInterpreterTest {
     parse(str, useBigDecimalForDouble = true).asInstanceOf[JObject]
   }
 
-
 }
-
 
 class UnionTest extends FunSuite {
 
@@ -134,14 +130,13 @@ class UnionTest extends FunSuite {
     val x = struct("c" <<- path"a")
     val y = struct("c" <<- path"b")
 
-    val z:Struct = Expr.union(x,y)
+    val z: Struct = Expr.union(x, y)
 
     z.check("""{a:1, b:2}""", """{c:1}""", """"{c:2}""")
 
   }
 
 }
-
 
 class JsonInterpreterTest extends FunSuite {
 
@@ -177,8 +172,8 @@ class JsonInterpreterTest extends FunSuite {
 
     tx.setInput("ktInvoicingType" -> "MONTHLY", "gppTypeProduit" -> "TOTO")
       .setExpected(
-        "expr1"           -> dateparution,
-        "expr2"           -> dateparution,
+        "expr1"          -> dateparution,
+        "expr2"          -> dateparution,
         "da_deb_periode" -> dateparution
       )
       .check()
