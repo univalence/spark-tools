@@ -99,8 +99,13 @@ object Expr {
 
   case class Struct(fields: Seq[StructField]) extends UntypedExpr {
 
-    def where(expr: Expr[Boolean]): Query = Select(this)
+    def where(expr: Expr[Boolean]): Query = Where(Select(this), expr)
     def union(query: Query): Query        = Union(this, query)
+
+    def ++(struct: Struct): Struct = {
+      val rhsf: Set[String] = struct.fields.map(_.name).toSet
+      Struct(fields.filter(x => !rhsf(x.name)) ++ struct.fields)
+    }
   }
 
   case class CaseWhen[B](source: UntypedExpr, cases: CaseWhenExpr[B]) extends Expr[B]

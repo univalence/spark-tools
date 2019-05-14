@@ -12,53 +12,8 @@ import scala.util.Success
 import scala.util.Try
 
 object JsonInterpreter {
-  def directTx(struct: Expr.Struct): JObject => Try[JObject] = {
-    val f: JObject => Result[JObject] = tx(struct)
 
-    f.andThen(x => Try(x.value.get))
-  }
-
-  sealed trait Annotation {
-    def scope: Seq[String]
-    def addScope(name: String): Annotation
-  }
-
-  case class MissingField(name: String, scope: Seq[String] = Nil) extends Annotation {
-    override def addScope(name: String): MissingField =
-      copy(scope = name +: scope)
-  }
-
-  case class CaughtException(exception: Throwable, scope: Seq[String] = Nil) extends Annotation {
-    override def addScope(name: String): CaughtException =
-      copy(scope = name +: scope)
-  }
-
-  case class Result[+T](value: Option[T], annotations: Seq[Annotation]) {
-    def addScope(name: String): Result[T] =
-      copy(annotations = annotations.map(_.addScope(name)))
-    def map[B](f: T => B): Result[B] = Result(value.map(f), annotations)
-
-    def flatMap[B](f: T => Result[B]): Result[B] = {
-      val res: Option[Result[B]] = value.map(f)
-      Result(res.flatMap(_.value), res.map(_.annotations).getOrElse(Nil) ++ annotations)
-    }
-
-    def addAnnotation(annotation: Annotation*): Result[T] =
-      Result(value, annotation ++ annotations)
-  }
-
-  object Result {
-
-    val empty: Result[Nothing] = Result(None, Nil)
-
-    def point[T](t: T): Result[T] = t match {
-      case JNothing => empty
-      case _        => Result(Option(t), Nil)
-    }
-  }
-
-  def tx(struct: Struct): JObject => Result[JObject] = {
-    //def tx(struct: Fnk.Struct): JObject => (Result[JObject], BitSet)
+  private object Compute {
 
     import Expr.Ops._
 
@@ -90,33 +45,6 @@ object JsonInterpreter {
         Try(org.joda.time.LocalDate.parse(arg.take(10))).toOption
     }
 
-    def rewrite(expr: UntypedExpr): UntypedExpr =
-      expr match {
-        case Left(source, n) => source.as[String] <*> n |> (_ take _)
-        case DateAdd(interval, n, source) =>
-          interval <*> n <*> source.as[String] |> {
-            case ("day", days, LocalDate(start)) =>
-              start.plusDays(days).toString
-            case ("month", months, LocalDate(start)) =>
-              start.plusMonths(months).toString
-            case ("year", years, LocalDate(start)) =>
-              start.plusYears(years).toString
-          }
-
-        case DateDiff(datepart, startdate, enddate) =>
-          datepart <*> startdate.as[String] <*> enddate.as[String] |> {
-            case ("day", LocalDate(start), LocalDate(end)) =>
-              Days.daysBetween(start, end).getDays
-            case ("month", LocalDate(start), LocalDate(end)) =>
-              Months.monthsBetween(start, end).getMonths
-          }
-
-        case Remove(source, toRemove) =>
-          Expr.CaseWhen(source, new CaseWhenExpr[Any](toRemove.map(_ -> Null), Some(source)))
-
-        case _ => expr
-      }
-
     implicit def tryToResult[T](t: Try[T]): Result[T] = t match {
       case Success(v) => Result(Some(v), Nil)
       case Failure(e) => Result(None, CaughtException(e, Nil) :: Nil)
@@ -143,7 +71,8 @@ object JsonInterpreter {
         case IsEmpty(source) =>
           val f = compute(source)
           rawJson(source, {
-            case JString("") | JNothing => JBool(true); case _ => JBool(false)
+            case JString("") | JNothing => JBool(true);
+            case _                      => JBool(false)
           })
 
         // LastElement can't be rewriten, it would need a way to specify the schema of the ouput, even using #>
@@ -310,9 +239,116 @@ object JsonInterpreter {
       }
     }
 
+    def rewrite(expr: UntypedExpr): UntypedExpr =
+      expr match {
+        case Left(source, n) => source.as[String] <*> n |> (_ take _)
+        case DateAdd(interval, n, source) =>
+          interval <*> n <*> source.as[String] |> {
+            case ("day", days, LocalDate(start)) =>
+              start.plusDays(days).toString
+            case ("month", months, LocalDate(start)) =>
+              start.plusMonths(months).toString
+            case ("year", years, LocalDate(start)) =>
+              start.plusYears(years).toString
+          }
+
+        case DateDiff(datepart, startdate, enddate) =>
+          datepart <*> startdate.as[String] <*> enddate.as[String] |> {
+            case ("day", LocalDate(start), LocalDate(end)) =>
+              Days.daysBetween(start, end).getDays
+            case ("month", LocalDate(start), LocalDate(end)) =>
+              Months.monthsBetween(start, end).getMonths
+          }
+
+        case Remove(source, toRemove) =>
+          Expr.CaseWhen(source, new CaseWhenExpr[Any](toRemove.map(_ -> Null), Some(source)))
+
+        case _ => expr
+      }
+
+  }
+
+  def query(q: Query): JObject => Try[Seq[JObject]] =
+    q match {
+      case Union(l, r) =>
+        val fl = query(l)
+        val fr = query(r)
+
+        jObject =>
+          for {
+            ls <- fl(jObject)
+            rs <- fr(jObject)
+          } yield ls ++ rs
+
+      case Select(struct) =>
+        val f: JObject => Try[JObject] = directTx(struct)
+        f.andThen(_.map(Seq(_)))
+
+      case Where(source, pred) =>
+        val pf: JValue => Result[JValue] = Compute.compute(pred)
+        val f                            = query(source)
+        jobj =>
+          {
+            val guard: Option[Boolean] = pf(jobj).value.collect({ case JBool(b) => b })
+
+            guard match {
+              case Some(true)  => f(jobj)
+              case Some(false) => Try(Nil)
+              case None        => Failure(new Exception("|> |> * <| <|"))
+            }
+          }
+    }
+
+  def directTx(struct: Expr.Struct): JObject => Try[JObject] = {
+    val f: JObject => Result[JObject] = tx(struct)
+
+    f.andThen(x => Try(x.value.get))
+  }
+
+  sealed trait Annotation {
+    def scope: Seq[String]
+    def addScope(name: String): Annotation
+  }
+
+  case class MissingField(name: String, scope: Seq[String] = Nil) extends Annotation {
+    override def addScope(name: String): MissingField =
+      copy(scope = name +: scope)
+  }
+
+  case class CaughtException(exception: Throwable, scope: Seq[String] = Nil) extends Annotation {
+    override def addScope(name: String): CaughtException =
+      copy(scope = name +: scope)
+  }
+
+  case class Result[+T](value: Option[T], annotations: Seq[Annotation]) {
+    def addScope(name: String): Result[T] =
+      copy(annotations = annotations.map(_.addScope(name)))
+    def map[B](f: T => B): Result[B] = Result(value.map(f), annotations)
+
+    def flatMap[B](f: T => Result[B]): Result[B] = {
+      val res: Option[Result[B]] = value.map(f)
+      Result(res.flatMap(_.value), res.map(_.annotations).getOrElse(Nil) ++ annotations)
+    }
+
+    def addAnnotation(annotation: Annotation*): Result[T] =
+      Result(value, annotation ++ annotations)
+  }
+
+  object Result {
+
+    val empty: Result[Nothing] = Result(None, Nil)
+
+    def point[T](t: T): Result[T] = t match {
+      case JNothing => empty
+      case _        => Result(Option(t), Nil)
+    }
+  }
+
+  def tx(struct: Struct): JObject => Result[JObject] = {
+    //def tx(struct: Fnk.Struct): JObject => (Result[JObject], BitSet)
     val maps: scala.List[(String, JValue => Result[JValue])] =
       struct.fields
-        .map(x => x.name -> compute(x.source).andThen(_.flatMap(Result.point)))
+        .map(x => x.name -> Compute.compute(x.source).andThen(_.flatMap(Result.point)))
         .toList
 
     jobj =>

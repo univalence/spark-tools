@@ -7,6 +7,7 @@ import org.json4s.JsonAST._
 import org.scalatest.FunSuite
 
 import scala.language.implicitConversions
+import scala.util.Try
 
 object JsonInterpreterTest {
   type Struct = Expr.Struct
@@ -126,11 +127,25 @@ class UnionTest extends FunSuite {
 
   import JsonInterpreterTest._
 
-  ignore("build query") {
+  test("build query") {
+    val q: Query = struct("tata" <<- path"toto") where ((path"age".as[Int] |> (_ > 10)) orElse path"age".isEmpty)
 
-    val q: Query = struct("tata" <<- path"toto") where ((path"age".as[Int] |> (_ > 10)) or path"age".isEmpty)
+    val f = JsonInterpreter.query(q)
 
-    //TODO TEST
+    val tata: JObject = "{tata:0}"
+
+    assert(f("{toto:0, age:11}") == Try(Seq(tata)))
+
+    assert(f("{toto:0, age:9}") == Try(Nil))
+
+    assert(f("{toto:0}") == Try(Seq(tata)))
+
+    val q2 = q.union(q.andWhere(path"age".as[Int] |> (_ > 11)))
+
+    val f2 = JsonInterpreter.query(q2)
+
+    assert(f2("{toto:0,age:11}") == Try(Seq(tata)))
+    assert(f2("{toto:0,age:12}") == Try(Seq(tata, tata)))
 
   }
 
