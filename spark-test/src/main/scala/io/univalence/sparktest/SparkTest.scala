@@ -30,7 +30,11 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   }
 
   implicit class SparkTestDfOps(df: DataFrame) {
-    def assertEquals(df: DataFrame): Unit = ???
+    def assertEquals(otherDf: DataFrame): Unit =
+      if (df.schema != otherDf.schema)
+        throw new AssertionError("The data set schema is different")
+      else if (!df.collect().sameElements(otherDf.collect()))
+        throw new AssertionError("The data set content is different")
 
     def showCaseClass(): Unit = ??? //PrintCaseClass Definition from Dataframe inspection
 
