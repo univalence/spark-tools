@@ -97,7 +97,7 @@ lazy val centrifuge = project
   )
 
 lazy val fenek = project
-  .dependsOn(typedpath)
+  .dependsOn(typedpath, sparkTest % "test -> compile")
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     description := "Fenek is for better mapping",

@@ -1,19 +1,22 @@
 package io.univalence.sparktest
+import org.apache.spark.sql.DataFrame
 import org.scalatest.FunSuite
 
 //I would be nicer to extends the trait and have all the feature instead of importing things
 class SparkTestTest extends FunSuite with SparkTest {
 
-  ignore("load Json from String") {
+  test("load Json from String") {
 
     //manage json option for jackson
-    val df = dfFromJsonString("[{a:1},{a:2}]")
+    val df = dfFromJsonString("{a:1}", "{a:2}")
 
-    df.as[Int].assertEquals(Seq(1, 2))
+    df.show()
 
-    df.as[Int].assertContains(1, 2)
-    df.as[Int].assertContains(1)
-    df.as[Int].assertContains(2)
+    df.as[Long].assertEquals(Seq(1L, 2L))
+
+    df.as[Long].assertContains(1, 2)
+    df.as[Long].assertContains(1)
+    df.as[Long].assertContains(2)
 
     df.assertEquals(df)
   }
@@ -51,5 +54,12 @@ class SparkTestTest extends FunSuite with SparkTest {
     assert(df.containsAtLeast(ageExpected))
     assert(!df.containsAtLeast(wrongAgeExpected))
     assert(df.containsAtLeast(nameExpected))
+  }
+
+  test("should assertEquals between equal DF") {
+    val dfUT = Seq(1, 2, 3).toDF("id")
+    val dfExpected = Seq(1, 2, 3).toDF("id")
+
+    dfUT.assertEquals(dfExpected)
   }
 }

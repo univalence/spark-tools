@@ -30,7 +30,9 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   }
 
   implicit class SparkTestDfOps(df: DataFrame) {
-    def assertEquals(df: DataFrame): Unit = ???
+    def assertEquals(otherDf: DataFrame): Unit = {
+      df.schema == otherDf.schema && df.collect().sameElements(otherDf.collect())
+    }
 
     def showCaseClass(): Unit = ??? //PrintCaseClass Definition from Dataframe inspection
 
@@ -44,7 +46,12 @@ object SparkTest {
     def ss: SparkSession
   }
   trait ReadOps extends HasSparkSession {
-    def dfFromJsonString(json: String): DataFrame = ???
+    def dfFromJsonString(json: String*): DataFrame = {
+      val _ss = ss
+      import _ss.implicits._
+
+      ss.read.option("allowUnquotedFieldNames",value = true).json(ss.createDataset[String](json).rdd)
+    }
     def dfFromJsonFile(path: String): DataFrame   = ss.read.json(path)
   }
 
