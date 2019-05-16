@@ -104,4 +104,16 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     }
   }
 
+  test("should not throw an exception if the dataset contains all values") {
+    val ds = Seq(1, 2, 3).toDS()
+    ds.assertContains(1, 2)
+  }
+
+  test("should throw an exception if the dataset does not contain at least one value") {
+    val ds = Seq(1, 2, 3).toDS()
+    assertThrows[AssertionError] {
+      ds.assertContains(1, 2, 4)
+    }
+  }
+
 }

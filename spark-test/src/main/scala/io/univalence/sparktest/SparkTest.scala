@@ -19,17 +19,24 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   implicit class SparkTestDsOps[T: Encoder](_ds: Dataset[T]) {
     def shouldExists(pred: T => Boolean): Unit =
-      if(!_ds.collect().exists(pred))
+      if (!_ds.collect().exists(pred))
         throw new AssertionError("All the rows do not match the predicate.")
 
     def shouldForAll(pred: T => Boolean): Unit =
-      if(!_ds.collect().forall(pred))
+      if (!_ds.collect().forall(pred))
         throw new AssertionError("At least one row does not match the predicate.")
 
-    def assertContains(values: T*): Unit = ???
+    def assertContains(values: T*): Unit = {
+      val dsArray = _ds.collect()
+      if (!values.forall(dsArray.contains(_)))
+        throw new AssertionError("At least one value was not in the dataset.")
+    }
 
     def assertEquals(ds: Dataset[T]): Unit = {
-      _ds.schema == ds.schema && _ds.collect().sameElements(ds.collect())
+      if (_ds.schema == ds.schema)
+        throw new AssertionError("The data set schema is different")
+      else if (_ds.collect().sameElements(ds.collect()))
+        throw new AssertionError("The data set content is different")
     }
 
     def assertEquals(seq: Seq[T]): Unit = assertEquals(seq.toDS())
