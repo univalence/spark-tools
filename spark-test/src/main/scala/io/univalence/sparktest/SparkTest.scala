@@ -23,14 +23,16 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
     def assertContains(values: T*): Unit = ???
 
-    def assertEquals(ds: Dataset[T]): Unit = ???
+    def assertEquals(ds: Dataset[T]): Boolean = {
+      _ds.schema == ds.schema && _ds.collect().sameElements(ds.collect())
+    }
 
-    def assertEquals(seq: Seq[T]): Unit = ???
+    def assertEquals(seq: Seq[T]): Boolean = assertEquals(seq.toDS())
 
   }
 
   implicit class SparkTestDfOps(df: DataFrame) {
-    def assertEquals(otherDf: DataFrame): Unit = {
+    def assertEquals(otherDf: DataFrame): Boolean = {
       df.schema == otherDf.schema && df.collect().sameElements(otherDf.collect())
     }
 
