@@ -18,8 +18,13 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   protected def _sqlContext: SQLContext = ss.sqlContext
 
   implicit class SparkTestDsOps[T: Encoder](_ds: Dataset[T]) {
-    def shouldExists(pred: T => Boolean): Unit = ??? //TODO throws exception if false
-    def shouldForAll(pred: T => Boolean): Unit = ??? //TODO throws exception if false
+    def shouldExists(pred: T => Boolean): Unit =
+      if(!_ds.collect().exists(pred))
+        throw new AssertionError("All the rows do not match the predicate.")
+
+    def shouldForAll(pred: T => Boolean): Unit =
+      if(!_ds.collect().forall(pred))
+        throw new AssertionError("At least one row does not match the predicate.")
 
     def assertContains(values: T*): Unit = ???
 
