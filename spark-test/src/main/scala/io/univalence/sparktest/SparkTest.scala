@@ -23,9 +23,11 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
     def assertContains(values: T*): Unit = ???
 
-    def assertEquals(ds: Dataset[T]): Unit = ???
+    def assertEquals(ds: Dataset[T]): Unit = {
+      _ds.schema == ds.schema && _ds.collect().sameElements(ds.collect())
+    }
 
-    def assertEquals(seq: Seq[T]): Unit = ???
+    def assertEquals(seq: Seq[T]): Unit = assertEquals(seq.toDS())
 
   }
 
@@ -48,7 +50,12 @@ object SparkTest {
     def ss: SparkSession
   }
   trait ReadOps extends HasSparkSession {
-    def dfFromJsonString(json: String): DataFrame = ???
+    def dfFromJsonString(json: String*): DataFrame = {
+      val _ss = ss
+      import _ss.implicits._
+
+      ss.read.option("allowUnquotedFieldNames",value = true).json(ss.createDataset[String](json).rdd)
+    }
     def dfFromJsonFile(path: String): DataFrame   = ss.read.json(path)
   }
 
