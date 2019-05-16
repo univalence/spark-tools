@@ -60,7 +60,7 @@ class SparkTestTest extends FunSuite with SparkTest {
     val dfUT = Seq(1, 2, 3).toDF("id")
     val dfExpected = Seq(1, 2, 3).toDF("id")
 
-    assert(dfUT.assertEquals(dfExpected))
+    dfUT.assertEquals(dfExpected)
   }
 
   test("should assertEquals between equal DS") {
@@ -68,13 +68,13 @@ class SparkTestTest extends FunSuite with SparkTest {
     val dsUT = Seq(1, 2, 3).toDS
     val dsExpected = Seq(1, 2, 3).toDS
 
-    assert(dsUT.assertEquals(dsExpected))
+    dsUT.assertEquals(dsExpected)
 
     // assertEquals(seq)
     val dsPerson = Seq(Person("John", 15), Person("Alicia", 18)).toDS
     val seqExpected = Seq(Person("John", 15), Person("Alicia", 18))
 
-    assert(dsPerson.assertEquals(seqExpected))
+    dsPerson.assertEquals(seqExpected)
   }
 }
 
