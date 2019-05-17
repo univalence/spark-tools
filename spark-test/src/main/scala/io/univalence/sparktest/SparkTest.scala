@@ -4,7 +4,7 @@ import org.apache.spark.sql._
 
 trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
-  object contains {
+  /*object contains {
     def containsOnly(df: DataFrame, element: Any): Boolean    = ???
     def containsAtLeast(df: DataFrame, element: Any): Boolean = ???
     // df.columns.exists(name => df.filter(s"$name == '$element'").head(1).nonEmpty)
@@ -12,7 +12,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   trait Comparisons {
     def assertEquality(df: DataFrame, expectedDF: DataFrame): Boolean
-  }
+  }*/
 
   lazy val ss: SparkSession             = SparkTestSession.spark
   protected def _sqlContext: SQLContext = ss.sqlContext
@@ -33,13 +33,18 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     def assertEquals(ds: Dataset[T]): Unit = {
-      if (_ds.schema == ds.schema)
+      if (_ds.schema != ds.schema)
         throw new AssertionError("The data set schema is different")
-      else if (_ds.collect().sameElements(ds.collect()))
+      else if (!_ds.collect().sameElements(ds.collect()))
         throw new AssertionError("The data set content is different")
     }
 
-    def assertEquals(seq: Seq[T]): Unit = assertEquals(seq.toDS())
+    def assertEquals(seq: Seq[T]): Unit = {
+      val schema = _ds.schema
+      val df = seq.toDF()
+      val newDF = _sqlContext.createDataFrame(df.rdd, schema)
+      assertEquals(newDF.as[T])
+    }
 
   }
 
@@ -56,8 +61,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       println(s2cc.schemaToCaseClass(df.schema, className))
     } //PrintCaseClass Definition from Dataframe inspection
 
-    def containsAtLeast(element: Any): Boolean = contains.containsAtLeast(df, element)
-    def containsOnly(element: Any): Boolean    = contains.containsOnly(df, element)
   }
 }
 

@@ -4,12 +4,10 @@ import org.scalatest.FunSuiteLike
 //I would be nicer to extends the trait and have all the feature instead of importing things
 class SparkTestTest extends FunSuiteLike with SparkTest {
 
-  ignore("load Json from String") {
+  test("load Json from String") {
 
     //manage json option for jackson
     val df = dfFromJsonString("{a:1}", "{a:2}")
-
-    df.show()
 
     df.as[Long].assertEquals(Seq(1L, 2L))
 
@@ -36,13 +34,13 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
   TODO : optimize spark for small load
    */
 
-  test("load Json") {
+  test("load Json from file") {
     val path = "spark-test/src/test/resources/jsonTest.json"
     val df   = dfFromJsonFile(path)
     assert(df.count == 3)
   }
 
-  ignore("contains at least") {
+  /*ignore("contains at least") {
     val path = "spark-test/src/test/resources/jsonTest.json"
     val df   = dfFromJsonFile(path)
 
@@ -53,7 +51,7 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     assert(df.containsAtLeast(ageExpected))
     assert(!df.containsAtLeast(wrongAgeExpected))
     assert(df.containsAtLeast(nameExpected))
-  }
+  }*/
 
   test("should assertEquals between equal DF") {
     val dfUT = Seq(1, 2, 3).toDF("id")
