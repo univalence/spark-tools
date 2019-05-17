@@ -35,8 +35,13 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     def assertEquals(ds: Dataset[T]): Unit = {
       if (_ds.schema != ds.schema)
         throw new AssertionError("The data set schema is different")
-      else if (!_ds.collect().sameElements(ds.collect()))
-        throw new AssertionError("The data set content is different")
+      else if (!_ds.collect().sameElements(ds.collect())) {
+        val actual = _ds.collect().toSeq
+        val expected   = ds.collect().toSeq
+        val errors = expected.zip(actual).filter(x => x._1 != x._2)
+        val displayErr = errors.map(diff => s"${diff._1} was not equal to ${diff._2}")
+        throw new AssertionError("The data set content is different :\n" + displayErr.mkString("\n"))
+      }
     }
 
     def assertEquals(seq: Seq[T]): Unit = {
