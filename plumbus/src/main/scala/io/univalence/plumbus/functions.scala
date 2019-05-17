@@ -11,7 +11,7 @@ import scala.reflect.runtime.universe.TypeTag
 object functions {
 
   implicit class RicherColumn[C <: Column](column: C) {
-    def |>[A: CleanFromRow: TypeTag, B: TypeTag: Encoder](f: A => B): TypedColumn[Any, B] = {
+    def |>[A: CleanFromRow : TypeTag, B: TypeTag : Encoder](f: A => B): TypedColumn[Any, B] = {
       val f0 = udf[B, A](a => f(serializeAndCleanValue(a)))
       f0(column).as[B]
     }
@@ -81,7 +81,7 @@ object functions {
         null.asInstanceOf[B]
       } else {
         val fExt0: Seq[A] => B = fExt.get
-        val cleaner0: A => A   = cleaner.get
+        val cleaner0: A => A = cleaner.get
 
         fExt0(values.map(cleaner0))
       }
@@ -111,7 +111,7 @@ object functions {
   }
 
   def renameColumnsWithSameName(df: DataFrame): DataFrame = {
-    val frame            = df.select("*")
+    val frame = df.select("*")
     val namedExpressions = frame.queryExecution.analyzed.asInstanceOf[Project].projectList
     val duplicateNames: Set[String] =
       namedExpressions
@@ -124,7 +124,7 @@ object functions {
     if (duplicateNames.isEmpty) df
     else {
       type NameCount = Map[String, Int]
-      type Res       = (NameCount, Seq[Column])
+      type Res = (NameCount, Seq[Column])
 
       val zero: Res = (Map.empty, Nil)
 
@@ -132,7 +132,7 @@ object functions {
         namedExpressions.foldLeft(zero) {
           case ((counts, cols), exp) =>
             if (duplicateNames(exp.name)) {
-              val i   = counts.getOrElse(exp.name, 0)
+              val i = counts.getOrElse(exp.name, 0)
               val col = new Column(exp).as(exp.name + "_" + i)
 
               (counts + (exp.name -> (i + 1)), cols :+ col)
@@ -143,6 +143,16 @@ object functions {
 
       df.select(columns: _*)
     }
+  }
+
+  def differentLines(left: DataFrame, right: DataFrame): Dataset[Row] = {
+    import org.apache.spark.sql.functions._
+
+    left.withColumn("side", lit("left")).union(right.withColumn("side", lit("right")))
+      .groupBy(left.columns.map(left.apply): _*).agg(
+      sum(when(expr("side = 'left'"), lit(1))).as("nbLeft"),
+      sum(when(expr("side = 'right'"), lit(1))).as("nbRight")
+    ).filter(expr("not (nbLeft = 1 and nbRight = 1)"))
   }
 
 }
