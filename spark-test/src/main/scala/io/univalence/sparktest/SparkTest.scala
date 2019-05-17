@@ -50,7 +50,11 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       else if (!df.collect().sameElements(otherDf.collect()))
         throw new AssertionError("The data set content is different")
 
-    def showCaseClass(): Unit = ??? //PrintCaseClass Definition from Dataframe inspection
+    def showCaseClass(className: String): Unit = {
+      val s2cc = new Schema2CaseClass
+      import s2cc.implicits._
+      println(s2cc.schemaToCaseClass(df.schema, className))
+    } //PrintCaseClass Definition from Dataframe inspection
 
     def containsAtLeast(element: Any): Boolean = contains.containsAtLeast(df, element)
     def containsOnly(element: Any): Boolean    = contains.containsOnly(df, element)
@@ -70,5 +74,4 @@ object SparkTest {
     }
     def dfFromJsonFile(path: String): DataFrame   = ss.read.json(path)
   }
-
 }
