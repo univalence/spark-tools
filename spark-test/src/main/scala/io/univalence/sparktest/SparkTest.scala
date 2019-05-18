@@ -32,34 +32,35 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         throw new AssertionError("At least one value was not in the dataset.")
     }
 
-    def assertEquals(ds: Dataset[T]): Unit = {
+    def assertEquals(ds: Dataset[T]): Unit =
       if (_ds.schema != ds.schema)
         throw new AssertionError("The data set schema is different")
       else if (!_ds.collect().sameElements(ds.collect())) {
-        val actual = _ds.collect().toSeq
+        val actual     = _ds.collect().toSeq
         val expected   = ds.collect().toSeq
-        val errors = expected.zip(actual).filter(x => x._1 != x._2)
+        val errors     = expected.zip(actual).filter(x => x._1 != x._2)
         val displayErr = errors.map(diff => s"${diff._1} was not equal to ${diff._2}")
         throw new AssertionError("The data set content is different :\n" + displayErr.mkString("\n"))
       }
-    }
 
     def assertEquals(seq: Seq[T]): Unit = {
       val schema = _ds.schema
-      val df = seq.toDF()
-      val newDF = _sqlContext.createDataFrame(df.rdd, schema)
+      val df     = seq.toDF()
+      val newDF  = _sqlContext.createDataFrame(df.rdd, schema)
       assertEquals(newDF.as[T])
     }
 
   }
 
   implicit class SparkTestDfOps(df: DataFrame) {
-    def assertEquals(otherDf: DataFrame): Unit =
+    //TODO : assertEquals should not check the order by default
+    def assertEquals(otherDf: DataFrame /* checkRowOrder:Boolean = false */ ): Unit =
       if (df.schema != otherDf.schema)
         throw new AssertionError("The data set schema is different")
       else if (!df.collect().sameElements(otherDf.collect()))
         throw new AssertionError("The data set content is different")
 
+    //TODO : Usage documentation
     def showCaseClass(className: String): Unit = {
       val s2cc = new Schema2CaseClass
       import s2cc.implicits._
@@ -78,8 +79,8 @@ object SparkTest {
       val _ss = ss
       import _ss.implicits._
 
-      ss.read.option("allowUnquotedFieldNames",value = true).json(ss.createDataset[String](json).rdd)
+      ss.read.option("allowUnquotedFieldNames", value = true).json(ss.createDataset[String](json).rdd)
     }
-    def dfFromJsonFile(path: String): DataFrame   = ss.read.json(path)
+    def dfFromJsonFile(path: String): DataFrame = ss.read.json(path)
   }
 }

@@ -54,25 +54,29 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
   }*/
 
   test("should assertEquals between equal DF") {
-    val dfUT = Seq(1, 2, 3).toDF("id")
+    val dfUT       = Seq(1, 2, 3).toDF("id")
     val dfExpected = Seq(1, 2, 3).toDF("id")
 
     dfUT.assertEquals(dfExpected)
   }
 
   test("should not assertEquals between DF with different contents") {
-    val dfUT = Seq(1, 2, 3).toDF("id")
+    val dfUT       = Seq(1, 2, 3).toDF("id")
     val dfExpected = Seq(3, 2, 1).toDF("id")
 
     assertThrows[AssertionError] {
-      dfUT.assertEquals(dfExpected)
+      dfUT.assertEquals(dfExpected /* , checkOrder = true */ )
     }
+
+    //dfUT.assertEquals(dfExpected /* , checkOrder = false */)
+
   }
 
   test("should not assertEquals between DF with different schema") {
-    val dfUT = Seq(1, 2, 3).toDF("id")
+    val dfUT       = Seq(1, 2, 3).toDF("id")
     val dfExpected = Seq(1, 2, 3).toDF("di")
 
+    //TODO : Build an ADT for Errors, AssertionError is too generic
     assertThrows[AssertionError] {
       dfUT.assertEquals(dfExpected)
     }
@@ -85,6 +89,7 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
 
   test("should not exists if all the rows don't match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
+    //TODO : Should display 10 rows that don't match the predicate
     assertThrows[AssertionError] {
       ds.shouldExists(i => i > 3)
     }
@@ -97,6 +102,7 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
 
   test("should throw an exception if one of the row does not match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
+    //TODO : Should display 10 rows that don't match the predicate
     assertThrows[AssertionError] {
       ds.shouldForAll(i => i >= 2)
     }
@@ -107,8 +113,9 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     ds.assertContains(1, 2)
   }
 
-  test("should throw an exception if the dataset does not contain at least one value") {
+  test("should throw an exception if the dataset does not contain at least one of the expected value") {
     val ds = Seq(1, 2, 3).toDS()
+    //TODO : Display the value not found in the dataset
     assertThrows[AssertionError] {
       ds.assertContains(1, 2, 4)
     }
