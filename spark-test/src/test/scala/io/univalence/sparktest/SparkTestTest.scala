@@ -65,7 +65,7 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     val dfExpected = Seq(3, 2, 1).toDF("id")
 
     assertThrows[AssertionError] {
-      dfUT.assertEquals(dfExpected /* , checkOrder = true */ )
+      dfUT.assertEquals(dfExpected, checkRowOrder = true)
     }
 
     //dfUT.assertEquals(dfExpected /* , checkOrder = false */)

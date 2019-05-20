@@ -58,17 +58,18 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   implicit class SparkTestDfOps(df: DataFrame) {
     //TODO : assertEquals should not check the order by default
     def assertEquals(otherDf: DataFrame, checkRowOrder: Boolean = false): Unit = {
-      if (checkRowOrder) {
-        if (df.schema != otherDf.schema)
-          throw new AssertionError("The data set schema is different")
-        else if (!df.collect().sameElements(otherDf.collect())) //df.rdd.compareRDD(otherDf.rdd).isDefined
-          throw new AssertionError("The data set content is different")
-      } else {
-        if (df.except(otherDf).head(1).nonEmpty || otherDf.except(df).head(1).nonEmpty){
-          throw new AssertionError("The data set content is different")
+      if (df.schema != otherDf.schema)
+        throw new AssertionError("The data set schema is different")
+      else {
+        if (checkRowOrder) {
+          if (!df.collect().sameElements(otherDf.collect())) //df.rdd.compareRDD(otherDf.rdd).isDefined
+            throw new AssertionError("The data set content is different")
+        } else {
+          if (df.except(otherDf).head(1).nonEmpty || otherDf.except(df).head(1).nonEmpty) {
+            throw new AssertionError("The data set content is different")
+          }
         }
       }
-
     }
 
     //TODO : Usage documentation
