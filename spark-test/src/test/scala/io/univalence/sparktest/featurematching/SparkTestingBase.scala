@@ -13,29 +13,28 @@ class SparkTestingBase extends FunSuite with SparkTest {
   val sc: SparkContext                 = ss.sparkContext
 
   //https://github.com/holdenk/spark-testing-base/wiki/RDDComparisons
-  ignore("test RDDComparisons") {
+  test("test RDDComparisons") {
     val expectedRDD = sc.parallelize(Seq(1, 2, 3))
     val resultRDD   = sc.parallelize(Seq(3, 2, 1))
 
-    //TODO implements compareRDD
-    //TODO implements assertRDDEquals(...)
-    /*
-      assert(None === compareRDD(expectedRDD, resultRDD)) // succeed
-      assert(None === compareRDDWithOrder(expectedRDD, resultRDD)) // Fail
-      assertRDDEquals(expectedRDD, resultRDD) // succeed
-      assertRDDEqualsWithOrder(expectedRDD, resultRDD) // Fail
-   */
+    assert(None === expectedRDD.compareRDD(resultRDD))
+    expectedRDD.assertRDDEquals(resultRDD)
+    assert(Some((Some(1),Some(3))) === expectedRDD.compareRDDWithOrder(resultRDD))
+    intercept[AssertionError] {
+      expectedRDD.assertRDDEqualsWithOrder(resultRDD)
+    }
   }
 
   //https://github.com/holdenk/spark-testing-base/wiki/DataFrameSuiteBase
   test("test DataFrame Comparison") {
-    val input1 = sc.parallelize(List(1, 2, 3)).toDF
+    val input1 = sc.parallelize(List(1, 2, 4)).toDF
 
     input1 assertEquals input1 // equal
 
-    val input2 = sc.parallelize(List(4, 5, 6)).toDF
+    val input2 = sc.parallelize(List(2, 4, 1)).toDF
+
     intercept[AssertionError] {
-      input1 assertEquals input2 // not equal
+      input1.assertEquals(input2, checkRowOrder = true)// not equal
     }
   }
 

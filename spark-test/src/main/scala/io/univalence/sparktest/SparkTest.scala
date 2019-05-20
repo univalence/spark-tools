@@ -1,6 +1,9 @@
 package io.univalence.sparktest
 
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
+
+import scala.reflect.ClassTag
 
 trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
@@ -54,11 +57,19 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   implicit class SparkTestDfOps(df: DataFrame) {
     //TODO : assertEquals should not check the order by default
-    def assertEquals(otherDf: DataFrame /* checkRowOrder:Boolean = false */ ): Unit =
-      if (df.schema != otherDf.schema)
-        throw new AssertionError("The data set schema is different")
-      else if (!df.collect().sameElements(otherDf.collect()))
-        throw new AssertionError("The data set content is different")
+    def assertEquals(otherDf: DataFrame, checkRowOrder: Boolean = false): Unit = {
+      if (checkRowOrder) {
+        if (df.schema != otherDf.schema)
+          throw new AssertionError("The data set schema is different")
+        else if (!df.collect().sameElements(otherDf.collect())) //df.rdd.compareRDD(otherDf.rdd).isDefined
+          throw new AssertionError("The data set content is different")
+      } else {
+        if (df.except(otherDf).head(1).nonEmpty || otherDf.except(df).head(1).nonEmpty){
+          throw new AssertionError("The data set content is different")
+        }
+      }
+
+    }
 
     //TODO : Usage documentation
     def showCaseClass(className: String): Unit = {
@@ -67,6 +78,74 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       println(s2cc.schemaToCaseClass(df.schema, className))
     } //PrintCaseClass Definition from Dataframe inspection
 
+  }
+
+  implicit class SparkTestRDDOps[T: ClassTag](rdd: RDD[T]) {
+    def assertRDDEquals(otherRDD: RDD[T]): Unit = {
+      if (compareRDD(otherRDD).isDefined)
+        throw new AssertionError("The RDD is different")
+    }
+
+    def compareRDD(otherRDD: RDD[T]): Option[(T, Int, Int)] = {
+      val expectedKeyed = rdd.map(x => (x, 1)).reduceByKey(_ + _)
+      val resultKeyed = otherRDD.map(x => (x, 1)).reduceByKey(_ + _)
+      // Group them together and filter for difference
+      expectedKeyed.cogroup(resultKeyed).filter { case (_, (i1, i2)) =>
+        i1.isEmpty || i2.isEmpty || i1.head != i2.head
+      }
+        .take(1).headOption.
+        map { case (v, (i1, i2)) =>
+          (v, i1.headOption.getOrElse(0), i2.headOption.getOrElse(0))
+        }
+    }
+
+    def assertRDDEqualsWithOrder(result: RDD[T]): Unit = {
+      if (compareRDDWithOrder(result).isDefined)
+        throw new AssertionError("The RDD is different")
+
+    }
+
+    def compareRDDWithOrder(result: RDD[T]): Option[(Option[T], Option[T])] = {
+      // If there is a known partitioner just zip
+      if (result.partitioner.map(_ == rdd.partitioner.get).getOrElse(false)) {
+        rdd.compareRDDWithOrderSamePartitioner(result)
+      } else {
+        // Otherwise index every element
+        def indexRDD[T](rdd: RDD[T]): RDD[(Long, T)] = {
+          rdd.zipWithIndex.map { case (x, y) => (y, x) }
+        }
+        val indexedExpected = indexRDD(rdd)
+        val indexedResult = indexRDD(result)
+        indexedExpected.cogroup(indexedResult).filter { case (_, (i1, i2)) =>
+          i1.isEmpty || i2.isEmpty || i1.head != i2.head
+        }.take(1).headOption.
+          map { case (_, (i1, i2)) =>
+            (i1.headOption, i2.headOption) }.take(1).headOption
+      }
+    }
+
+    /**
+      * Compare two RDDs. If they are equal returns None, otherwise
+      * returns Some with the first mismatch. Assumes we have the same partitioner.
+      */
+    def compareRDDWithOrderSamePartitioner(result: RDD[T]): Option[(Option[T], Option[T])] = {
+      // Handle mismatched lengths by converting into options and padding with Nones
+      rdd.zipPartitions(result) {
+        (thisIter, otherIter) =>
+          new Iterator[(Option[T], Option[T])] {
+            def hasNext: Boolean = (thisIter.hasNext || otherIter.hasNext)
+
+            def next(): (Option[T], Option[T]) = {
+              (thisIter.hasNext, otherIter.hasNext) match {
+                case (false, true) => (Option.empty[T], Some(otherIter.next()))
+                case (true, false) => (Some(thisIter.next()), Option.empty[T])
+                case (true, true) => (Some(thisIter.next()), Some(otherIter.next()))
+                case _ => throw new Exception("next called when elements consumed")
+              }
+            }
+          }
+      }.filter { case (v1, v2) => v1 != v2 }.take(1).headOption
+    }
   }
 }
 
