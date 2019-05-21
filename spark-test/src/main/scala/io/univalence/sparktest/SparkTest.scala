@@ -65,13 +65,12 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   }
 
   implicit class SparkTestDfOps(df: DataFrame) {
-    //TODO : assertEquals should not check the order by default
     def assertEquals(otherDf: DataFrame, checkRowOrder: Boolean = false): Unit = {
       if (df.schema != otherDf.schema)
         throw new AssertionError("The data set schema is different")
       else {
         if (checkRowOrder) {
-          if (!df.collect().sameElements(otherDf.collect())) //df.rdd.compareRDD(otherDf.rdd).isDefined
+          if (!df.collect().sameElements(otherDf.collect()))
             throw new AssertionError("The data set content is different")
         } else {
           if (df.except(otherDf).head(1).nonEmpty || otherDf.except(df).head(1).nonEmpty) {
@@ -81,7 +80,39 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    //TODO : Usage documentation
+    def assertColumnEquality(rightLabel: String, leftLabel: String): Unit = {
+      if(compareColumn(rightLabel, leftLabel))
+        throw new AssertionError("Columns are different")
+
+    }
+
+    def compareColumn(rightLabel: String, leftLabel: String): Boolean = {
+      val elements = df
+        .select(
+          rightLabel,
+          leftLabel
+        )
+        .collect()
+      val rightElements = elements.map(_(0))
+      val leftElements = elements.map(_(1))
+      elements.exists(r => r(0) != r(1))
+      //rightElements.sameElements(leftElements)
+      //val zippedElements = rightElements zip leftElements
+      //zippedElements.filter{ case (right, left) => right != left }
+    }
+
+    /**
+      * Display the schema of the DataFrame as a case class.
+      * Example :
+      *   val df = Seq(1, 2, 3).toDF("id")
+      *   df.showCaseClass("Id")
+      *
+      *   result :
+      *   case class Id (
+      *       id:Int
+      *   )
+      * @param className name of the case class
+      */
     def showCaseClass(className: String): Unit = {
       val s2cc = new Schema2CaseClass
       import s2cc.implicits._
