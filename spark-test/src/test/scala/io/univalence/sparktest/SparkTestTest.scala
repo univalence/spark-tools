@@ -89,7 +89,6 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
 
   test("should not exists if all the rows don't match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
-    //TODO : Should display 10 rows that don't match the predicate
     assertThrows[AssertionError] {
       ds.shouldExists(i => i > 3)
     }
@@ -102,7 +101,6 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
 
   test("should throw an exception if one of the row does not match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
-    //TODO : Should display 10 rows that don't match the predicate
     assertThrows[AssertionError] {
       ds.shouldForAll(i => i >= 2)
     }
@@ -115,7 +113,6 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
 
   test("should throw an exception if the dataset does not contain at least one of the expected value") {
     val ds = Seq(1, 2, 3).toDS()
-    //TODO : Display the value not found in the dataset
     assertThrows[AssertionError] {
       ds.assertContains(1, 2, 4)
     }

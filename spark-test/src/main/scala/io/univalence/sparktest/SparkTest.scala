@@ -22,17 +22,26 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   implicit class SparkTestDsOps[T: Encoder](_ds: Dataset[T]) {
     def shouldExists(pred: T => Boolean): Unit =
-      if (!_ds.collect().exists(pred))
-        throw new AssertionError("All the rows do not match the predicate.")
+      if (!_ds.collect().exists(pred)) {
+        val displayErr = _ds.collect().take(10)
+        throw new AssertionError("No rows from the dataset match the predicate. " +
+          s"Rows not matching the predicate :\n ${displayErr.mkString("\n")}")
+      }
 
     def shouldForAll(pred: T => Boolean): Unit =
-      if (!_ds.collect().forall(pred))
-        throw new AssertionError("At least one row does not match the predicate.")
+      if (!_ds.collect().forall(pred)) {
+        val displayErr = _ds.collect().filterNot(pred).take(10)
+        throw new AssertionError("At least one row does not match the predicate. " +
+          s"Rows not matching the predicate :\n${displayErr.mkString("\n")}")
+      }
 
     def assertContains(values: T*): Unit = {
       val dsArray = _ds.collect()
-      if (!values.forall(dsArray.contains(_)))
-        throw new AssertionError("At least one value was not in the dataset.")
+      if (!values.forall(dsArray.contains(_))) {
+        val displayErr = values.diff(dsArray).take(10)
+        throw new AssertionError("At least one value was not in the dataset. " +
+          s"Values not in the dataset :\n${displayErr.mkString("\n")}")
+      }
     }
 
     def assertEquals(ds: Dataset[T]): Unit =
@@ -112,7 +121,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         rdd.compareRDDWithOrderSamePartitioner(result)
       } else {
         // Otherwise index every element
-        def indexRDD[T](rdd: RDD[T]): RDD[(Long, T)] = {
+        def indexRDD(rdd: RDD[T]): RDD[(Long, T)] = {
           rdd.zipWithIndex.map { case (x, y) => (y, x) }
         }
         val indexedExpected = indexRDD(rdd)
