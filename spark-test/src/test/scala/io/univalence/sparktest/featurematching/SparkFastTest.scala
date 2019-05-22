@@ -11,7 +11,7 @@ class SparkFastTest extends FunSuite with SparkTest {
   val sharedSparkSession: SparkSession = ss
   val sc: SparkContext                 = ss.sparkContext
 
-  ignore("test DataFrame equality") {
+  test("test DataFrame equality") {
 
     val sourceDF = Seq(
       "jose",
@@ -26,6 +26,7 @@ class SparkFastTest extends FunSuite with SparkTest {
     ).toDF("name")
 
     //assertSmallDatasetEquality(sourceDF, expectedDF) // equal
+    sourceDF.assertEquals(expectedDF)
   }
 
   test("column equality") {
@@ -52,6 +53,7 @@ class SparkFastTest extends FunSuite with SparkTest {
     ).toDF("number")
 
     //assertSmallDataFrameEquality(sourceDF, expectedDF, orderedComparison = false) // equal
+    sourceDF.assertEquals(expectedDF, checkRowOrder = false)
   }
 
   ignore("ignore nullable flag equality") {
@@ -70,6 +72,7 @@ class SparkFastTest extends FunSuite with SparkTest {
       StructType(List(StructField("number", IntegerType, true)))
     )
 
+    // TODO
     //assertSmallDatasetEquality(sourceDF, expectedDF, ignoreNullable = true)
   }
 

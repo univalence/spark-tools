@@ -44,22 +44,34 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def assertEquals(ds: Dataset[T]): Unit =
+    def assertEquals(ds: Dataset[T], checkRowOrder: Boolean = false): Unit = {
       if (_ds.schema != ds.schema)
         throw new AssertionError("The data set schema is different")
-      else if (!_ds.collect().sameElements(ds.collect())) {
-        val actual     = _ds.collect().toSeq
-        val expected   = ds.collect().toSeq
-        val errors     = expected.zip(actual).filter(x => x._1 != x._2)
-        val displayErr = errors.map(diff => s"${diff._1} was not equal to ${diff._2}")
-        throw new AssertionError("The data set content is different :\n" + displayErr.mkString("\n"))
+      else {
+        if (checkRowOrder) {
+          if (!_ds.collect().sameElements(ds.collect())) {
+            throw new AssertionError(s"The data set content is different :\n${displayErr(_ds, ds)}")
+          }
+        } else {
+          if (ds.except(_ds).head(1).nonEmpty || _ds.except(ds).head(1).nonEmpty) {
+            throw new AssertionError(s"The data set content is different :\n${displayErr(_ds, ds)}")
+          }
+        }
       }
+    }
 
     def assertEquals(seq: Seq[T]): Unit = {
       val schema = _ds.schema
       val df     = seq.toDF()
       val newDF  = _sqlContext.createDataFrame(df.rdd, schema)
       assertEquals(newDF.as[T])
+    }
+
+    def displayErr(_ds: Dataset[T], ds: Dataset[T]): String = {
+      val actual     = _ds.collect().toSeq
+      val expected   = ds.collect().toSeq
+      val errors     = expected.zip(actual).filter(x => x._1 != x._2)
+      errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
     }
 
   }
@@ -71,10 +83,10 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       else {
         if (checkRowOrder) {
           if (!df.collect().sameElements(otherDf.collect()))
-            throw new AssertionError("The data set content is different")
+            throw new AssertionError(s"The data set content is different :\n${displayErr(df, otherDf)}")
         } else {
           if (df.except(otherDf).head(1).nonEmpty || otherDf.except(df).head(1).nonEmpty) {
-            throw new AssertionError("The data set content is different")
+            throw new AssertionError(s"The data set content is different :\n${displayErr(df, otherDf)}")
           }
         }
       }
@@ -93,12 +105,21 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
           leftLabel
         )
         .collect()
-      val rightElements = elements.map(_(0))
-      val leftElements = elements.map(_(1))
       elements.exists(r => r(0) != r(1))
+
+      //val rightElements = elements.map(_(0))
+      //val leftElements = elements.map(_(1))
       //rightElements.sameElements(leftElements)
+
       //val zippedElements = rightElements zip leftElements
       //zippedElements.filter{ case (right, left) => right != left }
+    }
+
+    def displayErr(df: DataFrame, otherDf: DataFrame): String = {
+      val actual     = df.collect().toSeq
+      val expected   = otherDf.collect().toSeq
+      val errors     = expected.zip(actual).filter(x => x._1 != x._2)
+      errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
     }
 
     /**

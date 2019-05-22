@@ -53,16 +53,34 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     assert(df.containsAtLeast(nameExpected))
   }*/
 
-  test("should assertEquals between equal DF") {
+  // ========================== DataFrame Tests ====================================
+
+  test("should assertEquals unordered between equal DF") {
     val dfUT       = Seq(1, 2, 3).toDF("id")
-    val dfExpected = Seq(1, 2, 3).toDF("id")
+    val dfExpected = Seq(3, 2, 1).toDF("id")
 
     dfUT.assertEquals(dfExpected)
   }
 
-  test("should not assertEquals between DF with different contents") {
+  test("should not assertEquals unordered between DF with different contents") {
     val dfUT       = Seq(1, 2, 3).toDF("id")
-    val dfExpected = Seq(3, 2, 1).toDF("id")
+    val dfExpected = Seq(2, 1, 4).toDF("id")
+
+    assertThrows[AssertionError] {
+      dfUT.assertEquals(dfExpected)
+    }
+  }
+
+  test("should assertEquals ordered between equal DF") {
+    val dfUT       = Seq(1, 2, 3).toDF("id")
+    val dfExpected = Seq(1, 2, 3).toDF("id")
+
+    dfUT.assertEquals(dfExpected, checkRowOrder = true)
+  }
+
+  test("should not assertEquals ordered between DF with different contents") {
+    val dfUT       = Seq(1, 2, 3).toDF("id")
+    val dfExpected = Seq(1, 3, 4).toDF("id")
 
     assertThrows[AssertionError] {
       dfUT.assertEquals(dfExpected, checkRowOrder = true)
@@ -76,6 +94,40 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     //TODO : Build an ADT for Errors, AssertionError is too generic
     assertThrows[AssertionError] {
       dfUT.assertEquals(dfExpected)
+    }
+  }
+
+  // ========================== DataSet Tests ====================================
+
+  test("should assertEquals unordered between equal DS") {
+    val dsUT       = Seq(1, 2, 3).toDS()
+    val dsExpected = Seq(3, 2, 1).toDS()
+
+    dsUT.assertEquals(dsExpected)
+  }
+
+  test("should not assertEquals unordered between DS with different contents") {
+    val dsUT       = Seq(1, 2, 3).toDS()
+    val dsExpected = Seq(2, 1, 4).toDS()
+
+    assertThrows[AssertionError] {
+      dsUT.assertEquals(dsExpected)
+    }
+  }
+
+  test("should assertEquals ordered between equal DS") {
+    val dsUT       = Seq(1, 2, 3).toDS()
+    val dsExpected = Seq(1, 2, 3).toDS()
+
+    dsUT.assertEquals(dsExpected, checkRowOrder = true)
+  }
+
+  test("should not assertEquals ordered between DS with different contents") {
+    val dsUT       = Seq(1, 2, 3).toDS()
+    val dsExpected = Seq(1, 3, 4).toDS()
+
+    assertThrows[AssertionError] {
+      dsUT.assertEquals(dsExpected, checkRowOrder = true)
     }
   }
 
