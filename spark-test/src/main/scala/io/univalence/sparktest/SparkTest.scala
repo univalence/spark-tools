@@ -176,7 +176,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
     def compareRDDWithOrder(result: RDD[T]): Option[(Option[T], Option[T])] =
       // If there is a known partitioner just zip
-      if (result.partitioner.contains(rdd.partitioner.get)) {
+      if (result.partitioner.map(_ == rdd.partitioner.get).getOrElse(false)) {
         rdd.compareRDDWithOrderSamePartitioner(result)
       } else {
         // Otherwise index every element
