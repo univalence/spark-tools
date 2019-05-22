@@ -1,4 +1,5 @@
 package io.univalence.sparktest.featurematching
+
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.{Row, SparkSession}
@@ -7,7 +8,6 @@ import org.scalatest.FunSuite
 
 class SparkFastTest extends FunSuite with SparkTest {
 
-  //SharedSparkContext
   val sharedSparkSession: SparkSession = ss
   val sc: SparkContext                 = ss.sparkContext
 

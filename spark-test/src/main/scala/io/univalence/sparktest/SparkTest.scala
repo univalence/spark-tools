@@ -21,6 +21,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   protected def _sqlContext: SQLContext = ss.sqlContext
 
   implicit class SparkTestDsOps[T: Encoder](_ds: Dataset[T]) {
+
     def shouldExists(pred: T => Boolean): Unit =
       if (!_ds.collect().exists(pred)) {
         val displayErr = _ds.collect().take(10)
