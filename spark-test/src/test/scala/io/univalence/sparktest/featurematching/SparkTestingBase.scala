@@ -67,20 +67,23 @@ class SparkTestingBase extends FunSuite with SparkTest {
     }
   }
 
-  ignore("dataset should be equal to itself with precision") {
-    //TODO implements
-    val input1 = sc.parallelize(List[(Int, Double)]((1, 1.1), (2, 2.2), (3, 3.3))).toDS
-
-    //    assertDatasetApproximateEquals(input1, input2, 0.11) // equal
-  }
-
-  ignore("dataset should not be equal to a different even with precision") {
+  test("dataset should be equal to itself with precision") {
     val input1 = sc.parallelize(List[(Int, Double)]((1, 1.1), (2, 2.2), (3, 3.3))).toDS
     val input2 = sc.parallelize(List[(Int, Double)]((1, 1.2), (2, 2.3), (3, 3.4))).toDS
 
-    //    intercept[org.scalatest.exceptions.TestFailedException] {
-//      assertDatasetApproximateEquals(input1, input2, 0.05) // not equal
-//    }
+    //    assertDatasetApproximateEquals(input1, input2, 0.11) // equal
+    input1.assertApproxEquals(input2, 0.11)
+  }
+
+  test("dataset should not be equal to a different even with precision") {
+    val input1 = sc.parallelize(List[(Int, Double)]((1, 1.1), (2, 2.2), (3, 3.3))).toDS
+    val input2 = sc.parallelize(List[(Int, Double)]((1, 1.2), (2, 2.3), (3, 3.4))).toDS
+
+    intercept[AssertionError] {
+      input1.assertApproxEquals(input2, 0.05)
+    }
+
+//  assertDatasetApproximateEquals(input1, input2, 0.05) // not equal
   }
 
   //https://github.com/holdenk/spark-testing-base/wiki/RDDGenerator

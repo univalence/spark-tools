@@ -56,7 +56,7 @@ class SparkFastTest extends FunSuite with SparkTest {
     sourceDF.assertEquals(expectedDF, checkRowOrder = false)
   }
 
-  ignore("ignore nullable flag equality") {
+  test("ignore nullable flag equality") {
     val data = Seq(
       Row(1),
       Row(5)
@@ -64,16 +64,17 @@ class SparkFastTest extends FunSuite with SparkTest {
 
     val sourceDF = ss.createDataFrame(
       sc.parallelize(data),
-      StructType(List(StructField("number", IntegerType, false)))
+      StructType(List(StructField("number", IntegerType, nullable = false)))
     )
 
     val expectedDF = ss.createDataFrame(
       sc.parallelize(data),
-      StructType(List(StructField("number", IntegerType, true)))
+      StructType(List(StructField("number", IntegerType, nullable = true)))
     )
 
-    // TODO
-    //assertSmallDatasetEquality(sourceDF, expectedDF, ignoreNullable = true)
+    //assertSmallDatasetEquality(sourceDF, expectedDF, ignoreNullable = true) // OK
+    //assertSmallDatasetEquality(sourceDF, expectedDF, ignoreNullable = false) // not equal
+    sourceDF.assertEquals(expectedDF, ignoreNullableFlag = true)
   }
 
   test("approximate dataframe equality") {
@@ -85,7 +86,7 @@ class SparkFastTest extends FunSuite with SparkTest {
 
     val sourceDF = ss.createDataFrame(
       sc.parallelize(sourceData),
-      StructType(List(StructField("number", DoubleType, true)))
+      StructType(List(StructField("number", DoubleType, nullable = true)))
     )
 
     val expectedData = Seq(
@@ -96,7 +97,7 @@ class SparkFastTest extends FunSuite with SparkTest {
 
     val expectedDF = ss.createDataFrame(
       sc.parallelize(expectedData),
-      StructType(List(StructField("number", DoubleType, true)))
+      StructType(List(StructField("number", DoubleType, nullable = true)))
     )
 
     //assertApproximateDataFrameEquality(sourceDF, expectedDF, 0.1)

@@ -1,8 +1,14 @@
 package io.univalence.sparktest
 
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types.{DoubleType, StructField, StructType}
 import org.scalatest.FunSuiteLike
 
 class SparkTestTest extends FunSuiteLike with SparkTest {
+
+  val sharedSparkSession: SparkSession = ss
+  val sc: SparkContext                 = ss.sparkContext
 
   test("load Json from String") {
     //manage json option for jackson
@@ -171,6 +177,24 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     assertThrows[AssertionError] {
       ds.assertContains(1, 2, 4)
     }
+  }
+  
+  test("should not throw an exception if the schema is the same (nullable = true)") {
+    val sourceData = Seq(
+      Row(1.11),
+      Row(5.22)
+    )
+    val sourceDF = ss.createDataFrame(
+      sc.parallelize(sourceData),
+      StructType(List(StructField("number", DoubleType, nullable = true)))
+    ).as[Double]
+
+    val expectedDS = ss.createDataFrame(
+      sc.parallelize(sourceData),
+      StructType(List(StructField("number", DoubleType, nullable = false)))
+    ).as[Double]
+
+    sourceDF.assertEquals(expectedDS, ignoreNullableFlag = true)
   }
 
 }
