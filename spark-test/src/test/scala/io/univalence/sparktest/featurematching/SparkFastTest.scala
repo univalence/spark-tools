@@ -76,7 +76,7 @@ class SparkFastTest extends FunSuite with SparkTest {
     //assertSmallDatasetEquality(sourceDF, expectedDF, ignoreNullable = true)
   }
 
-  ignore("approximate dataframe equality") {
+  test("approximate dataframe equality") {
     val sourceData = Seq(
       Row(1.11),
       Row(5.22),
@@ -99,8 +99,8 @@ class SparkFastTest extends FunSuite with SparkTest {
       StructType(List(StructField("number", DoubleType, true)))
     )
 
-    // TODO
     //assertApproximateDataFrameEquality(sourceDF, expectedDF, 0.1)
+    sourceDF.assertApproxEquals(expectedDF, 0.1)
   }
 
 }

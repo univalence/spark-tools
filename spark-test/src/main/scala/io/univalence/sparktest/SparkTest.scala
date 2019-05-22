@@ -3,6 +3,7 @@ package io.univalence.sparktest
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import scala.reflect.ClassTag
+import io.univalence.sparktest.RowComparer._
 
 trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
@@ -122,6 +123,16 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       val errors   = expected.zip(actual).filter(x => x._1 != x._2)
 
       errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
+    }
+
+    def assertApproxEquals(otherDf: DataFrame, approx: Double): Unit = {
+      val rows1 = df.collect()
+      val rows2 = otherDf.collect()
+      val zipped = rows1.zip(rows2)
+      zipped.foreach { case(r1, r2) =>
+        if (!areRowsEqual(r1, r2, approx))
+          throw new AssertionError(s"$r1 was not equal approx to expected $r2, with a $approx approx")
+      }
     }
 
     /**

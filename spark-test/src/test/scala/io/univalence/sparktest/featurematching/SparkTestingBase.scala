@@ -41,17 +41,14 @@ class SparkTestingBase extends FunSuite with SparkTest {
     }
   }
 
-  ignore("test DataFrame Comparison with precision") {
-    //TODO Implement approximative comparison
-    /*
+  test("test DataFrame Comparison with precision") {
     val input1 = sc.parallelize(List[(Int, Double)]((1, 1.1), (2, 2.2), (3, 3.3))).toDF
     val input2 = sc.parallelize(List[(Int, Double)]((1, 1.2), (2, 2.3), (3, 3.4))).toDF
-    assertDataFrameApproximateEquals(input1, input2, 0.11) // equal
-
-    intercept[org.scalatest.exceptions.TestFailedException] {
-      assertDataFrameApproximateEquals(input1, input2, 0.05) // not equal
+    //assertDataFrameApproximateEquals(input1, input2, 0.11) // equal
+    input1.assertApproxEquals(input2, 0.11) // equal
+    intercept[AssertionError] {
+      input1.assertApproxEquals(input2, 0.05) // not equal
     }
-   */
   }
 
   //https://github.com/holdenk/spark-testing-base/wiki/DatasetSuiteBase
