@@ -198,8 +198,7 @@ lazy val defaultConfiguration =
 
 lazy val deliveryConfiguration =
   Def.settings(
-    releaseEarlyEnableSyncToMaven := true,
-    isSnapshot                    := false,
+    isSnapshot := false
     // XXX: set the value below to true if you really wish to deliver from your machine
 //    releaseEarlyEnableLocalReleases := true
   ) ++ bintrayConfiguration
@@ -207,16 +206,18 @@ lazy val deliveryConfiguration =
 
 lazy val sonatypeConfiguration =
   Def.settings(
-    publishTo                  := sonatypePublishTo.value,
-    releaseEarlyWith in Global := SonatypePublisher
+    publishTo                     := sonatypePublishTo.value,
+    releaseEarlyEnableSyncToMaven := true,
+    releaseEarlyWith in Global    := SonatypePublisher
   )
 
 lazy val bintrayConfiguration =
   Def.settings(
-    bintrayOrganization        := Some("univalence"),
-    bintrayRepository          := "univalence-jvm",
-    bintrayPackageLabels       := Seq("spark", "scala"),
-    releaseEarlyWith in Global := BintrayPublisher
+    bintrayOrganization           := Some("univalence"),
+    bintrayRepository             := "univalence-jvm",
+    bintrayPackageLabels          := Seq("spark", "scala"),
+    releaseEarlyEnableSyncToMaven := false,
+    releaseEarlyWith in Global    := BintrayPublisher
   )
 
 lazy val minisiteConfiguration =
