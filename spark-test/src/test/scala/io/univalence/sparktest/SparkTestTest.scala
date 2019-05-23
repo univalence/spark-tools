@@ -2,7 +2,7 @@ package io.univalence.sparktest
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.types.{DoubleType, StructField, StructType}
+import org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}
 import org.scalatest.FunSuiteLike
 
 class SparkTestTest extends FunSuiteLike with SparkTest {
@@ -137,13 +137,13 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     }
   }
 
-  test("should exists if at least one row matches the predicate") {
+  test("shouldExists : at least one row should match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 
     ds.shouldExists(i => i > 2)
   }
 
-  test("should not exists if all the rows don't match the predicate") {
+  test("shouldExists : should throw an error if all the rows don't match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 
     assertThrows[AssertionError] {
@@ -151,13 +151,13 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     }
   }
 
-  test("should not throw an exception if all the rows match the predicate") {
+  test("shouldForAll : all the rows should match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 
     ds.shouldForAll(i => i >= 1)
   }
 
-  test("should throw an exception if one of the row does not match the predicate") {
+  test("shouldForAll : should throw an error if one of the row does not match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 
     assertThrows[AssertionError] {
@@ -165,13 +165,13 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     }
   }
 
-  test("should not throw an exception if the dataset contains all values") {
+  test("assertContains : The dataset should contains all values") {
     val ds = Seq(1, 2, 3).toDS()
 
     ds.assertContains(1, 2)
   }
 
-  test("should throw an exception if the dataset does not contain at least one of the expected value") {
+  test("assertContains : should throw an exception if the dataset does not contain at least one of the expected value") {
     val ds = Seq(1, 2, 3).toDS()
 
     assertThrows[AssertionError] {
@@ -179,7 +179,7 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     }
   }
   
-  test("should not throw an exception if the schema is the same (nullable = true)") {
+  test("ignoreNullableFlag : two DataSet with different nullable should be equal if ignoreNullableFlag is true") {
     val sourceData = Seq(
       Row(1.11),
       Row(5.22)
@@ -197,4 +197,32 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     sourceDF.assertEquals(expectedDS, ignoreNullableFlag = true)
   }
 
+  test("assertEquals (RDD & Seq) : an RDD and a Seq with the same value are equal") {
+    val seq = Seq(1, 2, 3)
+    val rdd = sc.parallelize(seq)
+
+    rdd.assertEquals(seq)
+  }
+
+  test("assertEquals (DS & Seq) : a DS and a Seq with the same value are equal") {
+    val seq = Seq(1.0, 2.0, 3.0)
+    val ds = ss.createDataFrame(
+      sc.parallelize(seq.map(Row(_))),
+      StructType(List(StructField("number", DoubleType, nullable = true)))
+    ).as[Double]
+
+    ds.assertEquals(seq)
+  }
+
+  test("assertEquals (DF & Seq) : a DF and a Seq with the same value are equal") {
+    val seq = Seq(1, 2, 3)
+    val df = ss.createDataFrame(
+      sc.parallelize(seq.map(Row(_))),
+      StructType(List(StructField("number", IntegerType, nullable = true)))
+    )
+
+    df.assertEquals(seq)
+  }
 }
+
+case class Person(name: String, age: Int)

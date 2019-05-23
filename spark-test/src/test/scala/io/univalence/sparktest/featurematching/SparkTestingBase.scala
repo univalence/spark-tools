@@ -18,7 +18,7 @@ class SparkTestingBase extends FunSuite with SparkTest {
     val resultRDD   = sc.parallelize(Seq(3, 2, 1))
 
     assert(None === expectedRDD.compareRDD(resultRDD))
-    expectedRDD.assertRDDEquals(resultRDD)
+    expectedRDD.assertEquals(resultRDD)
     assert(Some((Some(1), Some(3))) === expectedRDD.compareRDDWithOrder(resultRDD))
     intercept[AssertionError] {
       expectedRDD.assertRDDEqualsWithOrder(resultRDD)
