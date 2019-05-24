@@ -208,20 +208,14 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
   // TODO : Add tests when not equal for comparisons with Seq, List
   test("assertEquals (DS & Seq) : a DS and a Seq with the same content are equal") {
     val seq = Seq(1, 2, 3)
-    val ds = ss.createDataFrame(
-      sc.parallelize(seq.map(Row(_))),
-      StructType(List(StructField("number", IntegerType, nullable = true)))
-    ).as[Int]
+    val ds = seq.toDF("id").as[Int]
 
     ds.assertEquals(seq)
   }
 
   test("assertEquals (DS & List) : a DS and a List with the same content are equal") {
     val l = List(1, 2, 3)
-    val ds = ss.createDataFrame(
-      sc.parallelize(l.map(Row(_))),
-      StructType(List(StructField("number", IntegerType, nullable = true)))
-    ).as[Int]
+    val ds = l.toDF("id").as[Int]
 
     ds.assertEquals(l)
   }
