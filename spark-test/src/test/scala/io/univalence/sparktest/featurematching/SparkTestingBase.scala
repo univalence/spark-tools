@@ -21,7 +21,7 @@ class SparkTestingBase extends FunSuite with SparkTest {
     expectedRDD.assertEquals(resultRDD)
     assert(Some((Some(1), Some(3))) === expectedRDD.compareRDDWithOrder(resultRDD))
     intercept[AssertionError] {
-      expectedRDD.assertRDDEqualsWithOrder(resultRDD)
+      expectedRDD.assertEqualsWithOrder(resultRDD)
     }
   }
 

@@ -9,24 +9,17 @@ import org.apache.spark.sql.types.StructType
 
 trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
-  /*object contains {
-    def containsOnly(df: DataFrame, element: Any): Boolean    = ???
-    def containsAtLeast(df: DataFrame, element: Any): Boolean = ???
-    // df.columns.exists(name => df.filter(s"$name == '$element'").head(1).nonEmpty)
-  }
-
-  trait Comparisons {
-    def assertEquality(df: DataFrame, expectedDF: DataFrame): Boolean
-  }*/
-
   lazy val ss: SparkSession             = SparkTestSession.spark
   protected def _sqlContext: SQLContext = ss.sqlContext
 
-  implicit class SparkTestDsOps[T: Encoder](_ds: Dataset[T]) {
+  /*
+  ----------DATASET------------
+   */
+  implicit class SparkTestDsOps[T: Encoder](ds: Dataset[T]) {
 
     def shouldExists(pred: T => Boolean): Unit =
-      if (!_ds.collect().exists(pred)) {
-        val displayErr = _ds.collect().take(10)
+      if (!ds.collect().exists(pred)) {
+        val displayErr = ds.collect().take(10)
         throw new AssertionError(
           "No rows from the dataset match the predicate. " +
             s"Rows not matching the predicate :\n ${displayErr.mkString("\n")}"
@@ -34,8 +27,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
 
     def shouldForAll(pred: T => Boolean): Unit =
-      if (!_ds.collect().forall(pred)) {
-        val displayErr = _ds.collect().filterNot(pred).take(10)
+      if (!ds.collect().forall(pred)) {
+        val displayErr = ds.collect().filterNot(pred).take(10)
         throw new AssertionError(
           "At least one row does not match the predicate. " +
             s"Rows not matching the predicate :\n${displayErr.mkString("\n")}"
@@ -43,7 +36,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
 
     def assertContains(values: T*): Unit = {
-      val dsArray = _ds.collect()
+      val dsArray = ds.collect()
       if (!values.forall(dsArray.contains(_))) {
         val displayErr = values.diff(dsArray).take(10)
         throw new AssertionError(
@@ -53,24 +46,24 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def assertEquals(ds: Dataset[T], checkRowOrder: Boolean = false, ignoreNullableFlag: Boolean = false,
+    def assertEquals(otherDs: Dataset[T], checkRowOrder: Boolean = false, ignoreNullableFlag: Boolean = false,
                      ignoreSchemaFlag: Boolean = false): Unit =
-      if (!ignoreSchemaFlag && SparkTest.compareSchema(_ds.schema, ds.schema, ignoreNullableFlag))
+      if (!ignoreSchemaFlag && SparkTest.compareSchema(ds.schema, otherDs.schema, ignoreNullableFlag))
         throw new AssertionError("The data set schema is different")
       else {
         if (checkRowOrder) {
-          if (!_ds.collect().sameElements(ds.collect())) {
-            throw new AssertionError(s"The data set content is different :\n${displayErr(_ds, ds)}")
+          if (!ds.collect().sameElements(otherDs.collect())) {
+            throw new AssertionError(s"The data set content is different :\n${displayErr(ds, otherDs)}")
           }
         } else {
-          if (ds.except(_ds).head(1).nonEmpty || _ds.except(ds).head(1).nonEmpty) { // if sparkSQL => anti join ?
-            throw new AssertionError(s"The data set content is different :\n${displayErr(_ds, ds)}")
+          if (otherDs.except(ds).head(1).nonEmpty || ds.except(otherDs).head(1).nonEmpty) { // if sparkSQL => anti join ?
+            throw new AssertionError(s"The data set content is different :\n${displayErr(ds, otherDs)}")
           }
         }
       }
 
     def dsToDf(ds: Dataset[T]): DataFrame = {
-      val schema = _ds.schema
+      val schema = ds.schema
       val df     = ds.toDF()
       _sqlContext.createDataFrame(df.rdd, schema)
     }
@@ -82,11 +75,14 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     def assertEquals(seq: Seq[T]): Unit =
       assertEquals(seq.toDS(), ignoreSchemaFlag = true)
 
-    def assertApproxEquals(ds: Dataset[T], approx: Double, ignoreNullableFlag: Boolean = false): Unit = {
-      val rows1 = dsToDf(_ds).collect()
-      val rows2 = dsToDf(ds).collect()
+    def assertEquals(l: List[T]): Unit =
+      assertEquals(l.toDS(), ignoreSchemaFlag = true)
+
+    def assertApproxEquals(otherDs: Dataset[T], approx: Double, ignoreNullableFlag: Boolean = false): Unit = {
+      val rows1 = dsToDf(ds).collect()
+      val rows2 = dsToDf(otherDs).collect()
       val zipped = rows1.zip(rows2)
-      if (SparkTest.compareSchema(_ds.schema, ds.schema, ignoreNullableFlag))
+      if (SparkTest.compareSchema(ds.schema, otherDs.schema, ignoreNullableFlag))
         throw new AssertionError("The data set schema is different")
       zipped.foreach { case (r1, r2) =>
         if (!areRowsEqual(r1, r2, approx))
@@ -94,9 +90,9 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def displayErr(_ds: Dataset[T], ds: Dataset[T]): String = {
+    def displayErr(_ds: Dataset[T], otherDs: Dataset[T]): String = {
       val actual   = _ds.collect().toSeq
-      val expected = ds.collect().toSeq
+      val expected = otherDs.collect().toSeq
       val errors   = expected.zip(actual).filter(x => x._1 != x._2)
 
       errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
@@ -121,6 +117,9 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
     def assertEquals[T: Encoder](seq: Seq[T]): Unit =
       assertEquals(seq.toDF, ignoreSchemaFlag = true)
+
+    def assertEquals[T: Encoder](l: List[T]): Unit =
+      assertEquals(l.toDF, ignoreSchemaFlag = true)
 
     def assertColumnEquality(rightLabel: String, leftLabel: String): Unit =
       if (compareColumn(rightLabel, leftLabel))
@@ -186,6 +185,9 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   }
 
+  /*
+  ----------RDD------------
+   */
   implicit class SparkTestRDDOps[T: ClassTag](rdd: RDD[T]) {
     def assertEquals(otherRDD: RDD[T]): Unit =
       if (compareRDD(otherRDD).isDefined)
@@ -195,6 +197,11 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     def assertEquals(seq: Seq[T]): Unit = {
       val seqRDD = ss.sparkContext.parallelize(seq)
       assertEquals(seqRDD)
+    }
+
+    def assertEquals(l: List[T]): Unit = {
+      val listRDD = ss.sparkContext.parallelize(l)
+      assertEquals(listRDD)
     }
 
     def compareRDD(otherRDD: RDD[T]): Option[(T, Int, Int)] = {
@@ -216,7 +223,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         }
     }
 
-    def assertRDDEqualsWithOrder(result: RDD[T]): Unit =
+    def assertEqualsWithOrder(result: RDD[T]): Unit =
       if (compareRDDWithOrder(result).isDefined)
         throw new AssertionError("The RDD is different")
 

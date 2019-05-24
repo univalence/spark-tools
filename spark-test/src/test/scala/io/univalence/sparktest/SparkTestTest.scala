@@ -46,19 +46,6 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     assert(df.count == 3)
   }
 
-  /*ignore("contains at least") {
-    val path = "spark-test/src/test/resources/jsonTest.json"
-    val df   = dfFromJsonFile(path)
-
-    val ageExpected      = 30
-    val wrongAgeExpected = 17
-    val nameExpected     = "Andy"
-
-    assert(df.containsAtLeast(ageExpected))
-    assert(!df.containsAtLeast(wrongAgeExpected))
-    assert(df.containsAtLeast(nameExpected))
-  }*/
-
   // ========================== DataFrame Tests ====================================
 
   test("should assertEquals unordered between equal DF") {
@@ -101,6 +88,27 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     assertThrows[AssertionError] {
       dfUT.assertEquals(dfExpected)
     }
+  }
+
+  // TODO : Add tests when not equal for comparisons with Seq, List
+  test("assertEquals (DF & Seq) : a DF and a Seq with the same content are equal") {
+    val seq = Seq(1, 2, 3)
+    val df = ss.createDataFrame(
+      sc.parallelize(seq.map(Row(_))),
+      StructType(List(StructField("number", IntegerType, nullable = true)))
+    )
+
+    df.assertEquals(seq)
+  }
+
+  test("assertEquals (DF & List) : a DF and a List with the same content are equal") {
+    val l = List(1, 2, 3)
+    val df = ss.createDataFrame(
+      sc.parallelize(l.map(Row(_))),
+      StructType(List(StructField("number", IntegerType, nullable = true)))
+    )
+
+    df.assertEquals(l)
   }
 
   // ========================== DataSet Tests ====================================
@@ -197,32 +205,40 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     sourceDF.assertEquals(expectedDS, ignoreNullableFlag = true)
   }
 
-  test("assertEquals (RDD & Seq) : an RDD and a Seq with the same value are equal") {
+  // TODO : Add tests when not equal for comparisons with Seq, List
+  test("assertEquals (DS & Seq) : a DS and a Seq with the same content are equal") {
+    val seq = Seq(1, 2, 3)
+    val ds = ss.createDataFrame(
+      sc.parallelize(seq.map(Row(_))),
+      StructType(List(StructField("number", IntegerType, nullable = true)))
+    ).as[Int]
+
+    ds.assertEquals(seq)
+  }
+
+  test("assertEquals (DS & List) : a DS and a List with the same content are equal") {
+    val l = List(1, 2, 3)
+    val ds = ss.createDataFrame(
+      sc.parallelize(l.map(Row(_))),
+      StructType(List(StructField("number", IntegerType, nullable = true)))
+    ).as[Int]
+
+    ds.assertEquals(l)
+  }
+
+  // ========================== RDD Tests ====================================
+  // TODO : Add tests when not equal for comparisons with Seq, List
+  test("assertEquals (RDD & Seq) : an RDD and a Seq with the same content are equal") {
     val seq = Seq(1, 2, 3)
     val rdd = sc.parallelize(seq)
 
     rdd.assertEquals(seq)
   }
 
-  test("assertEquals (DS & Seq) : a DS and a Seq with the same value are equal") {
-    val seq = Seq(1.0, 2.0, 3.0)
-    val ds = ss.createDataFrame(
-      sc.parallelize(seq.map(Row(_))),
-      StructType(List(StructField("number", DoubleType, nullable = true)))
-    ).as[Double]
+  test("assertEquals (RDD & List) : an RDD and a List with the same content are equal") {
+    val l = List(1, 2, 3)
+    val rdd = sc.parallelize(l)
 
-    ds.assertEquals(seq)
-  }
-
-  test("assertEquals (DF & Seq) : a DF and a Seq with the same value are equal") {
-    val seq = Seq(1, 2, 3)
-    val df = ss.createDataFrame(
-      sc.parallelize(seq.map(Row(_))),
-      StructType(List(StructField("number", IntegerType, nullable = true)))
-    )
-
-    df.assertEquals(seq)
+    rdd.assertEquals(l)
   }
 }
-
-case class Person(name: String, age: Int)
