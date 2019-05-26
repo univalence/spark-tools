@@ -219,15 +219,18 @@ package object centrifuge_sql {
 
       type KpiApplier = (Column, Column) => (String, Column)
 
+      //FMT has trouble with this peace of code.
+      // format: off
       val kpis: Seq[KpiApplier] = Seq[KpiApplier](
-        (c1, _) => ("OnlyLeft", when(onlyLeft, c1)),
-        (_, c2) => ("OnlyRight", when(onlyRight, c2)),
-        (c1, _) => ("BothLeft", when(both, c1)),
-        (_, c2) => ("BothRight", when(both, c2)),
+        (c1,  _) => ("OnlyLeft",  when(onlyLeft, c1)),
+        (_ , c2) => ("OnlyRight", when(onlyRight, c2)),
+        (c1,  _) => ("BothLeft",  when(both, c1)),
+        (_ , c2) => ("BothRight", when(both, c2)),
         (c1, c2) => ("BothDelta", when(both, c1 - c2)),
-        (c1, c2) => ("BothDeltaSquared", when(both, (c1 - c2).multiply(c1 - c2))),
-        (c1, c2) => ("BothCountEqual", when(both && (c1 === c2), Column(Literal(1))))
+        (c1, c2) => ("BothDeltaSquared",  when(both, (c1 - c2).multiply(c1 - c2))),
+        (c1, c2) => ("BothCountEqual",    when(both && (c1 === c2), Column(Literal(1))))
       )
+      // format: on
 
       val allCols: Seq[Column] = valueCouple.flatMap({
         case (n, c1, c2) =>

@@ -2,8 +2,8 @@ package io.univalence.sparktest.featurematching
 
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}
+import org.apache.spark.sql.{ Row, SparkSession }
+import org.apache.spark.sql.types.{ DoubleType, IntegerType, StructField, StructType }
 import org.scalatest.FunSuite
 
 //https://github.com/MrPowers/spark-fast-tests

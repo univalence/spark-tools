@@ -80,10 +80,7 @@ object functions {
       if (values == null) {
         null.asInstanceOf[B]
       } else {
-        val fExt0: Seq[A] => B = fExt.get
-        val cleaner0: A => A   = cleaner.get
-
-        fExt0(values.map(cleaner0))
+        fExt.get(values.map(cleaner.get))
       }
   }
 

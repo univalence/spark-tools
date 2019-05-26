@@ -3,7 +3,7 @@ package io.univalence.sparktest
 import io.univalence.sparktest.RowComparer.areRowsEqual
 import java.sql.Timestamp
 import org.apache.spark.sql.Row
-import org.scalatest.{FunSuiteLike, Matchers}
+import org.scalatest.{ FunSuiteLike, Matchers }
 
 class RowComparerTest extends FunSuiteLike with Matchers {
 

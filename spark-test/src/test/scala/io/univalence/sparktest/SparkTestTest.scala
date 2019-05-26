@@ -1,8 +1,8 @@
 package io.univalence.sparktest
 
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}
+import org.apache.spark.sql.{ Row, SparkSession }
+import org.apache.spark.sql.types.{ DoubleType, IntegerType, StructField, StructType }
 import org.scalatest.FunSuiteLike
 
 class SparkTestTest extends FunSuiteLike with SparkTest {
@@ -186,21 +186,25 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
       ds.assertContains(1, 2, 4)
     }
   }
-  
+
   test("ignoreNullableFlag : two DataSet with different nullable should be equal if ignoreNullableFlag is true") {
     val sourceData = Seq(
       Row(1.11),
       Row(5.22)
     )
-    val sourceDF = ss.createDataFrame(
-      sc.parallelize(sourceData),
-      StructType(List(StructField("number", DoubleType, nullable = true)))
-    ).as[Double]
+    val sourceDF = ss
+      .createDataFrame(
+        sc.parallelize(sourceData),
+        StructType(List(StructField("number", DoubleType, nullable = true)))
+      )
+      .as[Double]
 
-    val expectedDS = ss.createDataFrame(
-      sc.parallelize(sourceData),
-      StructType(List(StructField("number", DoubleType, nullable = false)))
-    ).as[Double]
+    val expectedDS = ss
+      .createDataFrame(
+        sc.parallelize(sourceData),
+        StructType(List(StructField("number", DoubleType, nullable = false)))
+      )
+      .as[Double]
 
     sourceDF.assertEquals(expectedDS, ignoreNullableFlag = true)
   }
@@ -208,13 +212,13 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
   // TODO : Add tests when not equal for comparisons with Seq, List
   test("assertEquals (DS & Seq) : a DS and a Seq with the same content are equal") {
     val seq = Seq(1, 2, 3)
-    val ds = seq.toDF("id").as[Int]
+    val ds  = seq.toDF("id").as[Int]
 
     ds.assertEquals(seq)
   }
 
   test("assertEquals (DS & List) : a DS and a List with the same content are equal") {
-    val l = List(1, 2, 3)
+    val l  = List(1, 2, 3)
     val ds = l.toDF("id").as[Int]
 
     ds.assertEquals(l)
@@ -230,7 +234,7 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
   }
 
   test("assertEquals (RDD & List) : an RDD and a List with the same content are equal") {
-    val l = List(1, 2, 3)
+    val l   = List(1, 2, 3)
     val rdd = sc.parallelize(l)
 
     rdd.assertEquals(l)
