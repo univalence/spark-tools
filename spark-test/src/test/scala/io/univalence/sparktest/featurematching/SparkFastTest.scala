@@ -53,6 +53,7 @@ class SparkFastTest extends FunSuite with SparkTest {
     ).toDF("number")
 
     //assertSmallDataFrameEquality(sourceDF, expectedDF, orderedComparison = false) // equal
+    //by default SparkTest doesn't check for ordering
     sourceDF.assertEquals(expectedDF, checkRowOrder = false)
   }
 

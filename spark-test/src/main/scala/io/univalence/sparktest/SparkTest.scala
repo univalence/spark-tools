@@ -7,7 +7,6 @@ import scala.reflect.ClassTag
 import io.univalence.sparktest.RowComparer._
 import org.apache.spark.sql.types.StructType
 
-//TODO : Change the name of the file to SparkTest
 trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   lazy val ss: SparkSession             = SparkTestSession.spark
@@ -17,6 +16,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   ----------DATASET------------
    */
   implicit class SparkTestDsOps[T: Encoder](ds: Dataset[T]) {
+    ds.cache()
 
     def shouldExists(pred: T => Boolean): Unit =
       if (!ds.collect().exists(pred)) {
@@ -111,6 +111,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   ----------DATAFRAME------------
    */
   implicit class SparkTestDfOps(df: DataFrame) {
+    df.cache()
+
     def assertEquals(otherDf: DataFrame,
                      checkRowOrder: Boolean      = false,
                      ignoreNullableFlag: Boolean = false,
@@ -160,6 +162,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
     }
 
+    //TODO : SCALA DOC
     def assertApproxEquals(otherDf: DataFrame, approx: Double, ignoreNullableFlag: Boolean = false): Unit = {
       val rows1  = df.collect()
       val rows2  = otherDf.collect()
@@ -271,6 +274,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * Compare two RDDs. If they are equal returns None, otherwise
       * returns Some with the first mismatch. Assumes we have the same partitioner.
       */
+    //TODO : quote the source of that code. (SparkFastTest ?)
     def compareRDDWithOrderSamePartitioner(result: RDD[T]): Option[(Option[T], Option[T])] =
       // Handle mismatched lengths by converting into options and padding with Nones
       rdd1

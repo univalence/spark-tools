@@ -89,6 +89,6 @@ class SparkTestingBase extends FunSuite with SparkTest {
   //https://github.com/holdenk/spark-testing-base/wiki/RDDGenerator
   //https://github.com/holdenk/spark-testing-base/wiki/DataFrameGenerator
   //https://github.com/holdenk/spark-testing-base/wiki/Dataset-Generator
-  //Not supported, IMO (Jon) doesn't really make sens for real use cases
+  //Not supported, IMO (Jon) doesn't really make sense for real use cases to generate data like that.
 
 }
