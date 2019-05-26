@@ -286,7 +286,7 @@ object JsonInterpreter {
 
       case Where(source, pred) =>
         val pf: JValue => Result[JValue] = Compute.compute(pred)
-        val f                            = query(source)
+        val f = query(source)
         jobj =>
           {
             val guard: Option[Boolean] = pf(jobj).value.collect({ case JBool(b) => b })
