@@ -234,6 +234,11 @@ class JsonInterpreterTest extends FunSuite {
 
   }
 
+  test("75.0.as[BigDecimal]"){
+
+    struct("a" <<- 75.0.as[BigDecimal]).setExpected("a" -> BigDecimal(75)).check()
+  }
+
   test("cast str to int") {
     struct("a" <<- "1".as[Int]).setExpected("a" -> 1).check()
   }

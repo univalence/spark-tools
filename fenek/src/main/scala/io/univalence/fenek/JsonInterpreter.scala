@@ -148,6 +148,7 @@ object JsonInterpreter {
             case v: JBool if enc == Encoder.Bool          => v
             case v: JInt if enc == Encoder.Int            => v
             case v: JDouble if enc == Encoder.Double      => v
+            case JDouble(x) if enc == Encoder.BigDecimal  => JDecimal(BigDecimal(x))
             case v: JDecimal if enc == Encoder.BigDecimal => v
             case JInt(x) if enc == Encoder.BigDecimal     => JDecimal(BigDecimal(x))
             case JInt(x) if enc == Encoder.Double         => JDouble(x.toDouble)

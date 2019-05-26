@@ -13,68 +13,77 @@ class SparkTestingBase extends FunSuite with SparkTest {
   val sc: SparkContext                 = ss.sparkContext
 
   //https://github.com/holdenk/spark-testing-base/wiki/RDDComparisons
-  ignore("test RDDComparisons") {
+  test("test RDDComparisons") {
     val expectedRDD = sc.parallelize(Seq(1, 2, 3))
     val resultRDD   = sc.parallelize(Seq(3, 2, 1))
 
-    //TODO implements compareRDD
-    //TODO implements assertRDDEquals(...)
-    /*
-      assert(None === compareRDD(expectedRDD, resultRDD)) // succeed
-      assert(None === compareRDDWithOrder(expectedRDD, resultRDD)) // Fail
-      assertRDDEquals(expectedRDD, resultRDD) // succeed
-      assertRDDEqualsWithOrder(expectedRDD, resultRDD) // Fail
-   */
+    assert(None === expectedRDD.compareRDD(resultRDD))
+    expectedRDD.assertEquals(resultRDD)
+    assert(Some((Some(1), Some(3))) === expectedRDD.compareRDDWithOrder(resultRDD))
+    intercept[AssertionError] {
+      expectedRDD.assertEqualsWithOrder(resultRDD)
+    }
   }
 
   //https://github.com/holdenk/spark-testing-base/wiki/DataFrameSuiteBase
-  test("test DataFrame Comparison") {
-    val input1 = sc.parallelize(List(1, 2, 3)).toDF
+  test("dataframe should be equal to itself") {
+    val input1 = sc.parallelize(List(1, 2, 4)).toDF
 
     input1 assertEquals input1 // equal
+  }
 
-    val input2 = sc.parallelize(List(4, 5, 6)).toDF
+  test("dataframe should not be equal to a different dataframe") {
+    val input1 = sc.parallelize(List(1, 2, 4)).toDF
+    val input2 = sc.parallelize(List(2, 4, 1)).toDF
+
     intercept[AssertionError] {
-      input1 assertEquals input2 // not equal
+      input1.assertEquals(input2, checkRowOrder = true) // not equal
     }
   }
 
-  ignore("test DataFrame Comparison with precision") {
-    //TODO Implement approximative comparison
-    /*
+  test("test DataFrame Comparison with precision") {
     val input1 = sc.parallelize(List[(Int, Double)]((1, 1.1), (2, 2.2), (3, 3.3))).toDF
     val input2 = sc.parallelize(List[(Int, Double)]((1, 1.2), (2, 2.3), (3, 3.4))).toDF
-    assertDataFrameApproximateEquals(input1, input2, 0.11) // equal
-
-    intercept[org.scalatest.exceptions.TestFailedException] {
-      assertDataFrameApproximateEquals(input1, input2, 0.05) // not equal
+    //assertDataFrameApproximateEquals(input1, input2, 0.11) // equal
+    input1.assertApproxEquals(input2, 0.11) // equal
+    intercept[AssertionError] {
+      input1.assertApproxEquals(input2, 0.05) // not equal
     }
-   */
   }
 
   //https://github.com/holdenk/spark-testing-base/wiki/DatasetSuiteBase
-  test("test Dataset equality") {
+  test("dataset should be equal to itself") {
     val input1 = sc.parallelize(List(1, 2, 3)).toDS
-    input1 assertEquals input1 // equal
 
+    input1 assertEquals input1 // equal
+  }
+
+  test("dataset should not be equal to a different dataset") {
+    val input1 = sc.parallelize(List(1, 2, 3)).toDS
     val input2 = sc.parallelize(List(4, 5, 6)).toDS
+
     intercept[AssertionError] {
       input1 assertEquals input2 // not equal
     }
   }
 
-  ignore("test Dataset Comparison with precision") {
-
-    //TODO implements
+  test("dataset should be equal to itself with precision") {
     val input1 = sc.parallelize(List[(Int, Double)]((1, 1.1), (2, 2.2), (3, 3.3))).toDS
     val input2 = sc.parallelize(List[(Int, Double)]((1, 1.2), (2, 2.3), (3, 3.4))).toDS
-    /*
-    assertDatasetApproximateEquals(input1, input2, 0.11) // equal
 
-    intercept[org.scalatest.exceptions.TestFailedException] {
-      assertDatasetApproximateEquals(input1, input2, 0.05) // not equal
+    //    assertDatasetApproximateEquals(input1, input2, 0.11) // equal
+    input1.assertApproxEquals(input2, 0.11)
+  }
+
+  test("dataset should not be equal to a different even with precision") {
+    val input1 = sc.parallelize(List[(Int, Double)]((1, 1.1), (2, 2.2), (3, 3.3))).toDS
+    val input2 = sc.parallelize(List[(Int, Double)]((1, 1.2), (2, 2.3), (3, 3.4))).toDS
+
+    intercept[AssertionError] {
+      input1.assertApproxEquals(input2, 0.05)
     }
-   */
+
+//  assertDatasetApproximateEquals(input1, input2, 0.05) // not equal
   }
 
   //https://github.com/holdenk/spark-testing-base/wiki/RDDGenerator

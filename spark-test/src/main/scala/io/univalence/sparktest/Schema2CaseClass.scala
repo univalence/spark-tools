@@ -1,7 +1,9 @@
 package io.univalence.sparktest
 
 import org.apache.spark.sql.types._
+
 class Schema2CaseClass {
+
   type TypeConverter = DataType => String
 
   def schemaToCaseClass(schema: StructType, className: String)(implicit tc: TypeConverter): String = {
@@ -14,14 +16,13 @@ class Schema2CaseClass {
     }
 
     val fieldsStr = schema.map(genField).mkString(",\n  ")
-    s"""
-       |case class $className (
-       |  $fieldsStr
-       |)
-  """.stripMargin
+    s"""|case class $className (
+        |  $fieldsStr
+        |)""".stripMargin
   }
 
   object implicits {
+
     implicit val defaultTypeConverter: TypeConverter = {
       case _: ByteType      => "Byte"
       case _: ShortType     => "Short"
@@ -40,5 +41,6 @@ class Schema2CaseClass {
       case _: StructType    => "org.apache.spark.sql.Row"
       case _                => "String"
     }
+
   }
 }
