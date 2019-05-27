@@ -1,10 +1,10 @@
-package io.univalence.plumbus
+package io.univalence.plumbus.compress
 
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
+import org.apache.spark.sql.internal.SQLConf.SHUFFLE_PARTITIONS
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.sql.internal.SQLConf.SHUFFLE_PARTITIONS
 import scopt.OptionParser
 
 import scala.util.matching.Regex
@@ -195,8 +195,6 @@ object CompressDump {
           .config("spark.sql.autoBroadcastJoinThreshold", "-1")
           //.config("spark.executor.memoryOverhead", "6g")
           .getOrCreate()*/
-
-        import ss.implicits._
         ss.sqlContext.setConf("spark.sql.parquet.binaryAsString", "true")
         ss.sessionState.conf.setConf(SHUFFLE_PARTITIONS, 2001)
 
