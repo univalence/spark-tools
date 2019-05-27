@@ -20,7 +20,7 @@ options:
     menu_type: spark-zio
 
   - title: Spark-Test
-    url: spark-test/spark-test
+    url: spark-test/
     menu_section: spark-test
     menu_type: spark-test
 
