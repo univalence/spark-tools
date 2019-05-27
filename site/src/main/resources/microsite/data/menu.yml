@@ -20,9 +20,9 @@ options:
     menu_type: spark-zio
 
   - title: Spark-Test
-    url: spark-test/
-    menu-section: spark-test
-    menu-title: spark-test
+    url: spark-test/spark-test
+    menu_section: spark-test
+    menu_type: spark-test
 
   - title: TypedPath
     url: typedpath/
