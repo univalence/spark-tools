@@ -5,7 +5,10 @@ import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
 import io.univalence.sparktest.RowComparer._
-import org.apache.spark.sql.types.StructType
+import io.univalence.sparktest.internal.DatasetUtils
+import org.apache.spark.sql.types.{DataType, StructType}
+
+import scala.util.Try
 
 trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
@@ -16,7 +19,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   // ========================== DATASET ====================================
 
   implicit class SparkTestDsOps[T: Encoder](thisDs: Dataset[T]) {
-    thisDs.cache()
+
+    DatasetUtils.cacheIfNotCached(thisDs)
 
     /*def shouldForAll(f: T => Boolean): Unit = {
       val count = thisDs.map(v => f(v)).filter(_ == true).count()
@@ -71,7 +75,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def assertEquals(otherDs: Dataset[T],
+    def assertEquals[B](otherDs: Dataset[B],
                      checkRowOrder: Boolean = false,
                      ignoreNullableFlag: Boolean = false,
                      ignoreSchemaFlag: Boolean = false): Unit =
@@ -84,10 +88,10 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
             throw new AssertionError(s"The data set content is different :\n${displayErr(thisDs, otherDs)}")
           }
         } else {
-          if (otherDs
-            .except(thisDs)
+          if (otherDs.toDF
+            .except(thisDs.toDF)
             .head(1)
-            .nonEmpty || thisDs.except(otherDs).head(1).nonEmpty) { // if sparkSQL => anti join ?
+            .nonEmpty || thisDs.toDF.except(otherDs.toDF).head(1).nonEmpty) { // if sparkSQL => anti join ?
             throw new AssertionError(s"The data set content is different :\n${displayErr(thisDs, otherDs)}")
           }
         }
@@ -100,8 +104,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       assertEquals(l.toDS(), ignoreSchemaFlag = true)
 
     def assertApproxEquals(otherDs: Dataset[T], approx: Double, ignoreNullableFlag: Boolean = false): Unit = {
-      val rows1 = dsToDf(thisDs).collect()
-      val rows2 = dsToDf(otherDs).collect()
+      val rows1 = thisDs.toDF.collect()
+      val rows2 = otherDs.toDF.collect()
       val zipped = rows1.zip(rows2)
       if (SparkTest.compareSchema(thisDs.schema, otherDs.schema, ignoreNullableFlag))
         throw new AssertionError(
@@ -113,15 +117,9 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def dsToDf(ds: Dataset[T]): DataFrame = {
-      val schema = ds.schema
-      val df = ds.toDF()
-      _sqlContext.createDataFrame(df.rdd, schema)
-    }
-
-    def displayErr(ds: Dataset[T], otherDs: Dataset[T]): String = {
-      val actual = ds.collect().toSeq
-      val expected = otherDs.collect().toSeq
+    def displayErr(df: Dataset[_], otherDf: Dataset[_]): String = {
+      val actual = df.collect().toSeq
+      val expected = otherDf.collect().toSeq
       val errors = expected.zip(actual).filter(x => x._1 != x._2)
 
       errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
@@ -132,7 +130,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   // ========================== DATAFRAME ====================================
 
   implicit class SparkTestDfOps(thisDf: DataFrame) {
-    thisDf.cache()
+    DatasetUtils.cacheIfNotCached(thisDf)
 
     /*
     def shouldForAll[T: Encoder](f: T => Boolean): Unit = {
@@ -390,6 +388,45 @@ object SparkTest {
 
   def setAllFieldsNullable(sc: StructType): StructType =
     StructType(sc.map(sf => sf.copy(nullable = true)))
+
+
+  //Comparaison de Row
+  case class RowDiff(label:String, left:Any, right: Any) {
+    assert(left != right)
+  }
+
+  def compareRow(r1: Row,r2 :Row, schema: StructType):Seq[RowDiff] = {
+    ???
+  }
+
+  def modifyRow(r:Row, rowDiff: RowDiff):Try[Row] = ???
+
+
+  //Comparaison de schema
+  sealed trait SchemaModification
+  final case object AddField extends SchemaModification
+  final case object RemoveField extends SchemaModification
+  final case class ChangeFieldType(from:DataType, to:DataType) extends SchemaModification
+  final case object SetNullable extends SchemaModification
+  final case object SetNonNullable extends SchemaModification
+
+
+  type Path = String
+
+  def compareSchema2(sc1:StructType, sc2:StructType):Seq[(Path,SchemaModification)] = ???
+
+  def modifySchema(sc:StructType, path:Path, schemaModification: SchemaModification):Try[StructType] = ???
+
+  def invariant(sc1:StructType,sc2:StructType): Boolean = {
+    val diff = compareSchema2(sc1,sc2)
+
+    (for {
+      sc3 <- diff.foldLeft(Try(sc1))((sc,modif) => sc.flatMap(x => modifySchema(x, modif._1,modif._2)))
+    } yield compareSchema2(sc1,sc3).isEmpty) == Try(true)
+  }
+
+
+
 
   def compareSchema(sc1: StructType, sc2: StructType, ignoreNullableFlag: Boolean): Boolean =
     if (ignoreNullableFlag) {
