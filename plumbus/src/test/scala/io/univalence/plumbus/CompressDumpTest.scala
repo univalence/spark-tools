@@ -1,20 +1,18 @@
 package io.univalence.plumbus
 
 import io.univalence.plumbus.compress.CompressDump
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
+import org.apache.spark.sql.{ DataFrame, Dataset, SparkSession }
 import org.scalatest.FunSuite
-
-case class R(id: Int, a: String, b: Int)
-
-case class RCompressed(id: Int, a: String, b: Int, compressDumpDts: Seq[String])
 
 class CompressDumpTest extends FunSuite {
 
-  val ss: SparkSession = SparkSession.builder()
-    .master("local[*]")
-    .appName("test")
-    .config("spark.default.parallelism", "1")
-    .getOrCreate()
+  val ss: SparkSession =
+    SparkSession
+      .builder()
+      .master("local[*]")
+      .appName("test")
+      .config("spark.default.parallelism", "1")
+      .getOrCreate()
 
   import ss.implicits._
 
@@ -33,7 +31,7 @@ class CompressDumpTest extends FunSuite {
 
     val df1: Dataset[(Int, Seq[RCompressed])] =
       CompressDump
-        .compressUsingDF2(dfs = stringToRs.mapValues(s ⇒ ss.createDataset(s).toDF()), groupExpr = "id")
+        .compressUsingDF2(dfs = stringToRs.mapValues(s => ss.createDataset(s).toDF()), groupExpr = "id")
         .as[(Int, Seq[RCompressed])]
 
     /*val df2: DataFrame =
@@ -49,3 +47,7 @@ class CompressDumpTest extends FunSuite {
   }
 
 }
+
+case class R(id: Int, a: String, b: Int)
+
+case class RCompressed(id: Int, a: String, b: Int, compressDumpDts: Seq[String])

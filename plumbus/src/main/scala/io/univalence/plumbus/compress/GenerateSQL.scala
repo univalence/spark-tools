@@ -9,11 +9,25 @@ object GenerateSQL {
 
   def displayLigneFreqOverPkPerDump(df: DataFrame): Unit = {
     val pos = df.schema.fieldNames.indexOf(rowsName)
-    val pos2 = df.schema.fields(pos).dataType.asInstanceOf[ArrayType].elementType.asInstanceOf[StructType].fieldNames
+    val pos2 = df.schema
+      .fields(pos)
+      .dataType
+      .asInstanceOf[ArrayType]
+      .elementType
+      .asInstanceOf[StructType]
+      .fieldNames
       .indexOf(dtFinalColName)
 
-    val rddF: RDD[(String, Int)] = df.rdd.flatMap(_.get(pos).asInstanceOf[Seq[Row]].flatMap(_.get(pos2)
-      .asInstanceOf[Seq[String]]).groupBy(x ⇒ x).mapValues(_.size))
+    val rddF: RDD[(String, Int)] =
+      df.rdd.flatMap(
+        _.get(pos)
+          .asInstanceOf[Seq[Row]]
+          .flatMap(
+            _.get(pos2).asInstanceOf[Seq[String]]
+          )
+          .groupBy(x => x)
+          .mapValues(_.size)
+      )
 
     rddF.countByValue().foreach(println)
   }
@@ -23,25 +37,29 @@ object GenerateSQL {
 
     val fields: Vector[String] = schema
       .fields(schema.fieldIndex(rowsName))
-      .dataType.asInstanceOf[ArrayType]
-      .elementType.asInstanceOf[StructType]
-      .fieldNames.filterNot(_ == dtFinalColName).toVector
+      .dataType
+      .asInstanceOf[ArrayType]
+      .elementType
+      .asInstanceOf[StructType]
+      .fieldNames
+      .filterNot(_ == dtFinalColName)
+      .toVector
 
-    val projectionFields: Seq[String] = keyFields ++ Seq(
-      "minDt",
-      "maxDt",
-      "minDt_prev",
-      "maxDt_prev",
-      "minDt_prev IS NULL as isInit") ++ fields.flatMap(name ⇒ {
-      val name_prev = name + "_prev"
-      Seq(
-        s"""(minDt_prev IS NOT NULL) AND
+    val projectionFields: Seq[String] =
+      keyFields ++ Seq("minDt", "maxDt", "minDt_prev", "maxDt_prev", "minDt_prev IS NULL as isInit") ++ fields.flatMap(
+        name => {
+          val name_prev = name + "_prev"
+          Seq(
+            s"""(minDt_prev IS NOT NULL) AND
           (  ($name <> $name_prev )
             OR ($name_prev IS NULL AND $name IS NOT NULL )
             OR ($name IS NULL AND $name_prev IS NOT NULL )
             ) as ${name}_hasChanged""",
-        name, name_prev)
-    })
+            name,
+            name_prev
+          )
+        }
+      )
 
     s"""
        select
@@ -53,7 +71,7 @@ object GenerateSQL {
             LAG(minDt) OVER (order by minDt) as minDt_prev,
             LAG(maxDt) OVER (order by minDt) as maxDt_prev,
 
-            ${fields.map(name ⇒ s"LAG($name) OVER (order by minDt) as ${name}_prev").mkString(",\n")}
+            ${fields.map(name => s"LAG($name) OVER (order by minDt) as ${name}_prev").mkString(",\n")}
 
             from
             (select
