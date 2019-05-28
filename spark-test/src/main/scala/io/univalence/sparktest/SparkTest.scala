@@ -403,27 +403,7 @@ object SparkTest {
 
 
   //Comparaison de schema
-  sealed trait SchemaModification
-  final case object AddField extends SchemaModification
-  final case object RemoveField extends SchemaModification
-  final case class ChangeFieldType(from:DataType, to:DataType) extends SchemaModification
-  final case object SetNullable extends SchemaModification
-  final case object SetNonNullable extends SchemaModification
 
-
-  type Path = String
-
-  def compareSchema2(sc1:StructType, sc2:StructType):Seq[(Path,SchemaModification)] = ???
-
-  def modifySchema(sc:StructType, path:Path, schemaModification: SchemaModification):Try[StructType] = ???
-
-  def invariant(sc1:StructType,sc2:StructType): Boolean = {
-    val diff = compareSchema2(sc1,sc2)
-
-    (for {
-      sc3 <- diff.foldLeft(Try(sc1))((sc,modif) => sc.flatMap(x => modifySchema(x, modif._1,modif._2)))
-    } yield compareSchema2(sc1,sc3).isEmpty) == Try(true)
-  }
 
 
 

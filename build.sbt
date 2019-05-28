@@ -154,6 +154,7 @@ lazy val site = project
   )
 
 lazy val sparkTest = (project in file("spark-test"))
+  .dependsOn(typedpath)
   .settings(
     name        := "spark-test",
     description := "Spark Test are tools to easily make Spark tests",
