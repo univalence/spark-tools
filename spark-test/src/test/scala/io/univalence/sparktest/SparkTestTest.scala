@@ -111,6 +111,42 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     df.assertEquals(l)
   }
 
+  /*test("assertEquals (DF & Map) : a DF and a Map with the same content are equal") {
+
+  }*/
+
+  /*test("shouldExists (DF) : at least one row should match the predicate") {
+    val l = List(1, 2, 3)
+    val df = ss.createDataFrame(
+      sc.parallelize(l.map(Row(_))),
+      StructType(List(StructField("number", IntegerType, nullable = true)))
+    )
+    //df.shouldExists((n : Int) => n > 2) // ca fonctionne pas non plus :(
+    //df.shouldExists(_ > 2)
+  }
+
+  test("shouldExists : should throw an error if all the rows don't match the predicate") {
+    val df = Seq(1, 2, 3).toDF()
+
+    assertThrows[AssertionError] {
+      df.shouldExists((n: Int) => n > 3)
+    }
+  }
+
+  test("shouldForAll : all the rows should match the predicate") {
+    val df = Seq(1, 2, 3).toDF()
+
+    df.shouldForAll((n: Int) => n >= 1)
+  }
+
+  test("shouldForAll : should throw an error if one of the row does not match the predicate") {
+    val df = Seq(1, 2, 3).toDF()
+
+    assertThrows[AssertionError] {
+      df.shouldForAll((n: Int) => n >= 2)
+    }
+  }*/
+
   // ========================== DataSet Tests ====================================
 
   test("should assertEquals unordered between equal DS") {
@@ -145,31 +181,40 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     }
   }
 
+  test("should not assertEquals between DS with different schema") {
+    val dsUT       = Seq(1, 2, 3).toDF("id").as[Int]
+    val dsExpected = Seq(1, 2, 3).toDF("di").as[Int]
+
+    assertThrows[AssertionError] {
+      dsUT.assertEquals(dsExpected)
+    }
+  }
+
   test("shouldExists : at least one row should match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 
-    ds.shouldExists(i => i > 2)
+    ds.shouldExists(_ > 2)
   }
 
   test("shouldExists : should throw an error if all the rows don't match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 
     assertThrows[AssertionError] {
-      ds.shouldExists(i => i > 3)
+      ds.shouldExists(_ > 3)
     }
   }
 
   test("shouldForAll : all the rows should match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 
-    ds.shouldForAll(i => i >= 1)
+    ds.shouldForAll(_ >= 1)
   }
 
   test("shouldForAll : should throw an error if one of the row does not match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 
     assertThrows[AssertionError] {
-      ds.shouldForAll(i => i >= 2)
+      ds.shouldForAll(_ >= 2)
     }
   }
 
@@ -238,5 +283,33 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     val rdd = sc.parallelize(l)
 
     rdd.assertEquals(l)
+  }
+
+  test("shouldExists (RDD) : at least one row should match the predicate") {
+    val rdd = sc.parallelize(Seq(1, 2, 3))
+
+    rdd.shouldExists(_ > 2)
+  }
+
+  test("shouldExists (RDD) : should throw an error if all the rows don't match the predicate") {
+    val rdd = sc.parallelize(Seq(1, 2, 3))
+
+    assertThrows[AssertionError] {
+      rdd.shouldExists(_ > 3)
+    }
+  }
+
+  test("shouldForAll (RDD) : all the rows should match the predicate") {
+    val rdd = sc.parallelize(Seq(1, 2, 3))
+
+    rdd.shouldForAll(_ >= 1)
+  }
+
+  test("shouldForAll (RDD) : should throw an error if one of the row does not match the predicate") {
+    val rdd = sc.parallelize(Seq(1, 2, 3))
+
+    assertThrows[AssertionError] {
+      rdd.shouldForAll(_ >= 2)
+    }
   }
 }

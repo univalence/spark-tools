@@ -25,7 +25,7 @@ Once the Web site is built, go to `site/target/site` and launch Jekyll.
 
     $ jekyll serve
 
-The Web site will open on http://localhost:4000/.
+The Web site will open on http://127.0.0.1:4000/spark-tools/.
 
 # Publish
 

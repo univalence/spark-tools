@@ -70,7 +70,7 @@ lazy val sparkZio = (project in file("spark-zio"))
   .settings(
     useSpark(sparkVersion = "2.1.1")(modules = "sql"),
     addTestLibs,
-    libraryDependencies += "org.scalaz" %% "scalaz-zio" % "0.19"
+    libraryDependencies += "org.scalaz" %% "scalaz-zio" % "1.0-RC4"
   )
 
 lazy val centrifuge = project
@@ -120,8 +120,9 @@ lazy val plumbus =
     .settings(
       useSpark(libVersion.sparkScala212)("sql"),
       libraryDependencies ++= Seq(
-        "com.propensive" %% "magnolia"        % libVersion.magnolia,
-        "MrPowers"       % "spark-fast-tests" % "2.3.1_0.15.0" % Test
+        "com.propensive"   %% "magnolia"        % libVersion.magnolia,
+        "MrPowers"         % "spark-fast-tests" % "2.3.1_0.15.0" % Test,
+        "com.github.scopt" %% "scopt"           % "3.7.1"
       ),
       addTestLibs
     )
