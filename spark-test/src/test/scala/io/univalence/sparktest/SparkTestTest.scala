@@ -181,6 +181,15 @@ class SparkTestTest extends FunSuiteLike with SparkTest {
     }
   }
 
+  test("should not assertEquals between DS with different schema") {
+    val dsUT       = Seq(1, 2, 3).toDF("id").as[Int]
+    val dsExpected = Seq(1, 2, 3).toDF("di").as[Int]
+
+    assertThrows[AssertionError] {
+      dsUT.assertEquals(dsExpected)
+    }
+  }
+
   test("shouldExists : at least one row should match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 

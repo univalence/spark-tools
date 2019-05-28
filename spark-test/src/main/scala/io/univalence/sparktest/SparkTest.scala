@@ -76,7 +76,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
                      ignoreNullableFlag: Boolean = false,
                      ignoreSchemaFlag: Boolean = false): Unit =
       if (!ignoreSchemaFlag && SparkTest.compareSchema(thisDs.schema, otherDs.schema, ignoreNullableFlag))
-        throw new AssertionError("The data set schema is different")
+        throw new AssertionError(
+          s"The data set schema is different :\n${SparkTest.displayErrSchema(thisDs.schema, otherDs.schema)}")
       else {
         if (checkRowOrder) {
           if (!thisDs.collect().sameElements(otherDs.collect())) {
@@ -103,7 +104,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       val rows2 = dsToDf(otherDs).collect()
       val zipped = rows1.zip(rows2)
       if (SparkTest.compareSchema(thisDs.schema, otherDs.schema, ignoreNullableFlag))
-        throw new AssertionError("The data set schema is different")
+        throw new AssertionError(
+          s"The data set schema is different:\n${SparkTest.displayErrSchema(thisDs.schema, otherDs.schema)}")
       zipped.foreach {
         case (r1, r2) =>
           if (!areRowsEqual(r1, r2, approx))
@@ -160,7 +162,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
                      ignoreNullableFlag: Boolean = false,
                      ignoreSchemaFlag: Boolean = false): Unit =
       if (!ignoreSchemaFlag && SparkTest.compareSchema(thisDf.schema, otherDf.schema, ignoreNullableFlag)) {
-        throw new AssertionError("The data set schema is different")
+        throw new AssertionError(
+          s"The data set schema is different\n${SparkTest.displayErrSchema(thisDf.schema, otherDf.schema)}")
       } else if (checkRowOrder) {
         if (!thisDf.collect().sameElements(otherDf.collect()))
           throw new AssertionError(s"The data set content is different :\n${displayErr(thisDf, otherDf)}")
@@ -213,7 +216,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       val rows2 = otherDf.collect()
       val zipped = rows1.zip(rows2)
       if (SparkTest.compareSchema(thisDf.schema, otherDf.schema, ignoreNullableFlag))
-        throw new AssertionError("The data set schema is different")
+        throw new AssertionError(
+          s"The data set schema is different\n${SparkTest.displayErrSchema(thisDf.schema, otherDf.schema)}")
       zipped.foreach {
         case (r1, r2) =>
           if (!areRowsEqual(r1, r2, approx))
@@ -395,6 +399,12 @@ object SparkTest {
     } else {
       sc1 != sc2
     }
+
+  def displayErrSchema(actualSt: StructType, expectedSt: StructType): String = {
+    val errors = expectedSt.zip(actualSt).filter(x => x._1 != x._2)
+
+    errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
+  }
 
   trait HasSparkSession {
     def ss: SparkSession
