@@ -1,6 +1,6 @@
 ---
 layout: docs
-position: 2
+position: 5
 section: centrifuge
 title: "Centrifuge"
 ---

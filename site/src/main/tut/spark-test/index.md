@@ -1,6 +1,6 @@
 ---
 layout: docs
-position: 5
+position: 2
 section: spark-test
 title: "Spark-Test"
 ---
@@ -9,12 +9,13 @@ title: "Spark-Test"
 
 Spark-Test is a library to help developers test their Spark applications. You just have to extend SparkTest to have all those tools !
 
-## A shared Spark Session
-By extending SparkTest, you do not need to create your own spark session. It is already instantiated with the name `ss`.  
-Example:  
+## Usage
+Import the library :
 ```scala
-val sharedSparkSession: SparkSession = ss
-val sc: SparkContext                 = ss.sparkContext
+resolvers += "Spark-tools" at "http://dl.bintray.com/univalence/univalence-jvm"
+
+// replace version with a suitable one
+libraryDependencies += "io.univalence" %% "spark-test" % "0.2+245-09a064d9" % Test
 ```
 
 ## Creating a DataFrame with a json string

@@ -43,6 +43,12 @@ lazy val projectDescription =
         name  = "Harrison Cheng",
         email = "harrison@univalence.io",
         url   = url("https://github.com/HarrisonCheng")
+      ),
+      Developer(
+        id    = "dylandoamaral",
+        name  = "Dylan Do Amaral",
+        email = "dylan@univalence.io",
+        url   = url("https://github.com/dylandoamaral")
       )
     )
   )

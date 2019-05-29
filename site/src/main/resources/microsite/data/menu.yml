@@ -1,4 +1,9 @@
 options:
+  - title: Spark-Test
+    url: spark-test/
+    menu_section: spark-test
+    menu_type: spark-test
+
   - title: Centrifuge
     url: centrifuge/
     menu_section: centrifuge
@@ -18,11 +23,6 @@ options:
     url: spark-zio/
     menu_section: spark-zio
     menu_type: spark-zio
-
-  - title: Spark-Test
-    url: spark-test/
-    menu_section: spark-test
-    menu_type: spark-test
 
   - title: TypedPath
     url: typedpath/
