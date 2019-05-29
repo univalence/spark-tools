@@ -79,7 +79,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
                      checkRowOrder: Boolean = false,
                      ignoreNullableFlag: Boolean = false,
                      ignoreSchemaFlag: Boolean = false): Unit =
-      if (!ignoreSchemaFlag && SparkTest.compareSchema(thisDs.schema, otherDs.schema, ignoreNullableFlag))
+      if (!ignoreSchemaFlag && SchemaComparison.compareSchema(thisDs.schema, otherDs.schema).nonEmpty)
         throw new AssertionError(
           s"The data set schema is different :\n${SparkTest.displayErrSchema(thisDs.schema, otherDs.schema)}")
       else {
@@ -107,7 +107,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       val rows1 = thisDs.toDF.collect()
       val rows2 = otherDs.toDF.collect()
       val zipped = rows1.zip(rows2)
-      if (SparkTest.compareSchema(thisDs.schema, otherDs.schema, ignoreNullableFlag))
+      if (SchemaComparison.compareSchema(thisDs.schema, otherDs.schema).nonEmpty)
         throw new AssertionError(
           s"The data set schema is different:\n${SparkTest.displayErrSchema(thisDs.schema, otherDs.schema)}")
       zipped.foreach {
@@ -159,7 +159,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
                      checkRowOrder: Boolean = false,
                      ignoreNullableFlag: Boolean = false,
                      ignoreSchemaFlag: Boolean = false): Unit =
-      if (!ignoreSchemaFlag && SparkTest.compareSchema(thisDf.schema, otherDf.schema, ignoreNullableFlag)) {
+      if (!ignoreSchemaFlag && SchemaComparison.compareSchema(thisDf.schema, otherDf.schema).nonEmpty) {
         throw new AssertionError(
           s"The data set schema is different\n${SparkTest.displayErrSchema(thisDf.schema, otherDf.schema)}")
       } else if (checkRowOrder) {
@@ -213,7 +213,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       val rows1 = thisDf.collect()
       val rows2 = otherDf.collect()
       val zipped = rows1.zip(rows2)
-      if (SparkTest.compareSchema(thisDf.schema, otherDf.schema, ignoreNullableFlag))
+      if (SchemaComparison.compareSchema(thisDf.schema, otherDf.schema).nonEmpty)//(SparkTest.compareSchema(thisDf.schema, otherDf.schema, ignoreNullableFlag))
         throw new AssertionError(
           s"The data set schema is different\n${SparkTest.displayErrSchema(thisDf.schema, otherDf.schema)}")
       zipped.foreach {

@@ -3,20 +3,25 @@ package io.univalence.sparktest
 import io.univalence.typedpath.{ ArrayPath, FieldPath, Path, PathOrRoot, Root }
 import org.apache.spark.sql.types.{ ArrayType, DataType, StructField, StructType }
 
-import scala.util.Try
+import scala.util.{ Failure, Try }
 
 object SchemaComparison {
 
   sealed trait FieldModification
+
   final case class AddField(dataType: DataType) extends FieldModification
+
   final case class RemoveField(dataType: DataType) extends FieldModification
+
   final case class ChangeFieldType(from: DataType, to: DataType) extends FieldModification
+
   //final case object SetNullable extends FieldModification
+
   //final case object SetNonNullable extends FieldModification
 
   final case class SchemaModification(path: Path, fieldModification: FieldModification)
 
-  def compareSchema(sc1: StructType, sc2: StructType): Seq[SchemaModification] = {
+    def compareSchema(sc1: StructType, sc2: StructType): Seq[SchemaModification] = {
 
     def compareSchema(sc1: StructType, sc2: StructType, prefix: PathOrRoot): Seq[SchemaModification] = {
       def compareDataType(d1: DataType, d2: DataType, prefix: Path): Seq[SchemaModification] =
@@ -50,7 +55,49 @@ object SchemaComparison {
     compareSchema(sc1, sc2, Root)
   }
 
-  def modifySchema(sc: StructType, schemaModification: SchemaModification): Try[StructType] = ???
+  case class ApplyModificationErrorWithSource(error: ApplyModificationError,
+                                              sc: StructType,
+                                              schemaModification: SchemaModification)
+      extends Exception
+  sealed trait ApplyModificationError extends Exception
+  case class DuplicatedField(name: String) extends ApplyModificationError
+  case class NotFoundField(name: String) extends ApplyModificationError
+
+  def modifySchema(sc: StructType, schemaModification: SchemaModification): Try[StructType] = {
+
+    val res = Try {
+        schemaModification match {
+          case SchemaModification(path, AddField(dt)) =>
+            path match {
+              case FieldPath(name, Root) if !sc.fieldNames.contains(name) =>
+                StructType(sc.fields :+ StructField(name, dt))
+              case FieldPath(name, Root) if sc.fieldNames.contains(name) => throw DuplicatedField(name)
+            }
+          case SchemaModification(path, ChangeFieldType(from, to)) =>
+            path match {
+              case FieldPath(name, Root) if sc.fieldNames.contains(name) =>
+                StructType(sc.map(field => if (field.name == name) field.copy(dataType = to) else field))
+              case FieldPath(name, Root) if !sc.fieldNames.contains(name) => throw NotFoundField(name)
+
+            }
+          case SchemaModification(path, RemoveField(_)) =>
+            path match {
+              case FieldPath(name, Root) if sc.fieldNames.contains(name) =>
+                StructType(sc.filter(field => field.name != path.toString))
+              case FieldPath(name, Root) if !sc.fieldNames.contains(name) => throw NotFoundField(name)
+            }
+        }
+      }
+
+    res.recoverWith({
+      case a: ApplyModificationError => {
+        val error = ApplyModificationErrorWithSource(a, sc, schemaModification)
+        println(error)
+        Failure(error)
+      }
+    })
+
+  }
 
   def invariant(sc1: StructType, sc2: StructType): Boolean = {
     val diff = compareSchema(sc1, sc2)
@@ -59,5 +106,4 @@ object SchemaComparison {
       sc3 <- diff.foldLeft(Try(sc1))((sc, modif) => sc.flatMap(x => modifySchema(x, modif)))
     } yield compareSchema(sc1, sc3).isEmpty) == Try(true)
   }
-
 }
