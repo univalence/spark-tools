@@ -28,3 +28,22 @@ options:
     url: typedpath/
     menu_section: typedpath
     menu_type: typedpath
+
+  ###########################
+  # Spark Test Menu Options #
+  ###########################
+
+  - title: Getting Started
+    url: spark-test/getting_started
+    menu_type: spark-test
+    menu_section: spark-test-getting-started
+
+  - title: Overview
+    url: spark-test/overview
+    menu_type: spark-test
+    menu_section: spark-test-overview
+
+  - title: Functionalities
+    url: spark-test/functionalities
+    menu_type: spark-test
+    menu_section: spark-test-functionalities
