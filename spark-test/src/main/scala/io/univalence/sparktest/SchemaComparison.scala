@@ -21,7 +21,26 @@ object SchemaComparison {
 
   final case class SchemaModification(path: Path, fieldModification: FieldModification)
 
-    def compareSchema(sc1: StructType, sc2: StructType): Seq[SchemaModification] = {
+  /**
+    * Compare two schemas returning differences between both
+    *
+    * Example :
+    * val sc1 = struct("number" -> int, "name" -> int)
+    * val sc2 = struct("rebmun" -> int, "name" -> double)
+    * compareSchema(sc1, sc2)
+    *
+    * Result :
+    * Seq(
+    *   SchemaModification(path"number", RemoveField(int)),
+    *   SchemaModification(path"name", ChangeFieldType(int, double)),
+    *   SchemaModification(path"rebmun", AddField(int))
+    * )
+    *
+    * @param sc1 The entry schema
+    * @param sc2 Schema to compare to
+    * @return    Rhe sequence of schema modification from sc1 to s2
+    */
+  def compareSchema(sc1: StructType, sc2: StructType): Seq[SchemaModification] = {
 
     def compareSchema(sc1: StructType, sc2: StructType, prefix: PathOrRoot): Seq[SchemaModification] = {
       def compareDataType(d1: DataType, d2: DataType, prefix: Path): Seq[SchemaModification] =
@@ -63,31 +82,46 @@ object SchemaComparison {
   case class DuplicatedField(name: String) extends ApplyModificationError
   case class NotFoundField(name: String) extends ApplyModificationError
 
+  /**
+    * Apply a modification to a schema
+    *
+    * Example :
+    * val sc = struct("number" -> int)
+    * val sm = SchemaModification(path"rebmun", AddField(int))
+    * modifySchema(sc, sm)
+    *
+    * Result :
+    * Success(struct("number" -> int, "rebmun" -> int)
+    *
+    * @param sc                  The entry schema
+    * @param schemaModification  A schema modication that must be applied to the entry schema
+    * @return                    The schema after the modification
+    */
   def modifySchema(sc: StructType, schemaModification: SchemaModification): Try[StructType] = {
 
     val res = Try {
-        schemaModification match {
-          case SchemaModification(path, AddField(dt)) =>
-            path match {
-              case FieldPath(name, Root) if !sc.fieldNames.contains(name) =>
-                StructType(sc.fields :+ StructField(name, dt))
-              case FieldPath(name, Root) if sc.fieldNames.contains(name) => throw DuplicatedField(name)
-            }
-          case SchemaModification(path, ChangeFieldType(from, to)) =>
-            path match {
-              case FieldPath(name, Root) if sc.fieldNames.contains(name) =>
-                StructType(sc.map(field => if (field.name == name) field.copy(dataType = to) else field))
-              case FieldPath(name, Root) if !sc.fieldNames.contains(name) => throw NotFoundField(name)
+      schemaModification match {
+        case SchemaModification(path, AddField(dt)) =>
+          path match {
+            case FieldPath(name, Root) if !sc.fieldNames.contains(name) =>
+              StructType(sc.fields :+ StructField(name, dt))
+            case FieldPath(name, Root) if sc.fieldNames.contains(name) => throw DuplicatedField(name)
+          }
+        case SchemaModification(path, ChangeFieldType(from, to)) =>
+          path match {
+            case FieldPath(name, Root) if sc.fieldNames.contains(name) =>
+              StructType(sc.map(field => if (field.name == name) field.copy(dataType = to) else field))
+            case FieldPath(name, Root) if !sc.fieldNames.contains(name) => throw NotFoundField(name)
 
-            }
-          case SchemaModification(path, RemoveField(_)) =>
-            path match {
-              case FieldPath(name, Root) if sc.fieldNames.contains(name) =>
-                StructType(sc.filter(field => field.name != path.toString))
-              case FieldPath(name, Root) if !sc.fieldNames.contains(name) => throw NotFoundField(name)
-            }
-        }
+          }
+        case SchemaModification(path, RemoveField(_)) =>
+          path match {
+            case FieldPath(name, Root) if sc.fieldNames.contains(name) =>
+              StructType(sc.filter(field => field.name != path.toString))
+            case FieldPath(name, Root) if !sc.fieldNames.contains(name) => throw NotFoundField(name)
+          }
       }
+    }
 
     res.recoverWith({
       case a: ApplyModificationError => {
@@ -99,11 +133,5 @@ object SchemaComparison {
 
   }
 
-  def invariant(sc1: StructType, sc2: StructType): Boolean = {
-    val diff = compareSchema(sc1, sc2)
 
-    (for {
-      sc3 <- diff.foldLeft(Try(sc1))((sc, modif) => sc.flatMap(x => modifySchema(x, modif)))
-    } yield compareSchema(sc1, sc3).isEmpty) == Try(true)
-  }
 }
