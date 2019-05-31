@@ -133,15 +133,5 @@ object SchemaComparison {
 
   }
 
-  def assertInvariant(sc1: StructType, sc2: StructType): Unit = {
-    val diff = compareSchema(sc1, sc2)
 
-    val sc3 = diff.foldLeft(Try(sc1))((sc, modif) => sc.flatMap(x => modifySchema(x, modif))).get
-
-    val delta = compareSchema(sc3, sc2) // Should always be empty
-
-    if (delta.nonEmpty) {
-      throw new Exception("difference non empy : \n" + delta.mkString("\n"))
-    }
-  }
 }

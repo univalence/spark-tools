@@ -5,6 +5,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
 import SchemaComparison._
+import org.scalacheck.{ Arbitrary, Shrink }
+import org.scalatest.prop.PropertyChecks
 
 import scala.util.{ Failure, Success, Try }
 
@@ -14,7 +16,7 @@ object SchemaBuilder {
   def struct(args: (String, DataType)*): StructType = StructType(args.map({ case (k, b) => StructField(k, b) }))
 }
 
-class SchemaComparisonTest extends FunSuite with SparkTest {
+class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
   import io.univalence.typedpath._
 
   import SchemaBuilder._
@@ -129,7 +131,66 @@ class SchemaComparisonTest extends FunSuite with SparkTest {
   }
 
   test("test invariant") {
-    assertInvariant(struct("a" -> struct("b" -> int)), struct("a" -> struct("c" -> int)))
+
+    def invariant(sc1: StructType, sc2: StructType): Boolean = {
+      val diff = compareSchema(sc1, sc2)
+
+      val sc3 = diff.foldLeft(Try(sc1))((sc, modif) => sc.flatMap(x => modifySchema(x, modif))).get
+
+      val delta = compareSchema(sc3, sc2) // Should always be empty
+
+      delta.isEmpty
+    }
+
+    implicit val ab: Arbitrary[StructType] = Arbitrary(DatatypeGen.genSchema(5))
+
+    import DatatypeGen._
+
+
+
+
+    forAll { (s1: StructType, s2: StructType) =>
+      invariant(s1, s2)
+    }
 
   }
+
+}
+
+object DatatypeGen {
+  import org.scalacheck.Gen
+  import SchemaBuilder._
+
+  implicit def shrinkStrucType: Shrink[StructType] = Shrink[StructType](
+    schema =>
+      for {
+        n <- (1 until schema.fieldNames.length).toStream
+        fields = schema.fields.filter(_.name != schema.fieldNames(n))
+        rest <- Shrink.shrinkWithOrig(StructType(fields))
+      } yield rest
+  )
+
+
+  def fieldNames: Gen[String] = Gen.alphaLowerChar.map(_.toString)
+
+  def leafDatatype: Gen[DataType] = Gen.oneOf(IntegerType, StringType, DoubleType)
+
+  def genDataType(maxDepth: Int = 20): Gen[DataType] =
+    for {
+      depth <- Gen.choose(0, maxDepth)
+      dt    <- if (depth == 0) leafDatatype else Gen.oneOf(genSchema(depth), genArray(depth), leafDatatype)
+    } yield dt
+
+  def genSchema(maxDepth: Int = 20): Gen[StructType] = {
+    import scala.collection.JavaConverters._
+    for {
+      numberOfFields <- Gen.choose(1, 10)
+      fieldNames     <- Gen.listOfN(numberOfFields, fieldNames)
+      l = fieldNames.distinct.map(x => genDataType(maxDepth - 1).map(x -> _))
+      fields <- Gen.sequence(l)
+    } yield struct(fields.asScala: _*)
+  }
+
+  def genArray(maxDepth: Int): Gen[ArrayType] = genDataType(maxDepth - 1).map(x => ArrayType(x))
+
 }
