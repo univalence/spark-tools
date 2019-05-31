@@ -2,104 +2,134 @@ package io.univalence.sparktest
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}
+import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
 import SchemaComparison._
 
-import scala.util.{Success, Failure}
+import scala.util.{ Failure, Success, Try }
+
+object SchemaBuilder {
+  def double: DoubleType                            = DoubleType
+  def int: IntegerType                              = IntegerType
+  def struct(args: (String, DataType)*): StructType = StructType(args.map({ case (k, b) => StructField(k, b) }))
+}
 
 class SchemaComparisonTest extends FunSuite with SparkTest {
   import io.univalence.typedpath._
+
+  import SchemaBuilder._
 
   val sharedSparkSession: SparkSession = ss
   val sc: SparkContext                 = ss.sparkContext
 
   test("The two schemas are empty") {
-    val sc1 = StructType(List())
+    val sc1: StructType = struct()
     assert(compareSchema(sc1, sc1) == Nil)
   }
 
   test("Two identical schema have no schema modification") {
-    val sc1 = StructType(List(StructField("number", IntegerType)))
-    val expectedSchemaMod = Seq.empty
-    assert(compareSchema(sc1, sc1) == expectedSchemaMod)
+    val sc1 = struct("number" -> int)
+    assert(compareSchema(sc1, sc1) == Nil)
   }
-  
+
   test("A field removed should return a SchemaModification RemoveField") {
-    val sc1 = StructType(List(StructField("number", IntegerType), StructField("name", IntegerType)))
-    val sc2 = StructType(List(StructField("number", IntegerType)))
-    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(path"name", RemoveField(IntegerType))))
+    val sc1 = struct("number" -> int, "name" -> int)
+    val sc2 = struct("number" -> int)
+    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(path"name", RemoveField(int))))
   }
 
   test("A field added should return a SchemaModification with AddField") {
-    val sc1 = StructType(List(StructField("number", IntegerType)))
-    val sc2 = StructType(List(StructField("number", IntegerType), StructField("name", IntegerType)))
+    val sc1 = struct("number" -> int)
+    val sc2 = struct("number" -> int, "name" -> int)
 
-    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(path"name", AddField(IntegerType))))
+    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(path"name", AddField(int))))
   }
 
   test("A field changed should return a SchemaModification with ChangeField") {
-    val sc1 = StructType(List(StructField("number", IntegerType)))
-    val sc2 = StructType(List(StructField("number", DoubleType)))
+    val sc1 = struct("number" -> int)
+    val sc2 = struct("number" -> double)
 
-    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(path"number", ChangeFieldType(IntegerType, DoubleType))))
+    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(path"number", ChangeFieldType(int, DoubleType))))
   }
-  
-  test("A field removed, a field added, and a field changed should return a" +
-    "SchemaModification with RemoveField, AddField, and ChangeField") {
-    val sc1 = StructType(List(StructField("number", IntegerType), StructField("name", IntegerType)))
-    val sc2 = StructType(List(StructField("rebmun", IntegerType), StructField("name", DoubleType)))
 
-    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(path"number",RemoveField(IntegerType)),
-      SchemaModification(path"name",ChangeFieldType(IntegerType,DoubleType)), SchemaModification(path"rebmun",AddField(IntegerType)))
+  test(
+    "A field removed, a field added, and a field changed should return a" +
+      "SchemaModification with RemoveField, AddField, and ChangeField"
+  ) {
+    val sc1 = struct("number" -> int, "name" -> int)
+    val sc2 = struct("rebmun" -> int, "name" -> double)
+
+    assert(
+      compareSchema(sc1, sc2) == Seq(
+        SchemaModification(path"number", RemoveField(int)),
+        SchemaModification(path"name", ChangeFieldType(int, double)),
+        SchemaModification(path"rebmun", AddField(int))
+      )
     )
   }
 
   test("Adding a field while the field exists should return a Duplicated Field error") {
-    val sc = StructType(List(StructField("number", IntegerType)))
-    val sm = SchemaModification(path"number", AddField(IntegerType))
+    val sc = struct("number" -> int)
+    val sm = SchemaModification(path"number", AddField(int))
 
-    assert(SchemaComparison.modifySchema(sc, sm) ==
-      Failure(ApplyModificationErrorWithSource(DuplicatedField("number"), sc, sm)))
+    assert(
+      modifySchema(sc, sm) ==
+        Failure(ApplyModificationErrorWithSource(DuplicatedField("number"), sc, sm))
+    )
   }
 
   test("Adding a field while the field not exists should return a Success with the new StructType") {
-    val sc = StructType(List(StructField("number", IntegerType)))
-    val sm = SchemaModification(path"rebmun", AddField(IntegerType))
+    val sc = struct("number" -> int)
+    val sm = SchemaModification(path"rebmun", AddField(int))
 
-    assert(SchemaComparison.modifySchema(sc, sm) ==
-      Success(StructType(List(StructField("number", IntegerType), StructField("rebmun", IntegerType)))))
+    assert(
+      modifySchema(sc, sm) ==
+        Success(struct("number" -> int, "rebmun" -> int))
+    )
   }
 
   test("Removing a field while the field is inexistant should return a Not Found Field error") {
-    val sc = StructType(List(StructField("number", IntegerType)))
-    val sm = SchemaModification(path"name", RemoveField(IntegerType))
+    val sc = struct("number" -> int)
+    val sm = SchemaModification(path"name", RemoveField(int))
 
-    assert(SchemaComparison.modifySchema(sc, sm) ==
-      Failure(ApplyModificationErrorWithSource(NotFoundField("name"), sc, sm)))
+    assert(
+      modifySchema(sc, sm) ==
+        Failure(ApplyModificationErrorWithSource(NotFoundField("name"), sc, sm))
+    )
   }
 
   test("Removing a field while the field is existant should return a Success with the new StructType") {
-    val sc = StructType(List(StructField("number", IntegerType), StructField("rebmun", IntegerType)))
-    val sm = SchemaModification(path"rebmun", RemoveField(IntegerType))
+    val sc = struct("number" -> int, "rebmun" -> int)
+    val sm = SchemaModification(path"rebmun", RemoveField(int))
 
-    assert(SchemaComparison.modifySchema(sc, sm) ==
-      Success(StructType(List(StructField("number", IntegerType)))))
+    assert(
+      modifySchema(sc, sm) ==
+        Success(struct(("number", int)))
+    )
   }
 
   test("Updating a field type while the field is inexistant should return a Not Found Field error") {
-    val sc = StructType(List(StructField("number", IntegerType)))
-    val sm = SchemaModification(path"name", ChangeFieldType(IntegerType, DoubleType))
+    val sc = struct("number" -> int)
+    val sm = SchemaModification(path"name", ChangeFieldType(int, DoubleType))
 
-    assert(SchemaComparison.modifySchema(sc, sm) ==
-      Failure(ApplyModificationErrorWithSource(NotFoundField("name"), sc, sm)))
+    assert(
+      modifySchema(sc, sm) ==
+        Failure(ApplyModificationErrorWithSource(NotFoundField("name"), sc, sm))
+    )
   }
 
   test("Updating a field type while the field is existant should return a Success with the new StructType") {
-    val sc = StructType(List(StructField("number", IntegerType)))
-    val sm = SchemaModification(path"number", ChangeFieldType(IntegerType, DoubleType))
+    val sc = struct("number" -> int)
+    val sm = SchemaModification(path"number", ChangeFieldType(int, double))
 
-    assert(SchemaComparison.modifySchema(sc, sm) ==
-      Success(StructType(List(StructField("number", DoubleType)))))
+    assert(
+      modifySchema(sc, sm) ==
+        Success(struct(("number", DoubleType)))
+    )
+  }
+
+  test("test invariant") {
+    assertInvariant(struct("a" -> struct("b" -> int)), struct("a" -> struct("c" -> int)))
+
   }
 }
