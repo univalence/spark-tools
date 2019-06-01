@@ -12,6 +12,8 @@ import org.scalatest.prop.PropertyChecks
 import scala.util.{ Failure, Success, Try }
 
 object SchemaBuilder {
+
+  def string: StringType                            = StringType
   def double: DoubleType                            = DoubleType
   def integer: IntegerType                          = IntegerType
   def array(dataType: DataType): ArrayType          = ArrayType(dataType)
@@ -132,32 +134,74 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
     )
   }
 
-  ignore("property base bug #1") {
-
+  test("property base bug #1") {
     val s1 = struct("i" -> array(struct("o" -> struct("p" -> double))), "m" -> array(integer)) // 15 shrinks
     val s2 = struct("i" -> array(struct("v" -> integer))) // 12 shrinks
 
-    assert(invariant(s1, s2))
+    assertInvariant(s1, s2)
   }
 
-  def invariant(sc1: StructType, sc2: StructType): Boolean = {
-    val diff = compareSchema(sc1, sc2)
+  test("property base bug #2") {
+    val s1 = struct("k" -> array(integer)) // shrinked manualy
+    val s2 = struct("k" -> array(string)) // 5 shrinks
 
-    val sc3 = diff.foldLeft(Try(sc1))((sc, modif) => sc.flatMap(x => modifySchema(x, modif))).get
-
-    val delta = compareSchema(sc3, sc2) // Should always be empty
-
-    delta.isEmpty
+    assertInvariant(s1, s2)
   }
 
-  ignore("test invariant") {
+  test("property base bug #3") {
+    val arg0 = struct("t" -> double, "f" -> array(string)) // 9 shrinks
+    val arg1 = struct("v" -> double, "f" -> double) // 4 shrinks
+
+    assertInvariant(arg0, arg1)
+  }
+
+  test("property base bug #4") {
+    val arg0 = struct("e" -> array(array(struct("w" -> string)))) // 12 shrinks + Manualy
+    val arg1 = struct("e" -> array(string)) // 4 shrinks
+
+    assertInvariant(arg0, arg1)
+  }
+
+  def assertInvariant(s1: StructType, s2: StructType): Unit = {
+    val diff = compareSchema(s1, s2)
+
+    var s3 = s1
+    diff.foreach(sm => {
+      val t = modifySchema(s3, sm)
+      if (t.isFailure) println(sm)
+      s3 = t.get
+    })
+
+    assertSchemaEquals(s3, s2)
+  }
+
+  def assertDatatypeEquals(d1: DataType, d2: DataType): Unit =
+    (d1, d2) match {
+      case (s1: StructType, s2: StructType) => assertSchemaEquals(s1, s2)
+      case _                                => assert(d1 == d2)
+    }
+
+  def assertSchemaEquals(s1: StructType, s2: StructType): Unit =
+    for {
+      name <- (s2.fieldNames ++ s1.fieldNames).distinct
+    } {
+      (s1.fields.find(_.name == name), s2.fields.find(_.name == name)) match {
+        case (Some(f1), Some(f2)) => assertDatatypeEquals(f1.dataType, f2.dataType)
+        case (Some(f1), None)     => throw new Exception(s"extra field : $f1")
+        case (None, Some(f1))     => throw new Exception(s"extra field : $f1")
+
+      }
+
+    }
+
+  test("test invariant") {
 
     implicit val ab: Arbitrary[ST] = Arbitrary(DatatypeGen.genSchema(5).map(ST.apply))
 
     import DatatypeGen._
 
     forAll { (s1: ST, s2: ST) =>
-      invariant(s1.structType, s2.structType)
+      assertInvariant(s1.structType, s2.structType)
     }
 
   }
@@ -213,7 +257,7 @@ object DatatypeGen {
       case _              => Stream.empty
     })
 
-  def fieldNames: Gen[String] = Gen.alphaLowerChar.map(_.toString)
+  def fieldNames: Gen[String] = Gen.oneOf("abcdefghijklm".toSeq.map(_.toString))
 
   def leafDatatype: Gen[DataType] = Gen.oneOf(IntegerType, StringType, DoubleType)
 

@@ -6,7 +6,7 @@ import org.apache.spark.sql._
 import scala.reflect.ClassTag
 import io.univalence.sparktest.RowComparer._
 import io.univalence.sparktest.internal.DatasetUtils
-import org.apache.spark.sql.types.{DataType, StructType}
+import org.apache.spark.sql.types.{ DataType, StructType }
 
 import scala.util.Try
 
@@ -44,7 +44,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }*/
 
-    def shouldForAll(pred: T => Boolean): Unit = {
+    def shouldForAll(pred: T => Boolean): Unit =
       if (!thisDs.collect().forall(pred)) {
         val displayErr = thisDs.collect().filterNot(pred).take(10)
         throw new AssertionError(
@@ -52,9 +52,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
             s"Rows not matching the predicate :\n ${displayErr.mkString("\n")}"
         )
       }
-    }
 
-    def shouldExists(pred: T => Boolean): Unit = {
+    def shouldExists(pred: T => Boolean): Unit =
       if (!thisDs.collect().exists(pred)) {
         val displayErr = thisDs.collect().take(10)
         throw new AssertionError(
@@ -62,7 +61,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
             s"Rows not matching the predicate :\n ${displayErr.mkString("\n")}"
         )
       }
-    }
 
     def assertContains(values: T*): Unit = {
       val dsArray = thisDs.collect()
@@ -76,12 +74,13 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     def assertEquals[B](otherDs: Dataset[B],
-                     checkRowOrder: Boolean = false,
-                     ignoreNullableFlag: Boolean = false,
-                     ignoreSchemaFlag: Boolean = false): Unit =
+                        checkRowOrder: Boolean      = false,
+                        ignoreNullableFlag: Boolean = false,
+                        ignoreSchemaFlag: Boolean   = false): Unit =
       if (!ignoreSchemaFlag && SchemaComparison.compareSchema(thisDs.schema, otherDs.schema).nonEmpty)
         throw new AssertionError(
-          s"The data set schema is different :\n${SparkTest.displayErrSchema(thisDs.schema, otherDs.schema)}")
+          s"The data set schema is different :\n${SparkTest.displayErrSchema(thisDs.schema, otherDs.schema)}"
+        )
       else {
         if (checkRowOrder) {
           if (!thisDs.collect().sameElements(otherDs.collect())) {
@@ -89,9 +88,9 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
           }
         } else {
           if (otherDs.toDF
-            .except(thisDs.toDF)
-            .head(1)
-            .nonEmpty || thisDs.toDF.except(otherDs.toDF).head(1).nonEmpty) { // if sparkSQL => anti join ?
+                .except(thisDs.toDF)
+                .head(1)
+                .nonEmpty || thisDs.toDF.except(otherDs.toDF).head(1).nonEmpty) { // if sparkSQL => anti join ?
             throw new AssertionError(s"The data set content is different :\n${displayErr(thisDs, otherDs)}")
           }
         }
@@ -104,12 +103,13 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       assertEquals(l.toDS(), ignoreSchemaFlag = true)
 
     def assertApproxEquals(otherDs: Dataset[T], approx: Double, ignoreNullableFlag: Boolean = false): Unit = {
-      val rows1 = thisDs.toDF.collect()
-      val rows2 = otherDs.toDF.collect()
+      val rows1  = thisDs.toDF.collect()
+      val rows2  = otherDs.toDF.collect()
       val zipped = rows1.zip(rows2)
       if (SchemaComparison.compareSchema(thisDs.schema, otherDs.schema).nonEmpty)
         throw new AssertionError(
-          s"The data set schema is different:\n${SparkTest.displayErrSchema(thisDs.schema, otherDs.schema)}")
+          s"The data set schema is different:\n${SparkTest.displayErrSchema(thisDs.schema, otherDs.schema)}"
+        )
       zipped.foreach {
         case (r1, r2) =>
           if (!areRowsEqual(r1, r2, approx))
@@ -118,9 +118,9 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     def displayErr(df: Dataset[_], otherDf: Dataset[_]): String = {
-      val actual = df.collect().toSeq
+      val actual   = df.collect().toSeq
       val expected = otherDf.collect().toSeq
-      val errors = expected.zip(actual).filter(x => x._1 != x._2)
+      val errors   = expected.zip(actual).filter(x => x._1 != x._2)
 
       errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
     }
@@ -156,12 +156,13 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }*/
 
     def assertEquals(otherDf: DataFrame,
-                     checkRowOrder: Boolean = false,
+                     checkRowOrder: Boolean      = false,
                      ignoreNullableFlag: Boolean = false,
-                     ignoreSchemaFlag: Boolean = false): Unit =
+                     ignoreSchemaFlag: Boolean   = false): Unit =
       if (!ignoreSchemaFlag && SchemaComparison.compareSchema(thisDf.schema, otherDf.schema).nonEmpty) {
         throw new AssertionError(
-          s"The data set schema is different\n${SparkTest.displayErrSchema(thisDf.schema, otherDf.schema)}")
+          s"The data set schema is different\n${SparkTest.displayErrSchema(thisDf.schema, otherDf.schema)}"
+        )
       } else if (checkRowOrder) {
         if (!thisDf.collect().sameElements(otherDf.collect()))
           throw new AssertionError(s"The data set content is different :\n${displayErr(thisDf, otherDf)}")
@@ -192,9 +193,9 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     def displayErr(df: DataFrame, otherDf: DataFrame): String = {
-      val actual = df.collect().toSeq
+      val actual   = df.collect().toSeq
       val expected = otherDf.collect().toSeq
-      val errors = expected.zip(actual).filter(x => x._1 != x._2)
+      val errors   = expected.zip(actual).filter(x => x._1 != x._2)
 
       errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
     }
@@ -210,12 +211,15 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * @param ignoreNullableFlag flag to decide if nullable is ignored or not
       */
     def assertApproxEquals(otherDf: DataFrame, approx: Double, ignoreNullableFlag: Boolean = false): Unit = {
-      val rows1 = thisDf.collect()
-      val rows2 = otherDf.collect()
+      val rows1  = thisDf.collect()
+      val rows2  = otherDf.collect()
       val zipped = rows1.zip(rows2)
-      if (SchemaComparison.compareSchema(thisDf.schema, otherDf.schema).nonEmpty)//(SparkTest.compareSchema(thisDf.schema, otherDf.schema, ignoreNullableFlag))
+      if (SchemaComparison
+            .compareSchema(thisDf.schema, otherDf.schema)
+            .nonEmpty) //(SparkTest.compareSchema(thisDf.schema, otherDf.schema, ignoreNullableFlag))
         throw new AssertionError(
-          s"The data set schema is different\n${SparkTest.displayErrSchema(thisDf.schema, otherDf.schema)}")
+          s"The data set schema is different\n${SparkTest.displayErrSchema(thisDf.schema, otherDf.schema)}"
+        )
       zipped.foreach {
         case (r1, r2) =>
           if (!areRowsEqual(r1, r2, approx))
@@ -286,8 +290,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
     def compareRDD(otherRdd: RDD[T]): Option[(T, (Int, Int))] = {
       //
-      val expectedKeyed = thisRdd.map(x => (x, 1))
-      val resultKeyed = otherRdd.map(x => (x, 1))
+      val expectedKeyed = thisRdd.map(x  => (x, 1))
+      val resultKeyed   = otherRdd.map(x => (x, 1))
 
       //TODO : ReduceByKey + Cogroup give us 5 stages, we have to do the cogroup directly to have only 3 stages
       // and ReduceByKey can be done in the mapping post cogroup : DONE ?
@@ -320,7 +324,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
             (v, i1.headOption.getOrElse(0), i2.headOption.getOrElse(0))
         }
 
-       */
+     */
     }
 
     def assertEqualsWithOrder(otherRdd: RDD[T]): Unit =
@@ -328,7 +332,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         throw new AssertionError("The RDD is different")
 
     def compareRDDWithOrder(otherRdd: RDD[T]): Option[(Option[T], Option[T])] =
-    // If there is a known partitioner just zip
+      // If there is a known partitioner just zip
       if (otherRdd.partitioner.nonEmpty && otherRdd.partitioner.contains(otherRdd.partitioner.get)) {
         otherRdd.compareRDDWithOrderSamePartitioner(otherRdd)
       } else {
@@ -337,7 +341,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
           rdd.zipWithIndex.map { case (x, y) => (y, x) }
 
         val indexedExpected = indexRDD(thisRdd)
-        val indexedResult = indexRDD(otherRdd)
+        val indexedResult   = indexRDD(otherRdd)
 
         indexedExpected
           .cogroup(indexedResult)
@@ -362,7 +366,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     // Source code :
     // https://github.com/holdenk/spark-testing-base/blob/master/core/src/main/1.3/scala/com/holdenkarau/spark/testing/RDDComparisons.scala
     def compareRDDWithOrderSamePartitioner(otherRdd: RDD[T]): Option[(Option[T], Option[T])] =
-    // Handle mismatched lengths by converting into options and padding with Nones
+      // Handle mismatched lengths by converting into options and padding with Nones
       thisRdd
         .zipPartitions(otherRdd) { (thisIter, otherIter) =>
           new Iterator[(Option[T], Option[T])] {
@@ -372,8 +376,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
               (thisIter.hasNext, otherIter.hasNext) match {
                 case (false, true) => (Option.empty[T], Some(otherIter.next()))
                 case (true, false) => (Some(thisIter.next()), Option.empty[T])
-                case (true, true) => (Some(thisIter.next()), Some(otherIter.next()))
-                case _ => throw new Exception("next called when elements consumed")
+                case (true, true)  => (Some(thisIter.next()), Some(otherIter.next()))
+                case _             => throw new Exception("next called when elements consumed")
               }
           }
         }
@@ -389,24 +393,17 @@ object SparkTest {
   def setAllFieldsNullable(sc: StructType): StructType =
     StructType(sc.map(sf => sf.copy(nullable = true)))
 
-
   //Comparaison de Row
-  case class RowDiff(label:String, left:Any, right: Any) {
+  case class RowDiff(label: String, left: Any, right: Any) {
     assert(left != right)
   }
 
-  def compareRow(r1: Row,r2 :Row, schema: StructType):Seq[RowDiff] = {
+  def compareRow(r1: Row, r2: Row, schema: StructType): Seq[RowDiff] =
     ???
-  }
 
-  def modifyRow(r:Row, rowDiff: RowDiff):Try[Row] = ???
-
+  def modifyRow(r: Row, rowDiff: RowDiff): Try[Row] = ???
 
   //Comparaison de schema
-
-
-
-
 
   def compareSchema(sc1: StructType, sc2: StructType, ignoreNullableFlag: Boolean): Boolean =
     if (ignoreNullableFlag) {

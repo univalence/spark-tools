@@ -77,10 +77,12 @@ object SchemaComparison {
   case class ApplyModificationErrorWithSource(error: ApplyModificationError,
                                               sc: StructType,
                                               schemaModification: SchemaModification)
-      extends Exception
+      extends Exception(error)
+
   sealed trait ApplyModificationError extends Exception
   case class DuplicatedField(name: String) extends ApplyModificationError
   case class NotFoundField(name: String) extends ApplyModificationError
+  case object UnreachablePath extends ApplyModificationError
 
   /**
     * Apply a modification to a schema
@@ -99,39 +101,59 @@ object SchemaComparison {
     */
   def modifySchema(sc: StructType, schemaModification: SchemaModification): Try[StructType] = {
 
-    val res = Try {
-      schemaModification match {
-        case SchemaModification(path, AddField(dt)) =>
-          path match {
-            case FieldPath(name, Root) if !sc.fieldNames.contains(name) =>
-              StructType(sc.fields :+ StructField(name, dt))
-            case FieldPath(name, Root) if sc.fieldNames.contains(name) => throw DuplicatedField(name)
+    def loopDt(dataType: DataType, paths: List[Path], fieldModification: FieldModification): DataType =
+      dataType match {
+        case st: StructType => loopSt(st, paths, fieldModification)
+        case at: ArrayType =>
+          paths match {
+            case ArrayPath(_) :: xs => ArrayType(loopDt(at.elementType, xs, fieldModification))
+            case _                  => throw UnreachablePath
           }
-        case SchemaModification(path, ChangeFieldType(from, to)) =>
-          path match {
-            case FieldPath(name, Root) if sc.fieldNames.contains(name) =>
-              StructType(sc.map(field => if (field.name == name) field.copy(dataType = to) else field))
-            case FieldPath(name, Root) if !sc.fieldNames.contains(name) => throw NotFoundField(name)
-
-          }
-        case SchemaModification(path, RemoveField(_)) =>
-          path match {
-            case FieldPath(name, Root) if sc.fieldNames.contains(name) =>
-              StructType(sc.filter(field => field.name != path.toString))
-            case FieldPath(name, Root) if !sc.fieldNames.contains(name) => throw NotFoundField(name)
+        case _ =>
+          fieldModification match {
+            case ChangeFieldType(_, to) => to
+            case _                      => throw UnreachablePath
           }
       }
-    }
 
-    res.recoverWith({
-      case a: ApplyModificationError => {
-        val error = ApplyModificationErrorWithSource(a, sc, schemaModification)
-        println(error)
-        Failure(error)
+    def loopSt(sc: StructType, paths: List[Path], fieldModification: FieldModification): StructType =
+      (paths, fieldModification) match {
+        case (List(FieldPath(name, _)), AddField(dt)) =>
+          if (!sc.fieldNames.contains(name)) StructType(sc.fields :+ StructField(name, dt))
+          else throw DuplicatedField(name)
+
+        case (List(FieldPath(name, _)), RemoveField(_)) =>
+          if (sc.fieldNames.contains(name)) StructType(sc.filter(field => field.name != name))
+          else throw NotFoundField(name)
+
+        case (FieldPath(name, _) :: xs, ChangeFieldType(from, to)) if xs.forall(_.isInstanceOf[ArrayPath]) =>
+          if (sc.fieldNames.contains(name))
+            StructType(
+              sc.map(
+                field =>
+                  if (field.name == name) field.copy(dataType = xs.foldRight(to)((_, b) => ArrayType(b)))
+                  else field
+              )
+            )
+          else
+            throw NotFoundField(name)
+
+        //case (FieldPath(name, _) :: xs, action) if xs.forall(_.isInstanceOf[ArrayPath]) =>
+
+        case (FieldPath(name, _) :: xs, action) if xs.nonEmpty =>
+          if (sc.fieldNames.contains(name))
+            StructType(sc.fields.map(x => if (x.name == name) StructField(name, loopDt(x.dataType, xs, action)) else x))
+          else
+            throw NotFoundField(name)
       }
+
+    Try(loopSt(sc, schemaModification.path.allPaths, schemaModification.fieldModification)).recoverWith({
+      case a: ApplyModificationError =>
+        val source = ApplyModificationErrorWithSource(a, sc, schemaModification)
+        source.getCause
+        Failure(source)
     })
 
   }
-
 
 }

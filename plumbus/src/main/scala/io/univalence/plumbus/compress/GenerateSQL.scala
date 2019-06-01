@@ -2,8 +2,8 @@ package io.univalence.plumbus.compress
 
 import io.univalence.plumbus.compress.CompressDump._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.{ArrayType, StructType}
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.types.{ ArrayType, StructType }
+import org.apache.spark.sql.{ DataFrame, Row }
 
 object GenerateSQL {
 

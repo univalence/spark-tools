@@ -214,7 +214,25 @@ object Path {
 
 case object Root extends PathOrRoot
 
-sealed trait Path extends PathOrRoot
+sealed trait Path extends PathOrRoot {
+
+  def firstName: String with FieldPath.Name =
+    this match {
+      case FieldPath(name, Root) => name
+      case FieldPath(_, p: Path) => p.firstName
+      case ArrayPath(parent)     => parent.firstName
+    }
+
+  def allPaths: List[Path] = {
+    def loop(path: Path, stack: List[Path]): List[Path] =
+      path match {
+        case FieldPath(_, Root)         => path :: stack
+        case FieldPath(_, parent: Path) => loop(parent, path :: stack)
+        case ArrayPath(parent)          => loop(parent, path :: stack)
+      }
+    loop(this, Nil)
+  }
+}
 
 case class FieldPath(name: String with FieldPath.Name, parent: PathOrRoot) extends Path {
   override def toString: String = parent match {
