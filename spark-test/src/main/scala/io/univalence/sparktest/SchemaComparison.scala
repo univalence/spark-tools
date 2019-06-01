@@ -113,8 +113,10 @@ object SchemaComparison {
           fieldModification match {
             case ChangeFieldType(_, to) => to
             case _                      => throw UnreachablePath
+
           }
       }
+
 
     def loopSt(sc: StructType, paths: List[Path], fieldModification: FieldModification): StructType =
       (paths, fieldModification) match {
@@ -155,5 +157,4 @@ object SchemaComparison {
     })
 
   }
-
 }

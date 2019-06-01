@@ -12,7 +12,6 @@ import org.scalatest.prop.PropertyChecks
 import scala.util.{ Failure, Success, Try }
 
 object SchemaBuilder {
-
   def string: StringType                            = StringType
   def double: DoubleType                            = DoubleType
   def integer: IntegerType                          = IntegerType
@@ -278,5 +277,6 @@ object DatatypeGen {
   }
 
   def genArray(maxDepth: Int): Gen[ArrayType] = genDataType(maxDepth - 1).map(x => ArrayType(x))
+
 
 }
