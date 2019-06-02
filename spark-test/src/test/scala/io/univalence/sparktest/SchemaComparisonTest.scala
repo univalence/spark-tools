@@ -278,5 +278,4 @@ object DatatypeGen {
 
   def genArray(maxDepth: Int): Gen[ArrayType] = genDataType(maxDepth - 1).map(x => ArrayType(x))
 
-
 }

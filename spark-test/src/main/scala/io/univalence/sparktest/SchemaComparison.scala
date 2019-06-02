@@ -117,7 +117,6 @@ object SchemaComparison {
           }
       }
 
-
     def loopSt(sc: StructType, paths: List[Path], fieldModification: FieldModification): StructType =
       (paths, fieldModification) match {
         case (List(FieldPath(name, _)), AddField(dt)) =>
@@ -133,7 +132,7 @@ object SchemaComparison {
             StructType(
               sc.map(
                 field =>
-                  if (field.name == name) field.copy(dataType = xs.foldRight(to)((_, b) => ArrayType(b)))
+                  if (field.name == name) field.copy(dataType = xs.foldLeft(to)((b, _) => ArrayType(b)))
                   else field
               )
             )
