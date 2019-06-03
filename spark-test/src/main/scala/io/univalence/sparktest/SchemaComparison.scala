@@ -117,6 +117,9 @@ object SchemaComparison {
           }
       }
 
+    def applyN[A](f: A => A, n: Int): A => A =
+      if (n <= 0) identity else f andThen applyN(f, n - 1)
+
     def loopSt(sc: StructType, paths: List[Path], fieldModification: FieldModification): StructType =
       (paths, fieldModification) match {
         case (List(FieldPath(name, _)), AddField(dt)) =>
@@ -132,7 +135,7 @@ object SchemaComparison {
             StructType(
               sc.map(
                 field =>
-                  if (field.name == name) field.copy(dataType = xs.foldLeft(to)((b, _) => ArrayType(b)))
+                  if (field.name == name) field.copy(dataType = applyN[DataType](ArrayType.apply, xs.size)(to))
                   else field
               )
             )
