@@ -130,7 +130,7 @@ object SchemaComparison {
           if (sc.fieldNames.contains(name)) StructType(sc.filter(field => field.name != name))
           else throw NotFoundField(name)
 
-        case (FieldPath(name, _) :: xs, ChangeFieldType(from, to)) if xs.forall(_.isInstanceOf[ArrayPath]) =>
+        case (FieldPath(name, _) :: xs, ChangeFieldType(_, to)) if xs.forall(_.isInstanceOf[ArrayPath]) =>
           if (sc.fieldNames.contains(name))
             StructType(
               sc.map(
