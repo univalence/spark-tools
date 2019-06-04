@@ -1,4 +1,4 @@
-# Spark-tools
+![Spark-tools Logo](./logo.png)
 
 Spark-tools is a set of tools dedicated to Spark and aims to
 make the life of data engineers easier.

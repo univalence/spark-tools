@@ -1,0 +1,6 @@
+.jumbotron {
+  background: #000000 url("../img/jumbotron_pattern.png") no-repeat center bottom;
+  background-size:cover;
+  padding-top: 176px;
+  padding-bottom: 90px;
+}
