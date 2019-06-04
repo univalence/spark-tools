@@ -290,8 +290,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
     def compareRDD(otherRdd: RDD[T]): Option[(T, (Int, Int))] = {
       //
-      val expectedKeyed = thisRdd.map(x  => (x, 1))
-      val resultKeyed   = otherRdd.map(x => (x, 1))
+      val expectedKeyed: RDD[(T, Int)] = thisRdd.map(_  -> 1)
+      val resultKeyed: RDD[(T, Int)]   = otherRdd.map(_ -> 1)
 
       //TODO : ReduceByKey + Cogroup give us 5 stages, we have to do the cogroup directly to have only 3 stages
       // and ReduceByKey can be done in the mapping post cogroup : DONE ?

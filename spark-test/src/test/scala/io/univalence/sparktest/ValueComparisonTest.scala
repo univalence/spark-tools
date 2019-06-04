@@ -1,6 +1,6 @@
 package io.univalence.sparktest
 
-import ValueComparison._
+import Value._
 import org.scalatest.FunSuiteLike
 
 class ValueComparisonTest extends FunSuiteLike with SparkTest {
