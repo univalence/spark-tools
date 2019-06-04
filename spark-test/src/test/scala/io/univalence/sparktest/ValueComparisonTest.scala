@@ -120,8 +120,8 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
       sc.parallelize(data2),
       StructType(List(StructField("number", IntegerType, nullable = false)))
     )
-
-    println(toStringDataframeModif(compareDataframe(df1, df2)))
-    assert(compareDataframe(df1, df2).nonEmpty)
+    assertThrows[Exception] {
+      reportErrorDataframeComparison(df1, df2)
+    }
   }
 }

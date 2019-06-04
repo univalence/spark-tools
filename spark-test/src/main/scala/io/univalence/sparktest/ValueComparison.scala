@@ -7,6 +7,8 @@ import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.{ArrayType, StructField, StructType}
 import org.apache.spark.sql.functions.lit
 
+import scala.util.Try
+
 sealed trait Value
 
 case class ArrayValue(values: Value*) extends Value
@@ -55,9 +57,14 @@ object Value {
 
     }
 
-  private def cogroup[K, A, B](left: Seq[A], right: Seq[B])(f1: A => K, f2: B => K): Seq[(K, (Seq[A], Seq[B]))] =
-    //TODO implemens + find invariants
-    ???
+  private def cogroup[K, A, B](left: Seq[A], right: Seq[B])(f1: A => K, f2: B => K): Seq[(K, (Seq[A], Seq[B]))] = {
+    //TODO find invariants
+    val mappedLeft: Map[K, Seq[A]]  = left.groupBy(f1)
+    val mappedRight: Map[K, Seq[B]] = right.groupBy(f2)
+
+    val keys = (mappedLeft.keys.toSeq ++ mappedRight.keys.toSeq).distinct
+    keys.map(key => (key, (mappedLeft.getOrElse(key, Seq.empty), mappedRight.getOrElse(key, Seq.empty))))
+  }
 
   def compareValue(v1: ObjectValue, v2: ObjectValue): Seq[ObjectModification] = {
     def compareValue(v1: ObjectValue, v2: ObjectValue, prefix: PathOrRoot): Seq[ObjectModification] = {
@@ -68,6 +75,7 @@ object Value {
 
         case (l, NullValue) => Seq(ObjectModification(prefix, RemoveValue(l)))
         case (NullValue, r) => Seq(ObjectModification(prefix, AddValue(r)))
+        case (l, r) => Seq(ObjectModification(prefix, ChangeValue(l, r))) // Not sure
       }
 
       def compareAtomicValue(av1: AtomicValue, av2: AtomicValue, prefix: Path): Seq[ObjectModification] =
@@ -83,15 +91,12 @@ object Value {
             acc ++ loop(curr1, curr2, FieldPath(FieldPath.createName("index" + index.toString).get, ArrayPath(prefix)))
         }
 
-      val allFields = (v1.fields.map(_._1) ++ v2.fields.map(_._1)).distinct
-
       for {
-        //TODO : Utiliser un cogroup sur seq
-        fieldname <- allFields
+        (name, (leftField, rightField)) <- cogroup(v1.fields, v2.fields)(_._1, _._1)
 
-        left: Option[Value]  = v1.fields.find(_._1 == fieldname).map(_._2)
-        right: Option[Value] = v2.fields.find(_._1 == fieldname).map(_._2)
-        path: Path           = FieldPath(FieldPath.createName(fieldname).get, prefix)
+        left       = Option(leftField.head._2)
+        right      = Option(rightField.head._2)
+        path: Path = FieldPath(FieldPath.createName(name).get, prefix)
 
         modifications: Seq[ObjectModification] = (left, right) match {
           case (Some(l), None)    => Seq(ObjectModification(path, RemoveValue(l)))
@@ -120,21 +125,22 @@ object Value {
   def compareDataframe(df1: DataFrame, df2: DataFrame): Seq[Seq[ObjectModification]] = {
     val schemaMods = SchemaComparison.compareSchema(df1.schema, df2.schema)
     if (schemaMods.nonEmpty) {
-      val newSchema = schemaMods.foldLeft(df1.schema) { case (sc, sm) =>
-        val newSchema = SchemaComparison.modifySchema(sc, sm)
-        if (newSchema.isFailure) sc
-        else newSchema.get
+      val newSchema = schemaMods.foldLeft(df1.schema) {
+        case (sc, sm) =>
+          val newSchema = SchemaComparison.modifySchema(sc, sm)
+          if (newSchema.isFailure) sc
+          else newSchema.get
       }
       // In case of failure, return Nil.
       if (!assertSchemaEquals(df2.schema, newSchema, ignoreNullable = true)) Nil
       // Make it so that df1 has the same schema as df2 before comparing the two.
       else {
-        val newDf = schemaMods.foldLeft(df1) { case (df, sm) =>
-          sm match {
-            case SchemaModification(p, AddField(d)) => df.withColumn(p.firstName, lit(null).cast(d))
+        val newDf = schemaMods.foldLeft(df1) {
+          case (df, sm) => sm match {
+            case SchemaModification(p, AddField(d))    => df.withColumn(p.firstName, lit(null).cast(d))
             case SchemaModification(p, RemoveField(_)) => df.drop(p.firstName)
             case SchemaModification(p, ChangeFieldType(_, to)) =>
-              df1.withColumn(p.firstName, df.col(p.firstName).cast(to))
+              df.withColumn(p.firstName, df.col(p.firstName).cast(to)) // ??? Que faire dans ce cas ?
           }
         }
         compareEqualSchemaDataFrame(newDf, df2)
@@ -144,21 +150,28 @@ object Value {
     }
   }
 
+  def reportErrorDataframeComparison(df1: DataFrame, df2: DataFrame): Unit = {
+    val infos = compareDataframe(df1, df2).map(toStringRowModif)
+    throw new Exception(infos.take(10).mkString("\n\n"))
+  }
+
   /**
     * From https://github.com/MrPowers/spark-fast-tests/blob/master/src/main/scala/com/github/mrpowers/spark/fast/tests/SchemaComparer.scala
     */
-  def assertSchemaEquals(s1: StructType, s2: StructType, ignoreNullable: Boolean = false, ignoreColumnNames: Boolean = false): Boolean = {
+  def assertSchemaEquals(s1: StructType,
+                         s2: StructType,
+                         ignoreNullable: Boolean    = false,
+                         ignoreColumnNames: Boolean = false): Boolean =
     if (s1.length != s2.length) {
       false
     } else {
       val structFields: Seq[(StructField, StructField)] = s1.zip(s2)
       structFields.forall { t =>
         ((t._1.nullable == t._2.nullable) || ignoreNullable) &&
-          ((t._1.name == t._2.name) || ignoreColumnNames) &&
-          (t._1.dataType == t._2.dataType)
+        ((t._1.name == t._2.name) || ignoreColumnNames) &&
+        (t._1.dataType == t._2.dataType)
       }
     }
-  }
 
   def toStringRowModif(modifications: Seq[ObjectModification]): String = {
     def getPathWithIndex(path: Path): String =
@@ -173,6 +186,7 @@ object Value {
           s"in field $pwi, $value was added"
         case RemoveValue(AtomicValue(value)) =>
           s"in field $pwi, $value was removed"
+        case _ => null
       }
     }
 
