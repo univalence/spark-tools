@@ -1,9 +1,11 @@
 package io.univalence.sparktest
 
-import io.univalence.typedpath.{ ArrayPath, FieldPath, Path, PathOrRoot, Root }
-import org.apache.spark.sql.{ DataFrame, Row }
+import io.univalence.sparktest.SchemaComparison.{AddField, ChangeFieldType, RemoveField, SchemaModification}
+import io.univalence.typedpath.{ArrayPath, FieldPath, Path, PathOrRoot, Root}
+import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.types.{ ArrayType, StructType }
+import org.apache.spark.sql.types.{ArrayType, StructField, StructType}
+import org.apache.spark.sql.functions.lit
 
 sealed trait Value
 
@@ -104,9 +106,7 @@ object Value {
     compareValue(v1, v2, Root)
   }
 
-  // Move to SparkTest
-  def compareDataframe(df1: DataFrame, df2: DataFrame): Seq[Seq[ObjectModification]] = {
-    //TODO : Il faudrait vérifier et aligner les schémas avant, on ne peut comparer que le noyau en commun
+  def compareEqualSchemaDataFrame(df1: DataFrame, df2: DataFrame): Seq[Seq[ObjectModification]] = {
     val rows1 = df1.collect()
     val rows2 = df2.collect()
 
@@ -114,7 +114,50 @@ object Value {
       case (acc, (curr1, curr2)) =>
         acc :+ compareValue(fromRow(curr1), fromRow(curr2))
     }
+  }
 
+  // Move to SparkTest
+  def compareDataframe(df1: DataFrame, df2: DataFrame): Seq[Seq[ObjectModification]] = {
+    val schemaMods = SchemaComparison.compareSchema(df1.schema, df2.schema)
+    if (schemaMods.nonEmpty) {
+      val newSchema = schemaMods.foldLeft(df1.schema) { case (sc, sm) =>
+        val newSchema = SchemaComparison.modifySchema(sc, sm)
+        if (newSchema.isFailure) sc
+        else newSchema.get
+      }
+      // In case of failure, return Nil.
+      if (!assertSchemaEquals(df2.schema, newSchema, ignoreNullable = true)) Nil
+      // Make it so that df1 has the same schema as df2 before comparing the two.
+      else {
+        val newDf = schemaMods.foldLeft(df1) { case (df, sm) =>
+          sm match {
+            case SchemaModification(p, AddField(d)) => df.withColumn(p.firstName, lit(null).cast(d))
+            case SchemaModification(p, RemoveField(_)) => df.drop(p.firstName)
+            case SchemaModification(p, ChangeFieldType(_, to)) =>
+              df1.withColumn(p.firstName, df.col(p.firstName).cast(to))
+          }
+        }
+        compareEqualSchemaDataFrame(newDf, df2)
+      }
+    } else {
+      compareEqualSchemaDataFrame(df1, df2)
+    }
+  }
+
+  /**
+    * From https://github.com/MrPowers/spark-fast-tests/blob/master/src/main/scala/com/github/mrpowers/spark/fast/tests/SchemaComparer.scala
+    */
+  def assertSchemaEquals(s1: StructType, s2: StructType, ignoreNullable: Boolean = false, ignoreColumnNames: Boolean = false): Boolean = {
+    if (s1.length != s2.length) {
+      false
+    } else {
+      val structFields: Seq[(StructField, StructField)] = s1.zip(s2)
+      structFields.forall { t =>
+        ((t._1.nullable == t._2.nullable) || ignoreNullable) &&
+          ((t._1.name == t._2.name) || ignoreColumnNames) &&
+          (t._1.dataType == t._2.dataType)
+      }
+    }
   }
 
   def toStringRowModif(modifications: Seq[ObjectModification]): String = {
