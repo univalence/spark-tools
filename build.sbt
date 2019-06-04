@@ -1,5 +1,5 @@
 import ScalaSettings._
-import microsites._
+import microsites.MicrositeFavicon
 
 lazy val projectDescription =
   Def.settings(
@@ -111,7 +111,7 @@ lazy val fenek = project
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/fenek")),
     startYear   := Some(2018),
     libraryDependencies ++= Seq("joda-time"  % "joda-time"      % libVersion.jodaTime,
-      "org.json4s" %% "json4s-native" % libVersion.json4s),
+                                "org.json4s" %% "json4s-native" % libVersion.json4s),
     useSpark(libVersion.sparkScala211)("sql"),
     addTestLibs
   )
@@ -149,14 +149,6 @@ lazy val typedpath = project
     addTestLibs
   )
 
-lazy val siteSettings = Seq(
-  micrositeFavicons := Seq(MicrositeFavicon("favicon16x16.png", "16x16"),
-    MicrositeFavicon("favicon32x32.png", "32x32"),
-    MicrositeFavicon("favicon64x64.png", "64x64")
-  ),
-  micrositeCssDirectory := (resourceDirectory in Compile).value / "custom"
-)
-
 lazy val site = project
   .enablePlugins(MicrositesPlugin)
   //  .dependsOn(centrifuge, plumbus, typedpath, fenek)
@@ -167,9 +159,6 @@ lazy val site = project
     micrositeBaseUrl     := "/spark-tools",
     name                 := "spark-tools-site"
   )
-  .settings(siteSettings)
-
-
 
 lazy val sparkTest = (project in file("spark-test"))
   .dependsOn(typedpath)
@@ -253,7 +242,11 @@ lazy val minisiteConfiguration =
       """
         |<p>&copy; 2017-2019 <a href="https://github.com/univalence/spark-tools">Spark tools Maintainers</a></p>
         |""".stripMargin
-    )
+    ),
+    micrositeFavicons := Seq(MicrositeFavicon("favicon16x16.png", "16x16"),
+                             MicrositeFavicon("favicon32x32.png", "32x32"),
+                             MicrositeFavicon("favicon64x64.png", "64x64")),
+    micrositeCssDirectory := (resourceDirectory in Compile).value / "microsite" / "css"
   )
 
 def addTestLibs: SettingsDefinition =
