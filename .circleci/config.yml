@@ -170,6 +170,11 @@ jobs:
             sudo apt-get install -y ruby ruby-dev
             sudo gem install jekyll
       - run:
+          name: Configure Git user
+          command: |
+            git config --global user.name "Univalence"
+            git config --global user.email "${UNIVALENCE_EMAIL}"
+      - run:
           name: Regenerate Web site
           command: cat /dev/null | sbt publishMicrosite
       - save_cache: *save_cache_dependencies
