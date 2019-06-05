@@ -1,8 +1,8 @@
 package io.univalence.sparktest
 
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.types.{IntegerType, StructField, StructType}
+import org.apache.spark.sql.{ Row, SparkSession }
+import org.apache.spark.sql.types.{ IntegerType, StructField, StructType }
 import org.scalatest.FunSuite
 
 class DataFrameComparisonTest extends FunSuite with SparkTest {
@@ -108,6 +108,5 @@ class DataFrameComparisonTest extends FunSuite with SparkTest {
       df.shouldForAll((n: Int) => n >= 2)
     }
   }*/
-
 
 }

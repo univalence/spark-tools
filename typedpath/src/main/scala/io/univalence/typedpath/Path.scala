@@ -1,5 +1,7 @@
 package io.univalence.typedpath
 
+import io.univalence.typedpath.Index.{ ArrayIndex, FieldIndex }
+
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 import scala.util.matching.Regex
@@ -215,16 +217,64 @@ sealed trait IndexOrRoot
 
 case object Root extends PathOrRoot with IndexOrRoot
 
-sealed trait Index extends IndexOrRoot
+sealed trait Index extends IndexOrRoot {
+
+  final def at(name: String with FieldName): FieldIndex = FieldIndex(name, this)
+  final def at(idx: Int): ArrayIndex                    = ArrayIndex(idx, this)
+
+  final def firstName: String with FieldName =
+    this match {
+      case Index.ArrayIndex(_, parent)        => parent.firstName
+      case Index.FieldIndex(name, Root)       => name
+      case Index.FieldIndex(_, parent: Index) => parent.firstName
+
+    }
+}
 
 object Index {
-  case class FieldIndex(name: String with FieldName, parent: IndexOrRoot) extends Index
-  case class ArrayIndex(idx: Int, parent: Index) extends Index {
+
+  final def apply(name: FieldName with String): FieldIndex = FieldIndex(name, Root)
+
+  final case class FieldIndex(name: String with FieldName, parent: IndexOrRoot) extends Index {
+    override def toString: String = parent.toString + "." + name
+  }
+
+  final case class ArrayIndex(idx: Int, parent: Index) extends Index {
     assert(idx > 0)
+    override def toString: String = parent.toString + s"[$idx]"
   }
   //case class ArrayLastElement(parent: Index) extends Index
 
-  def create(index: String): Try[Index] = ???
+  def create(index: String): Try[Index] = Try {
+
+    val parts: Array[String] = index.split('.')
+
+    def computeIndex(parent: IndexOrRoot, part: String): IndexOrRoot = {
+
+      val (name, idx) = part.indexOf('[') match {
+        case -1 => (part, "")
+        case x  => part.splitAt(x)
+      }
+
+      val index = FieldIndex(FieldPath.createName(name).get, parent)
+
+      if (idx == null)
+        index
+      else {
+        val Idx = "\\[(\\d+)\\]".r
+        Idx
+          .findAllMatchIn(idx)
+          .foldLeft[Index](index)((i, s) => ArrayIndex(s.group(1).toInt, i))
+      }
+
+    }
+
+    parts.foldLeft[IndexOrRoot](Root)(computeIndex) match {
+      case Root     => throw new Exception("incorrect index from string \"" + index + "\"")
+      case i: Index => i
+    }
+
+  }
 }
 
 sealed trait Path extends PathOrRoot {

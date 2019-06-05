@@ -2,8 +2,8 @@ package io.univalence.sparktest
 
 import ValueComparison._
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.types.{ArrayType, IntegerType, StringType, StructField, StructType}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types.{ ArrayType, IntegerType, StringType, StructField, StructType }
+import org.apache.spark.sql.{ Row, SparkSession }
 import org.scalatest.FunSuiteLike
 
 import scala.collection.mutable
@@ -53,9 +53,12 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
       * in field set at index 0, WrappedArray(2, 4) was not equal to WrappedArray(2, 3)
       * in field set at index 1, WrappedArray(2, 5) was not equal to WrappedArray(2, 2)
       */
-
-    assert(compareValue(fromRow(df1.first), fromRow(df2.first)) ==
-      ArrayBuffer(ObjectModification(path"set/index1", AddValue(AtomicValue(mutable.WrappedArray.make(Array("2", "5")))))))
+    assert(
+      compareValue(fromRow(df1.first), fromRow(df2.first)) ==
+        ArrayBuffer(
+          ObjectModification(index"set[2]", AddValue(AtomicValue(mutable.WrappedArray.make(Array("2", "5")))))
+        )
+    )
   }
 
   test("Remove a field") {
@@ -67,8 +70,10 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
       (Array("2", "2"), 2)
     ).toDF("set", "id")
 
-    assert(compareValue(fromRow(df1.first), fromRow(df2.first)) ==
-      ArrayBuffer(ObjectModification(path"id2",RemoveValue(AtomicValue(2)))))
+    assert(
+      compareValue(fromRow(df1.first), fromRow(df2.first)) ==
+        ArrayBuffer(ObjectModification(index"id2", RemoveValue(AtomicValue(2))))
+    )
   }
 
   test("Add a field") {
@@ -80,8 +85,10 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
       (Array("2", "2"), 2, 4)
     ).toDF("set", "id", "id2")
 
-    assert(compareValue(fromRow(df1.first), fromRow(df2.first)) ==
-      ArrayBuffer(ObjectModification(path"id2",AddValue(AtomicValue(4)))))
+    assert(
+      compareValue(fromRow(df1.first), fromRow(df2.first)) ==
+        ArrayBuffer(ObjectModification(index"id2", AddValue(AtomicValue(4))))
+    )
   }
 
   test("Change a field type") {

@@ -6,6 +6,8 @@ package object typedpath {
 
     //TODO : replace with macro
     def name(args: Nothing*): String with FieldName = FieldPath.createName(sc.raw()).get
+
+    def index(args: Nothing*): Index = Index.create(sc.raw()).get
   }
 
 }

@@ -7,9 +7,9 @@ import scala.util.Try
 
 class IndexTest extends FunSuite {
 
-  //TODO
-  ignore("testCreate") {
-    assert(Index.create("abc[1].defg") == Try(FieldIndex(name"defg", ArrayIndex(1, FieldIndex(name"abc", Root)))))
-  }
+  test("testCreate index") {
+    assert(Index.create("abc[1].defg").get == (Index(name"abc") at 1 at name"defg"))
 
+    assert(Index.create("abc[1][2][3].defg").get == (Index(name"abc") at 1 at 2 at 3 at name"defg"))
+  }
 }

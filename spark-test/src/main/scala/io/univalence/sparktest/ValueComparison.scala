@@ -1,9 +1,10 @@
 package io.univalence.sparktest
 
-import io.univalence.typedpath.{ArrayPath, FieldPath, Path, PathOrRoot, Root}
+import io.univalence.typedpath.Index.{ ArrayIndex, FieldIndex }
+import io.univalence.typedpath.{ ArrayPath, FieldPath, Index, IndexOrRoot, Path, PathOrRoot, Root }
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.types.{ArrayType, StructType}
+import org.apache.spark.sql.types.{ ArrayType, StructType }
 
 import scala.collection.mutable
 
@@ -25,8 +26,7 @@ object ValueComparison {
   final case class RemoveValue(value: Value) extends ValueDiff
   final case class ChangeValue(from: Value, to: Value) extends ValueDiff
 
-  final case class ObjectModification(path: Path, valueModification: ValueDiff) extends ValueModification
-
+  final case class ObjectModification(index: Index, valueModification: ValueDiff) extends ValueModification
 
   def termValue(a: Any): TermValue = a match {
     case null    => NullValue
@@ -66,8 +66,8 @@ object ValueComparison {
   }
 
   def compareValue(v1: ObjectValue, v2: ObjectValue): Seq[ObjectModification] = {
-    def compareValue(v1: ObjectValue, v2: ObjectValue, prefix: PathOrRoot): Seq[ObjectModification] = {
-      def loop(v1: Value, v2: Value, prefix: Path): Seq[ObjectModification] = (v1, v2) match {
+    def compareValue(v1: ObjectValue, v2: ObjectValue, prefix: IndexOrRoot): Seq[ObjectModification] = {
+      def loop(v1: Value, v2: Value, prefix: Index): Seq[ObjectModification] = (v1, v2) match {
         case (c1: AtomicValue, c2: AtomicValue) => compareAtomicValue(c1, c2, prefix)
         case (c1: ArrayValue, c2: ArrayValue)   => compareArrayValue(c1, c2, prefix)
         case (c1: ObjectValue, c2: ObjectValue) => compareValue(c1, c2, prefix)
@@ -77,25 +77,25 @@ object ValueComparison {
         case (l, r)         => Seq(ObjectModification(prefix, ChangeValue(l, r))) // Not sure
       }
 
-      def compareAtomicValue(av1: AtomicValue, av2: AtomicValue, prefix: Path): Seq[ObjectModification] =
+      def compareAtomicValue(av1: AtomicValue, av2: AtomicValue, prefix: Index): Seq[ObjectModification] =
         (av1, av2) match {
           case (AtomicValue(c1), AtomicValue(c2)) if c1 == c2 => Nil
           case _                                              => Seq(ObjectModification(prefix, ChangeValue(av1, av2)))
         }
 
-      def compareArrayValue(av1: ArrayValue, av2: ArrayValue, prefix: Path): Seq[ObjectModification] =
+      def compareArrayValue(av1: ArrayValue, av2: ArrayValue, prefix: Index): Seq[ObjectModification] =
         av1.values.zipAll(av2.values, NullValue, NullValue).zipWithIndex.foldLeft(Seq(): Seq[ObjectModification]) {
           case (acc, ((curr1, curr2), index)) =>
             //peut-être qu'il faut faire un index dans les paths : abc.def[0]
-            acc ++ loop(curr1, curr2, FieldPath(FieldPath.createName("index" + index.toString).get, ArrayPath(prefix)))
+            acc ++ loop(curr1, curr2, ArrayIndex(index + 1, prefix))
         }
 
       for {
         (name, (leftField, rightField)) <- cogroup(v1.fields, v2.fields)(_._1, _._1)
 
-        left       = Option(leftField.headOption.getOrElse((Nil, NullValue))._2)
-        right      = Option(rightField.headOption.getOrElse((Nil, NullValue))._2)
-        path: Path = FieldPath(FieldPath.createName(name).get, prefix)
+        left        = Option(leftField.headOption.getOrElse((Nil, NullValue))._2)
+        right       = Option(rightField.headOption.getOrElse((Nil, NullValue))._2)
+        path: Index = FieldIndex(FieldPath.createName(name).get, prefix)
 
         modifications: Seq[ObjectModification] = (left, right) match {
           case (Some(l), None)    => Seq(ObjectModification(path, RemoveValue(l)))
@@ -110,13 +110,13 @@ object ValueComparison {
     compareValue(v1, v2, Root)
   }
 
-  private def toStringRowMods(row: Row, modifications: Seq[ObjectModification]) : String = {
+  private def toStringRowMods(row: Row, modifications: Seq[ObjectModification]): String = {
     def toStringValue[A](value: A): String = value match {
       case values: mutable.WrappedArray[_] =>
         s"[${values.mkString(", ")}]"
       case _ => value.toString
     }
-    val modifiedFields = modifications.map(_.path.firstName.toString).distinct
+    val modifiedFields = modifications.map(_.index.firstName).distinct
 
     val otherFields = row.schema.fieldNames.filter(!modifiedFields.contains(_))
     s"dataframe({${(modifiedFields ++ otherFields).map(x => s"$x: ${toStringValue(row.getAs(x))}").mkString(", ")}})"
@@ -129,18 +129,16 @@ object ValueComparison {
   }
 
   def toStringModifications(modifications: Seq[ObjectModification]): String = {
-    def getPathWithIndex(path: Path): String =
-      path.firstName + (if (path.toString.contains("/index")) " at index " + path.toString.split("/index").last else "")
 
     def stringMod(mod: ObjectModification): String = {
-      val pwi = getPathWithIndex(mod.path)
+      val pwi = mod.index.toString
       mod.valueModification match {
         case ChangeValue(AtomicValue(from), AtomicValue(to)) =>
-          s"in field $pwi, $to was diff to $from"
+          s"in value at $pwi, $to was diff to $from"
         case AddValue(AtomicValue(value)) =>
-          s"in field $pwi, $value was added"
+          s"in value at $pwi, $value was added"
         case RemoveValue(AtomicValue(value)) =>
-          s"in field $pwi, $value was removed"
+          s"in value at $pwi, $value was removed"
         case _ => null
       }
     }
