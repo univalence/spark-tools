@@ -164,6 +164,12 @@ jobs:
       - checkout
       - restore_cache: *restore_cache_dependencies
       - run:
+          name: Update ubuntu and install Jekyll
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y ruby ruby-dev
+            sudo gem install jekyll
+      - run:
           name: Regenerate Web site
           command: cat /dev/null | sbt publishMicrosite
       - save_cache: *save_cache_dependencies
