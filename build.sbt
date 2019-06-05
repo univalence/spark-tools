@@ -54,8 +54,6 @@ lazy val projectDescription =
     )
   )
 
-// ====
-
 lazy val sparkTools = (project in file("."))
   .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio, site, sparkTest)
   .settings(
@@ -77,7 +75,9 @@ lazy val sparkZio = (project in file("spark-zio"))
   .settings(
     useSpark(sparkVersion = "2.1.1")(modules = "sql"),
     addTestLibs,
-    libraryDependencies += "org.scalaz" %% "scalaz-zio" % "1.0-RC4"
+    libraryDependencies ++= Seq(
+      "org.scalaz" %% "scalaz-zio" % libVersion.zio
+    )
   )
 
 lazy val centrifuge = project
@@ -183,6 +183,7 @@ val libVersion =
     val json4s        = "3.2.11"
     val magnolia      = "0.10.0"
     val monix         = "2.3.3"
+    val zio           = "1.0-RC4"
     val scala2_12     = "2.12.8"
     val scala2_11     = "2.11.12"
     val scalacheck    = "1.13.5"

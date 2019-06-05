@@ -8,7 +8,7 @@ title: "Getting started"
 
 \[IN PROGRESS]
 
-Import the library :
+Import the library:
 ```scala
 resolvers += "Spark-tools" at "http://dl.bintray.com/univalence/univalence-jvm"
 
@@ -46,9 +46,9 @@ val dfExpected = Seq(2, 1, 4).toDF("id")
 
 dfUT.assertEquals(dfExpected)
 ```
-Throws the following exception :
+Throws the following exception:
 ```
-java.lang.AssertionError: The data set content is different :
+java.lang.AssertionError: The data set content is different:
 [2] was not equal to [1]
 [1] was not equal to [2]
 [4] was not equal to [3]
@@ -60,22 +60,22 @@ One of our test functionality is shouldForAll.
 
 It throws an Assertion Exception if there are rows that don't match the predicate.
 
-This example :
+This example:
 ```scala
 val rdd = sc.parallelize(Seq(Person("John", 19), Person("Paul", 17), Person("Emilie", 25), Person("Mary", 5)))
 rdd.shouldForAll(p => p.age > 18) // Paul and Mary are too young
 ```
 
-Will throw this exception :
+Will throw this exception:
 ```scala
 java.lang.AssertionError: No rows from the dataset match the predicate. Rows not matching the predicate :
 Person(Paul,17) 
 Person(Mary,5)
 ```
 
-Whereas this example :
+Whereas this example:
 ```scala
 val rdd = sc.parallelize(Seq(Person("John", 19), Person("Paul", 52), Person("Emilie", 25), Person("Mary", 83)))
 rdd.shouldForAll(p => p.age > 18) // Everyone pass the predicate
 ```
-Will pass !
+Will pass!
