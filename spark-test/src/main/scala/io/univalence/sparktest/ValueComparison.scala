@@ -1,33 +1,32 @@
 package io.univalence.sparktest
 
-import io.univalence.sparktest.SchemaComparison.{ AddField, ChangeFieldType, RemoveField, SchemaModification }
-import io.univalence.typedpath.{ ArrayPath, FieldPath, Path, PathOrRoot, Root }
-import org.apache.spark.sql.{ DataFrame, Row }
+import io.univalence.typedpath.{ArrayPath, FieldPath, Path, PathOrRoot, Root}
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.types.{ ArrayType, StructField, StructType }
-import org.apache.spark.sql.functions.lit
+import org.apache.spark.sql.types.{ArrayType, StructType}
 
-import scala.util.Try
+import scala.collection.mutable
 
-sealed trait Value
+object ValueComparison {
 
-case class ArrayValue(values: Value*) extends Value
-case class ObjectValue(fields: (String, Value)*) extends Value
+  sealed trait Value
 
-sealed trait TermValue extends Value
-case class AtomicValue(value: Any) extends TermValue
-case object NullValue extends TermValue
+  case class ArrayValue(values: Value*) extends Value
+  case class ObjectValue(fields: (String, Value)*) extends Value
 
-sealed trait ValueModification
+  sealed trait TermValue extends Value
+  case class AtomicValue(value: Any) extends TermValue
+  case object NullValue extends TermValue
 
-sealed trait ValueDiff extends ValueModification
-final case class AddValue(value: Value) extends ValueDiff
-final case class RemoveValue(value: Value) extends ValueDiff
-final case class ChangeValue(from: Value, to: Value) extends ValueDiff
+  sealed trait ValueModification
 
-final case class ObjectModification(path: Path, valueModification: ValueDiff) extends ValueModification
+  sealed trait ValueDiff extends ValueModification
+  final case class AddValue(value: Value) extends ValueDiff
+  final case class RemoveValue(value: Value) extends ValueDiff
+  final case class ChangeValue(from: Value, to: Value) extends ValueDiff
 
-object Value {
+  final case class ObjectModification(path: Path, valueModification: ValueDiff) extends ValueModification
+
 
   def termValue(a: Any): TermValue = a match {
     case null    => NullValue
@@ -94,8 +93,8 @@ object Value {
       for {
         (name, (leftField, rightField)) <- cogroup(v1.fields, v2.fields)(_._1, _._1)
 
-        left       = Option(leftField.head._2)
-        right      = Option(rightField.head._2)
+        left       = Option(leftField.headOption.getOrElse((Nil, NullValue))._2)
+        right      = Option(rightField.headOption.getOrElse((Nil, NullValue))._2)
         path: Path = FieldPath(FieldPath.createName(name).get, prefix)
 
         modifications: Seq[ObjectModification] = (left, right) match {
@@ -111,64 +110,25 @@ object Value {
     compareValue(v1, v2, Root)
   }
 
-  def compareEqualSchemaDataFrame(df1: DataFrame, df2: DataFrame): Seq[Seq[ObjectModification]] = {
-    val rows1 = df1.collect()
-    val rows2 = df2.collect()
-
-    rows1.zipAll(rows2, null, null).foldLeft(Seq(): Seq[Seq[ObjectModification]]) {
-      case (acc, (curr1, curr2)) =>
-        acc :+ compareValue(fromRow(curr1), fromRow(curr2))
+  private def toStringRowMods(row: Row, modifications: Seq[ObjectModification]) : String = {
+    def toStringValue[A](value: A): String = value match {
+      case values: mutable.WrappedArray[_] =>
+        s"[${values.mkString(", ")}]"
+      case _ => value.toString
     }
+    val modifiedFields = modifications.map(_.path.firstName.toString).distinct
+
+    val otherFields = row.schema.fieldNames.filter(!modifiedFields.contains(_))
+    s"dataframe({${(modifiedFields ++ otherFields).map(x => s"$x: ${toStringValue(row.getAs(x))}").mkString(", ")}})"
   }
 
-  def compareDataframe(df1: DataFrame, df2: DataFrame): Seq[Seq[ObjectModification]] = {
-    val schemaMods = SchemaComparison.compareSchema(df1.schema, df2.schema)
-    if (schemaMods.nonEmpty) {
-      val newSchema = schemaMods.foldLeft(df1.schema) {
-        case (sc, sm) =>
-          val newSchema = SchemaComparison.modifySchema(sc, sm)
-          if (newSchema.isFailure) sc
-          else newSchema.get
-      }
-      // In case of failure, return Nil.
-      if (!assertSchemaEquals(df2.schema, newSchema, ignoreNullable = true)) Nil
-      // Make it so that df1 has the same schema as df2 before comparing the two.
-      else {
-        val newDf = schemaMods.foldLeft(df1) {
-          case (df, sm) =>
-            sm match {
-              case SchemaModification(p, AddField(d))    => df.withColumn(p.firstName, lit(null).cast(d))
-              case SchemaModification(p, RemoveField(_)) => df.drop(p.firstName)
-              case SchemaModification(p, ChangeFieldType(_, to)) =>
-                df.withColumn(p.firstName, df.col(p.firstName).cast(to)) // ??? Que faire dans ce cas ?
-            }
-        }
-        compareEqualSchemaDataFrame(newDf, df2)
-      }
-    } else {
-      compareEqualSchemaDataFrame(df1, df2)
-    }
+  def toStringRowsMods(modifications: Seq[ObjectModification], row1: Row, row2: Row): String = {
+    val stringifyRow1 = toStringRowMods(row1, modifications)
+    val stringifyRow2 = toStringRowMods(row2, modifications)
+    s"\n$stringifyRow1\n$stringifyRow2"
   }
 
-  /**
-    * From https://github.com/MrPowers/spark-fast-tests/blob/master/src/main/scala/com/github/mrpowers/spark/fast/tests/SchemaComparer.scala
-    */
-  def assertSchemaEquals(s1: StructType,
-                         s2: StructType,
-                         ignoreNullable: Boolean    = false,
-                         ignoreColumnNames: Boolean = false): Boolean =
-    if (s1.length != s2.length) {
-      false
-    } else {
-      val structFields: Seq[(StructField, StructField)] = s1.zip(s2)
-      structFields.forall { t =>
-        ((t._1.nullable == t._2.nullable) || ignoreNullable) &&
-        ((t._1.name == t._2.name) || ignoreColumnNames) &&
-        (t._1.dataType == t._2.dataType)
-      }
-    }
-
-  def toStringRowMod(modifications: Seq[ObjectModification]): String = {
+  def toStringModifications(modifications: Seq[ObjectModification]): String = {
     def getPathWithIndex(path: Path): String =
       path.firstName + (if (path.toString.contains("/index")) " at index " + path.toString.split("/index").last else "")
 
@@ -176,7 +136,7 @@ object Value {
       val pwi = getPathWithIndex(mod.path)
       mod.valueModification match {
         case ChangeValue(AtomicValue(from), AtomicValue(to)) =>
-          s"in field $pwi, $to was not equal to $from"
+          s"in field $pwi, $to was diff to $from"
         case AddValue(AtomicValue(value)) =>
           s"in field $pwi, $value was added"
         case RemoveValue(AtomicValue(value)) =>
@@ -187,16 +147,4 @@ object Value {
 
     modifications.map(stringMod).mkString("\n")
   }
-
-  def toStringDataFrameMod(seqModifications: Seq[Seq[ObjectModification]]): String = {
-    val diffs = seqModifications.map(toStringRowMod)
-    diffs.take(10).mkString("\n\n")
-  }
-
-  def reportErrorDataframeComparison(df1: DataFrame, df2: DataFrame): Unit = {
-    val diffs = compareDataframe(df1, df2).map(toStringRowMod)
-    throw new Exception(diffs.take(10).mkString("\n\n"))
-  }
 }
-
-//class ValueComparison {}

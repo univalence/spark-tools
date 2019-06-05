@@ -1,64 +1,50 @@
 package io.univalence.sparktest
 
-import Value._
+import ValueComparison._
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.types.{ IntegerType, StringType, StructField, StructType }
-import org.apache.spark.sql.{ Row, SparkSession }
+import org.apache.spark.sql.types.{ArrayType, IntegerType, StringType, StructField, StructType}
+import org.apache.spark.sql.{Row, SparkSession}
 import org.scalatest.FunSuiteLike
 
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+
 class ValueComparisonTest extends FunSuiteLike with SparkTest {
+  import io.univalence.typedpath._
 
   val sharedSparkSession: SparkSession = ss
   val sc: SparkContext                 = ss.sparkContext
 
-  test("rows with two different arrayType should give some row modifications") {
-    val df1 = Seq(
-      (Array("2", "2"), 2),
-      (Array("2", "3"), 2)
+  test("A row should have no modification with itself") {
+    val df = Seq(
+      ("1", "2")
     ).toDF("set", "id")
 
-    val df2 = Seq(
-      (Array("3", "3"), 1),
-      (Array("2", "4"), 1)
-    ).toDF("set", "id")
-
-    println(toStringDataFrameMod(compareDataframe(df1, df2)))
-
-    /*
-      in field set at index 0, 3 was not equal to 2
-      in field set at index 1, 3 was not equal to 2
-      in field id, 1 was not equal to 2
-
-      in field set at index 1, 4 was not equal to 3
-      in field id, 1 was not equal to 2
-     */
-    assert(compareDataframe(df1, df2).nonEmpty)
+    val value = fromRow(df.first())
+    assert(compareValue(value, value).isEmpty)
   }
 
   // TODO : Null Pointer Exception
   ignore("Null Pointer Exception") {
     val df1 = Seq(
-      (null, 2),
-      (Array("2", "3"), 2)
+      (null, 2)
     ).toDF("set", "id")
 
     val df2 = Seq(
-      (Array("3", "3"), 1),
-      (Array("2", "4"), 1)
+      (Array("3", "3"), 1)
     ).toDF("set", "id")
 
-    println(toStringDataFrameMod(compareDataframe(df1, df2)))
+    println(compareValue(fromRow(df1.first), fromRow(df2.first)))
   }
 
-  test("two arrayType ") {
+  test("Add an ArrayType in an ArrayType") {
+
     val df1 = Seq(
-      (Array(Array("2", "1")), 2),
-      (Array(Array("2", "3"), Array("2", "2")), 2)
+      (Array(Array("2", "1")), 2)
     ).toDF("set", "id")
 
     val df2 = Seq(
-      (Array(Array("2", "1"), Array("2", "5")), 2),
-      (Array(Array("2", "4"), Array("2", "5")), 2)
+      (Array(Array("2", "1"), Array("2", "5")), 2)
     ).toDF("set", "id")
 
     /**
@@ -67,48 +53,44 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
       * in field set at index 0, WrappedArray(2, 4) was not equal to WrappedArray(2, 3)
       * in field set at index 1, WrappedArray(2, 5) was not equal to WrappedArray(2, 2)
       */
-    assert(compareDataframe(df1, df2).nonEmpty)
+
+    assert(compareValue(fromRow(df1.first), fromRow(df2.first)) ==
+      ArrayBuffer(ObjectModification(path"set/index1", AddValue(AtomicValue(mutable.WrappedArray.make(Array("2", "5")))))))
   }
 
-  test("A removeField modification should not have row modifications.") {
+  test("Remove a field") {
     val df1 = Seq(
-      (Array("2", "2"), 2, 2),
-      (Array("2", "3"), 2, 4)
+      (Array("2", "2"), 2, 2)
     ).toDF("set", "id", "id2")
 
     val df2 = Seq(
-      (Array("2", "2"), 2),
-      (Array("2", "3"), 2)
+      (Array("2", "2"), 2)
     ).toDF("set", "id")
 
-    println(toStringDataFrameMod(compareDataframe(df1, df2)))
-    assert(compareDataframe(df1, df2).forall(_.isEmpty))
+    assert(compareValue(fromRow(df1.first), fromRow(df2.first)) ==
+      ArrayBuffer(ObjectModification(path"id2",RemoveValue(AtomicValue(2)))))
   }
 
-  test("A addField modification should have row modifications.") {
+  test("Add a field") {
     val df1 = Seq(
-      (Array("2", "2"), 2),
-      (Array("2", "3"), 2)
+      (Array("2", "2"), 2)
     ).toDF("set", "id")
 
     val df2 = Seq(
-      (Array("2", "2"), 2, 4),
-      (Array("2", "3"), 2, 2)
+      (Array("2", "2"), 2, 4)
     ).toDF("set", "id", "id2")
 
-    println(toStringDataFrameMod(compareDataframe(df1, df2)))
-    assert(compareDataframe(df1, df2).nonEmpty)
+    assert(compareValue(fromRow(df1.first), fromRow(df2.first)) ==
+      ArrayBuffer(ObjectModification(path"id2",AddValue(AtomicValue(4)))))
   }
 
-  test("A changedFieldType modification with different row should have row modifications.") {
+  test("Change a field type") {
     val data1 = Seq(
-      Row("2"),
-      Row("5")
+      Row("1")
     )
 
     val data2 = Seq(
-      Row(1),
-      Row(5)
+      Row(1)
     )
 
     val df1 = ss.createDataFrame(
@@ -120,8 +102,8 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
       sc.parallelize(data2),
       StructType(List(StructField("number", IntegerType, nullable = false)))
     )
-    assertThrows[Exception] {
-      reportErrorDataframeComparison(df1, df2)
-    }
+
+    // Normal qu'il y ait une modification ?
+    println(compareValue(fromRow(df1.first), fromRow(df2.first)))
   }
 }

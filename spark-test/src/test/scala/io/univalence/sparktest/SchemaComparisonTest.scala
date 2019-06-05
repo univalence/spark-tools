@@ -9,7 +9,7 @@ import io.univalence.sparktest.DatatypeGen.ST
 import org.scalacheck.{ Arbitrary, Shrink }
 import org.scalatest.prop.PropertyChecks
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Success }
 
 object SchemaBuilder {
   def string: StringType                            = StringType
