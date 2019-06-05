@@ -9,7 +9,7 @@ title: "Home"
 
 Spark-tools is a set of tools dedicated to Spark and aims to make the life of data engineers easier.
 
-## Getting started with Spark Test
+## Getting started with Spark-test
 
 We recommend you to start using spark-tools with spark-test which is the most accessible tool.
 
@@ -25,12 +25,9 @@ libraryDependencies += "io.univalence" %% "spark-test" % "0.2+245-09a064d9" % Te
 
 For example, Spark-test provides a assertEquals function which compare two RDDs, Datasets or Dataframes returning an AssertionError if they are different.
 
-
 ```scala
 import io.univalence.sparktest.SparkTest
 import org.scalatest.FunSuiteLike
-
-
 
 class MyTestClass extends FunSuiteLike with SparkTest {
     test("some test"){
@@ -51,7 +48,7 @@ dataframe("{ a: 2 , b: false}")
 dataframe("{ a: 3 }")
 ```
 
-There are many other functionalities (To learn more about Spark-Test, see the [Spark-test documentation](./spark-test)).
+There are many other features. (To learn more about Spark-Test, see the [Spark-test documentation](./spark-test).)
 
 ## The tools
 
@@ -59,3 +56,4 @@ There are many other functionalities (To learn more about Spark-Test, see the [S
 * [Fenek](https://github.com/univalence/spark-tools/tree/master/fenek), a DSL for *semi-typed* transformation in Scala for Spark
 * [Plumbus](https://github.com/univalence/spark-tools/tree/master/plumbus), light misc things for Spark
 * [Spark-ZIO](https://github.com/univalence/spark-tools/tree/master/spark-zio), Spark in ZIO environment
+* [Spark-test](https://github.com/univalence/spark-tools/tree/master/spark-test), testing tools for Spark

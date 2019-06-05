@@ -6,7 +6,7 @@ title: "Getting started"
 
 # {{page.title}}
 
-[IN PROGRESS]
+\[IN PROGRESS]
 
 Import the library :
 ```scala
