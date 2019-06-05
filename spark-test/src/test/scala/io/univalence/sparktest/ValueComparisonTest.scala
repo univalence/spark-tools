@@ -22,7 +22,7 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
       (Array("2", "4"), 1)
     ).toDF("set", "id")
 
-    println(toStringDataframeModif(compareDataframe(df1, df2)))
+    println(toStringDataFrameMod(compareDataframe(df1, df2)))
 
     /*
       in field set at index 0, 3 was not equal to 2
@@ -47,7 +47,7 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
       (Array("2", "4"), 1)
     ).toDF("set", "id")
 
-    println(toStringDataframeModif(compareDataframe(df1, df2)))
+    println(toStringDataFrameMod(compareDataframe(df1, df2)))
   }
 
   test("two arrayType ") {
@@ -81,7 +81,7 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
       (Array("2", "3"), 2)
     ).toDF("set", "id")
 
-    println(toStringDataframeModif(compareDataframe(df1, df2)))
+    println(toStringDataFrameMod(compareDataframe(df1, df2)))
     assert(compareDataframe(df1, df2).forall(_.isEmpty))
   }
 
@@ -96,7 +96,7 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
       (Array("2", "3"), 2, 2)
     ).toDF("set", "id", "id2")
 
-    println(toStringDataframeModif(compareDataframe(df1, df2)))
+    println(toStringDataFrameMod(compareDataframe(df1, df2)))
     assert(compareDataframe(df1, df2).nonEmpty)
   }
 

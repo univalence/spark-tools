@@ -121,7 +121,6 @@ object Value {
     }
   }
 
-  // Move to SparkTest
   def compareDataframe(df1: DataFrame, df2: DataFrame): Seq[Seq[ObjectModification]] = {
     val schemaMods = SchemaComparison.compareSchema(df1.schema, df2.schema)
     if (schemaMods.nonEmpty) {
@@ -151,11 +150,6 @@ object Value {
     }
   }
 
-  def reportErrorDataframeComparison(df1: DataFrame, df2: DataFrame): Unit = {
-    val infos = compareDataframe(df1, df2).map(toStringRowModif)
-    throw new Exception(infos.take(10).mkString("\n\n"))
-  }
-
   /**
     * From https://github.com/MrPowers/spark-fast-tests/blob/master/src/main/scala/com/github/mrpowers/spark/fast/tests/SchemaComparer.scala
     */
@@ -174,7 +168,7 @@ object Value {
       }
     }
 
-  def toStringRowModif(modifications: Seq[ObjectModification]): String = {
+  def toStringRowMod(modifications: Seq[ObjectModification]): String = {
     def getPathWithIndex(path: Path): String =
       path.firstName + (if (path.toString.contains("/index")) " at index " + path.toString.split("/index").last else "")
 
@@ -194,13 +188,14 @@ object Value {
     modifications.map(stringMod).mkString("\n")
   }
 
-  // Move to SparkTest
-  def toStringDataframeModif(seqModifications: Seq[Seq[ObjectModification]]): String = {
-    val infos = for {
-      modifications <- seqModifications
-    } yield toStringRowModif(modifications)
+  def toStringDataFrameMod(seqModifications: Seq[Seq[ObjectModification]]): String = {
+    val diffs = seqModifications.map(toStringRowMod)
+    diffs.take(10).mkString("\n\n")
+  }
 
-    infos.take(10).mkString("\n\n")
+  def reportErrorDataframeComparison(df1: DataFrame, df2: DataFrame): Unit = {
+    val diffs = compareDataframe(df1, df2).map(toStringRowMod)
+    throw new Exception(diffs.take(10).mkString("\n\n"))
   }
 }
 
