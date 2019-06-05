@@ -152,15 +152,14 @@ object Path {
 
     val tokenize: String => Seq[Token] = unfold(_)(tokenOf)
 
-    val stringify: Token => String = {
-      case Dot               => "."
-      case Slash             => "/"
-      case NamePart(name)    => name
-      case ErrorToken(error) => error
-    }
-
     def stringify(tokens: Token*): String =
-      tokens.map(stringify).mkString
+      if (tokens.isEmpty) ""
+      else if (tokens.size == 1) tokens.head match {
+        case Dot               => "."
+        case Slash             => "/"
+        case NamePart(name)    => name
+        case ErrorToken(error) => error
+      } else tokens.map(x => stringify(x)).mkString
   }
 
   def highlightErrors(tokens: Token*): String =
@@ -212,7 +211,21 @@ object Path {
   }
 }
 
-case object Root extends PathOrRoot
+sealed trait IndexOrRoot
+
+case object Root extends PathOrRoot with IndexOrRoot
+
+sealed trait Index extends IndexOrRoot
+
+object Index {
+  case class FieldIndex(name: String with FieldName, parent: IndexOrRoot) extends Index
+  case class ArrayIndex(idx: Int, parent: Index) extends Index {
+    assert(idx > 0)
+  }
+  //case class ArrayLastElement(parent: Index) extends Index
+
+  def create(index: String): Try[Index] = ???
+}
 
 sealed trait Path extends PathOrRoot {
 
@@ -242,8 +255,10 @@ case class FieldPath(name: String with FieldPath.Name, parent: PathOrRoot) exten
   }
 }
 
+sealed trait FieldName
+
 object FieldPath {
-  sealed trait Name
+  type Name = FieldName
 
   def createName(string: String): Try[String with Name] = {
     val regExp = "^[a-zA-Z_][a-zA-Z0-9_]*$".r

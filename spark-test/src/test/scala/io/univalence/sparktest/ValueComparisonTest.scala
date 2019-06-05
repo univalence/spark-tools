@@ -2,8 +2,8 @@ package io.univalence.sparktest
 
 import Value._
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types.{ IntegerType, StringType, StructField, StructType }
+import org.apache.spark.sql.{ Row, SparkSession }
 import org.scalatest.FunSuiteLike
 
 class ValueComparisonTest extends FunSuiteLike with SparkTest {

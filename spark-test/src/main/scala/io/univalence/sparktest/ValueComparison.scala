@@ -1,10 +1,10 @@
 package io.univalence.sparktest
 
-import io.univalence.sparktest.SchemaComparison.{AddField, ChangeFieldType, RemoveField, SchemaModification}
-import io.univalence.typedpath.{ArrayPath, FieldPath, Path, PathOrRoot, Root}
-import org.apache.spark.sql.{DataFrame, Row}
+import io.univalence.sparktest.SchemaComparison.{ AddField, ChangeFieldType, RemoveField, SchemaModification }
+import io.univalence.typedpath.{ ArrayPath, FieldPath, Path, PathOrRoot, Root }
+import org.apache.spark.sql.{ DataFrame, Row }
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.types.{ArrayType, StructField, StructType}
+import org.apache.spark.sql.types.{ ArrayType, StructField, StructType }
 import org.apache.spark.sql.functions.lit
 
 import scala.util.Try
@@ -75,7 +75,7 @@ object Value {
 
         case (l, NullValue) => Seq(ObjectModification(prefix, RemoveValue(l)))
         case (NullValue, r) => Seq(ObjectModification(prefix, AddValue(r)))
-        case (l, r) => Seq(ObjectModification(prefix, ChangeValue(l, r))) // Not sure
+        case (l, r)         => Seq(ObjectModification(prefix, ChangeValue(l, r))) // Not sure
       }
 
       def compareAtomicValue(av1: AtomicValue, av2: AtomicValue, prefix: Path): Seq[ObjectModification] =
@@ -136,12 +136,13 @@ object Value {
       // Make it so that df1 has the same schema as df2 before comparing the two.
       else {
         val newDf = schemaMods.foldLeft(df1) {
-          case (df, sm) => sm match {
-            case SchemaModification(p, AddField(d))    => df.withColumn(p.firstName, lit(null).cast(d))
-            case SchemaModification(p, RemoveField(_)) => df.drop(p.firstName)
-            case SchemaModification(p, ChangeFieldType(_, to)) =>
-              df.withColumn(p.firstName, df.col(p.firstName).cast(to)) // ??? Que faire dans ce cas ?
-          }
+          case (df, sm) =>
+            sm match {
+              case SchemaModification(p, AddField(d))    => df.withColumn(p.firstName, lit(null).cast(d))
+              case SchemaModification(p, RemoveField(_)) => df.drop(p.firstName)
+              case SchemaModification(p, ChangeFieldType(_, to)) =>
+                df.withColumn(p.firstName, df.col(p.firstName).cast(to)) // ??? Que faire dans ce cas ?
+            }
         }
         compareEqualSchemaDataFrame(newDf, df2)
       }
