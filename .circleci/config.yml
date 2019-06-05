@@ -157,6 +157,14 @@ jobs:
     steps:
       - release_all
 
+  site:
+    <<: *environment
+    working_directory: ~/repo
+    steps:
+      - run:
+        name: Regenerate Web site
+        command: cat /dev/null | sbt publishMicrosite
+
 workflows:
   master:
     jobs:
@@ -168,3 +176,4 @@ workflows:
       - sparkzio: *only_master
       - sparktest: *only_master
       - release: *only_master
+      - site: *only_master
