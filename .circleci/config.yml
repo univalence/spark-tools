@@ -162,8 +162,8 @@ jobs:
     working_directory: ~/repo
     steps:
       - run:
-        name: Regenerate Web site
-        command: cat /dev/null | sbt publishMicrosite
+          name: Regenerate Web site
+          command: cat /dev/null | sbt publishMicrosite
 
 workflows:
   master:
