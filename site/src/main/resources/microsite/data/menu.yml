@@ -24,6 +24,14 @@ options:
     menu_section: spark-zio
     menu_type: spark-zio
 
+    ###########################
+    # Spark-ZIO Menu Options  #
+    ###########################
+  - title: Getting Started
+    url: spark-zio/getting_started
+    menu_type: spark-zio
+    menu_section: spark-zio-getting-started
+
   - title: TypedPath
     url: typedpath/
     menu_section: typedpath
