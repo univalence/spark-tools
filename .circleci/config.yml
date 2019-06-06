@@ -1,0 +1,16 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk
+    steps:
+      - run: echo "do nothing"
+
+workflows:
+  noop:
+    jobs:
+      - build:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
