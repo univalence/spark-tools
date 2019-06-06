@@ -1,7 +1,7 @@
 
 # Local setup
 
-You will need to install Jekyll, which a ruby framework that you can
+You will need to install Jekyll, which is a ruby framework that you can
 get by using `gem` (the Ruby dependency manager).
 To do so, you first need to install Ruby.
 On OSX platform, the default Ruby with download on incompatible version

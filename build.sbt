@@ -232,9 +232,9 @@ lazy val bintrayConfiguration =
 
 lazy val minisiteConfiguration =
   Def.settings(
-    micrositeName                 := "Spark tools",
-    micrositeDescription          := "Tools for Spark to simplify the life of data engineers",
-    micrositeAuthor               := "Spark tools contributors",
+    micrositeName                 := "Spark-Tools",
+    micrositeDescription          := "Spark-Tools: See the What to the Ouch",
+    micrositeAuthor               := "Spark-Tools contributors",
     micrositeOrganizationHomepage := "https://github.com/univalence/spark-tools",
     micrositeGitHostingUrl        := "https://github.com/univalence/spark-tools",
     micrositeGithubOwner          := "univalence",
@@ -247,7 +247,8 @@ lazy val minisiteConfiguration =
     micrositeFavicons := Seq(MicrositeFavicon("favicon16x16.png", "16x16"),
                              MicrositeFavicon("favicon32x32.png", "32x32"),
                              MicrositeFavicon("favicon64x64.png", "64x64")),
-    micrositeCssDirectory := (resourceDirectory in Compile).value / "microsite" / "css"
+    micrositeCssDirectory := (resourceDirectory in Compile).value / "microsite" / "css",
+    micrositeStaticDirectory := (resourceDirectory in Compile).value / "microsite" / ".circleci"
   )
 
 def addTestLibs: SettingsDefinition =

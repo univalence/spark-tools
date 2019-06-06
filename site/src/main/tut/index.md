@@ -7,15 +7,19 @@ title: "Home"
 
 # {{page.title}}
 
-Spark-tools is a set of tools dedicated to Spark and aims to make the life of data engineers easier.
+Spark-Tools is a set of tools dedicated to providing more clarity for data engineers when working on Spark jobs.
 
-## Getting started with Spark-test
+Our tools were created based on the usage of meta-data, which allows for greater visibility on code structures. This in turn provides more context when something breaks down and needs fixing.
 
-We recommend you to start using spark-tools with spark-test which is the most accessible tool.
+Imagine you're stumbling through your room in the dark and walk straight onto a piece of Lego; you curse, turn on the light and see that piece of Lego. Spark-Tools is that light: it won't stop the pain, but at least you know what hurt you.
 
-Here is an example from A to Z using spark-test :
+## Getting started with Spark-Test
 
-Include [Spark-test](./spark-test) to your project implementing these following lines inside your build sbt :
+Spark-Test is the tool that will improve your test reports.
+
+We recommend you to start using Spark-Tools with Spark-Test, because it's the most accessible tool. Here's an example of how to use Spark-Test from A to Z.
+
+Include [Spark-Test](./spark-test) in your project by implementing the following lines inside your build sbt:
 
 ```scala
 resolvers += "spark-test" at "http://dl.bintray.com/univalence/univalence-jvm"
@@ -23,7 +27,8 @@ resolvers += "spark-test" at "http://dl.bintray.com/univalence/univalence-jvm"
 libraryDependencies += "io.univalence" %% "spark-test" % "0.2+245-09a064d9" % Test
 ```
 
-For example, Spark-test provides a assertEquals function which compare two RDDs, Datasets or Dataframes returning an AssertionError if they are different.
+Spark-Test provides an `assertEquals` function which compares two RDDs, Datasets or Dataframes. It returns an `SparkTestError`
+if they are different.
 
 ```scala
 import io.univalence.sparktest.SparkTest
@@ -48,7 +53,7 @@ dataframe("{ a: 2 , b: false}")
 dataframe("{ a: 3 }")
 ```
 
-There are many other features. (To learn more about Spark-Test, see the [Spark-test documentation](./spark-test).)
+There are many other features! To learn more about Spark-Test, see the [Spark-Test documentation](./spark-test).)
 
 ## The tools
 
