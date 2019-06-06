@@ -122,11 +122,4 @@ class DataSetComparisonTest extends FunSuite with SparkTest {
 
     ds.assertEquals(seq)
   }
-
-  test("assertEquals (DS & List) : a DS and a List with the same content are equal") {
-    val l  = List(1, 2, 3)
-    val ds = l.toDF("id").as[Int]
-
-    ds.assertEquals(l)
-  }
 }

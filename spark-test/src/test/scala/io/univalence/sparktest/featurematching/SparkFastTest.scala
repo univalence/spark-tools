@@ -54,7 +54,7 @@ class SparkFastTest extends FunSuite with SparkTest {
 
     //assertSmallDataFrameEquality(sourceDF, expectedDF, orderedComparison = false) // equal
     //by default SparkTest doesn't check for ordering
-    sourceDF.assertEquals(expectedDF, checkRowOrder = false)
+    sourceDF.assertEquals(expectedDF)
   }
 
   test("ignore nullable flag equality") {
@@ -75,7 +75,7 @@ class SparkFastTest extends FunSuite with SparkTest {
 
     //assertSmallDatasetEquality(sourceDF, expectedDF, ignoreNullable = true) // OK
     //assertSmallDatasetEquality(sourceDF, expectedDF, ignoreNullable = false) // not equal
-    sourceDF.assertEquals(expectedDF, ignoreNullableFlag = true)
+    sourceDF.assertEquals(expectedDF)
   }
 
   test("approximate dataframe equality") {

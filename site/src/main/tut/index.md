@@ -53,7 +53,7 @@ dataframe("{ a: 2 , b: false}")
 dataframe("{ a: 3 }")
 ```
 
-There are many other features! To learn more about Spark-Test, see the [Spark-Test documentation](./spark-test).)
+There are many other features! To learn more about Spark-Test, see the [Spark-Test documentation](./spark-test).
 
 ## The tools
 

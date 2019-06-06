@@ -5,7 +5,7 @@ import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
 import io.univalence.sparktest.RowComparer._
-import io.univalence.sparktest.SchemaComparison.{ ChangeFieldType, RemoveField, SchemaModification }
+import io.univalence.sparktest.SchemaComparison.{ AddField, ChangeFieldType, RemoveField, SchemaModification }
 import io.univalence.sparktest.ValueComparison.{
   compareValue,
   fromRow,
@@ -18,11 +18,34 @@ import org.apache.spark.sql.types.StructType
 
 import scala.util.Try
 
+case class SparkTestConfiguration(failOnMissingOriginalCol: Boolean         = false,
+                                  failOnChangedDataTypeExpectedCol: Boolean = true,
+                                  failOnMissingExpectedCol: Boolean         = false)
+
 trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
+
+  private var configuration: SparkTestConfiguration = SparkTestConfiguration()
+
+  def withConfiguration(
+    failOnMissingOriginalCol: Boolean         = configuration.failOnMissingOriginalCol,
+    failOnChangedDataTypeExpectedCol: Boolean = configuration.failOnChangedDataTypeExpectedCol,
+    failOnMissingExpectedCol: Boolean         = configuration.failOnMissingExpectedCol
+  )(body: => Unit): Unit = {
+    val old = configuration
+    configuration = configuration.copy(
+      failOnMissingOriginalCol         = failOnMissingOriginalCol,
+      failOnChangedDataTypeExpectedCol = failOnChangedDataTypeExpectedCol,
+      failOnMissingExpectedCol         = failOnMissingExpectedCol
+    )
+    body
+    configuration = old
+  }
 
   lazy val ss: SparkSession = SparkTestSession.spark
 
   protected def _sqlContext: SQLContext = ss.sqlContext
+
+  trait SparkTestError extends Exception
 
   // ========================== DATASET ====================================
 
@@ -85,9 +108,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     def assertEquals(seq: Seq[T]): Unit =
       assertEquals(seq.toDS(), ignoreSchemaFlag = true)
 
-    def assertEquals(l: List[T]): Unit =
-      assertEquals(l.toDS(), ignoreSchemaFlag = true)
-
     def assertApproxEquals(otherDs: Dataset[T], approx: Double, ignoreNullableFlag: Boolean = false): Unit = {
       val rows1  = thisDs.toDF.collect()
       val rows2  = otherDs.toDF.collect()
@@ -115,39 +135,73 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   // ========================== DATAFRAME ====================================
 
+  case class SchemaError(modifications: Seq[SchemaModification]) extends Exception {
+    override def getMessage: String =
+      modifications.foldLeft("") {
+        case (msgs, error) =>
+          error match {
+            case SchemaModification(p, RemoveField(_)) =>
+              if (configuration.failOnMissingOriginalCol)
+                s"$msgs\nField ${p.firstName} was not in the expected DataFrame."
+              else msgs
+            case SchemaModification(p, ChangeFieldType(from, to)) =>
+              if (configuration.failOnChangedDataTypeExpectedCol)
+                s"$msgs\nField ${p.firstName} ($from) was not the same datatype as expected ($to)."
+              else msgs
+            case SchemaModification(p, AddField(_)) =>
+              if (configuration.failOnMissingExpectedCol)
+                s"$msgs\nField ${p.firstName} was not in the original DataFrame."
+              else msgs
+          }
+      }
+  }
+
   implicit class SparkTestDfOps(thisDf: DataFrame) {
     DatasetUtils.cacheIfNotCached(thisDf)
 
     /**
       * Delete columns that are not in otherDf, cast to the type of otherDf
+      *
       * @param otherDf
       * @return
       */
-    def reduceColumn(otherDf: DataFrame): DataFrame = {
+    def reduceColumn(otherDf: DataFrame): Try[(DataFrame, DataFrame)] = {
       val modifications = SchemaComparison.compareSchema(thisDf.schema, otherDf.schema)
-
-      if (modifications.nonEmpty) {
-        modifications.foldLeft(thisDf) {
-          case (df, sm) =>
+      Try(if (modifications.nonEmpty) {
+        modifications.foldLeft((thisDf, otherDf)) {
+          case ((df1, df2), sm) =>
             sm match {
-              case SchemaModification(p, RemoveField(_)) => df.drop(p.firstName)
+              case SchemaModification(p, RemoveField(_)) =>
+                if (!configuration.failOnMissingOriginalCol)
+                  (df1.drop(p.firstName), df2)
+                else throw SchemaError(modifications)
               case SchemaModification(p, ChangeFieldType(_, to)) =>
-                df.withColumn(p.firstName, df.col(p.firstName).cast(to))
-              case _ => df
+                if (!configuration.failOnChangedDataTypeExpectedCol)
+                  (df1.withColumn(p.firstName, df1.col(p.firstName).cast(to)), df2)
+                else throw SchemaError(modifications)
+              case SchemaModification(p, AddField(_)) =>
+                if (!configuration.failOnMissingExpectedCol)
+                  (df1, df2.drop(p.firstName))
+                else throw SchemaError(modifications)
             }
         }
       } else {
-        thisDf
+        (thisDf, otherDf)
+      })
+    }
+
+    def assertEquals(otherDf: DataFrame): Unit = {
+      // Compare Schema and try to reduce it
+      val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDf).get
+
+      if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
+        val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf)
+        thisDf.reportErrorComparison(otherDf, valueMods)
       }
     }
 
-    def assertEquals2(otherDf: DataFrame): Unit = {
-      val reducedThisDf  = thisDf.reduceColumn(otherDf)
-      val reducedOtherDf = otherDf.reduceColumn(reducedThisDf)
-
-      val modifications = reducedThisDf.getRowsDifferences(reducedOtherDf)
-      if (!modifications.forall(_.isEmpty)) thisDf.reportErrorComparison(otherDf, modifications)
-    }
+    def assertEquals[T: Encoder](seq: Seq[T]): Unit =
+      assertEquals(seq.toDF)
 
     def getRowsDifferences(otherDf: DataFrame): Seq[Seq[ObjectModification]] = {
       val rows1 = thisDf.collect()
@@ -176,27 +230,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
     }
 
-    def assertEquals(otherDf: DataFrame,
-                     checkRowOrder: Boolean      = false,
-                     ignoreNullableFlag: Boolean = false,
-                     ignoreSchemaFlag: Boolean   = false): Unit =
-      if (!ignoreSchemaFlag && SchemaComparison.compareSchema(thisDf.schema, otherDf.schema).nonEmpty) {
-        throw new AssertionError(
-          s"The data set schema is different\n${SparkTest.displayErrSchema(thisDf.schema, otherDf.schema)}"
-        )
-      } else if (checkRowOrder) {
-        if (!thisDf.collect().sameElements(otherDf.collect()))
-          throw new AssertionError(s"The data set content is different :\n${displayErr(thisDf, otherDf)}")
-      } else if (thisDf.except(otherDf).head(1).nonEmpty || otherDf.except(thisDf).head(1).nonEmpty) {
-        throw new AssertionError(s"The data set content is different :\n${displayErr(thisDf, otherDf)}")
-      }
-
-    def assertEquals[T: Encoder](seq: Seq[T]): Unit =
-      assertEquals(seq.toDF, ignoreSchemaFlag = true)
-
-    def assertEquals[T: Encoder](l: List[T]): Unit =
-      assertEquals(l.toDF, ignoreSchemaFlag = true)
-
     def assertColumnEquality(rightLabel: String, leftLabel: String): Unit =
       if (compareColumn(rightLabel, leftLabel))
         throw new AssertionError("Columns are different")
@@ -211,14 +244,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
           .collect()
 
       elements.exists(r => r(0) != r(1))
-    }
-
-    def displayErr(df: DataFrame, otherDf: DataFrame): String = {
-      val actual   = df.collect().toSeq
-      val expected = otherDf.collect().toSeq
-      val errors   = expected.zip(actual).filter(x => x._1 != x._2)
-
-      errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
     }
 
     /**
@@ -449,6 +474,7 @@ object SparkTest {
   trait ReadOps extends HasSparkSession {
 
     def dataframe(json: String*): DataFrame = {
+      assert(json.nonEmpty)
       val _ss = ss
       import _ss.implicits._
 
@@ -456,6 +482,16 @@ object SparkTest {
     }
 
     def dfFromJsonFile(path: String): DataFrame = ss.read.json(path)
+
+    def dataset[T](value: T*): Dataset[T] = {
+      assert(value.nonEmpty)
+      ???
+    }
+
+    def loadJson(filenames: String*): DataFrame = {
+      assert(filenames.nonEmpty)
+      ???
+    }
 
   }
 

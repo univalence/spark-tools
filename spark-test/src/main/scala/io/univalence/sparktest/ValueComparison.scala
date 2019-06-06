@@ -44,11 +44,11 @@ object ValueComparison {
             x.dataType match {
               case ArrayType(_: StructType, _) =>
                 (x.name, ArrayValue(g.getAs[Seq[Row]](x.name).map(fromRow): _*))
-              case st: StructType =>
+              case _: StructType =>
                 (x.name, fromRow(g.getAs[Row](x.name)))
-              case at: ArrayType =>
+              case _: ArrayType =>
                 (x.name, ArrayValue(g.getAs[Seq[Any]](x.name).map(termValue): _*))
-              case v =>
+              case _ =>
                 (x.name, termValue(g.getAs[Any](x.name)))
           }
         )
@@ -131,7 +131,7 @@ object ValueComparison {
   def toStringModifications(modifications: Seq[ObjectModification]): String = {
 
     def stringMod(mod: ObjectModification): String = {
-      val pwi = mod.index.toString
+      val pwi = mod.index.firstName.toString
       mod.valueModification match {
         case ChangeValue(AtomicValue(from), AtomicValue(to)) =>
           s"in value at $pwi, $to was diff to $from"
