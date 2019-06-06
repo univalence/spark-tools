@@ -2,7 +2,7 @@ package io.univalence.sparktest
 
 import ValueComparison._
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.types.{ ArrayType, IntegerType, StringType, StructField, StructType }
+import org.apache.spark.sql.types.{ IntegerType, StringType, StructField, StructType }
 import org.apache.spark.sql.{ Row, SparkSession }
 import org.scalatest.FunSuiteLike
 
@@ -22,19 +22,6 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
 
     val value = fromRow(df.first())
     assert(compareValue(value, value).isEmpty)
-  }
-
-  // TODO : Null Pointer Exception
-  ignore("Null Pointer Exception") {
-    val df1 = Seq(
-      (null, 2)
-    ).toDF("set", "id")
-
-    val df2 = Seq(
-      (Array("3", "3"), 1)
-    ).toDF("set", "id")
-
-    println(compareValue(fromRow(df1.first), fromRow(df2.first)))
   }
 
   test("Add an ArrayType in an ArrayType") {
@@ -112,5 +99,13 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
 
     // Normal qu'il y ait une modification ?
     println(compareValue(fromRow(df1.first), fromRow(df2.first)))
+  }
+
+  test("From null to a value should be an AddValue modification") {
+    val df1 = dataframe("{a: null, b: false}")
+    val df2 = dataframe("{a: 2}")
+    assert(compareValue(fromRow(df1.first), fromRow(df2.first)) ==
+      ArrayBuffer(ObjectModification(index"b",RemoveValue(AtomicValue(false))),
+        ObjectModification(index"a",AddValue(AtomicValue(2)))))
   }
 }
