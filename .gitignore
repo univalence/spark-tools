@@ -1,3 +1,4 @@
+.attach_pid*
 .DS_Store
 *.iml
 target/
