@@ -164,20 +164,17 @@ jobs:
       - checkout
       - restore_cache: *restore_cache_dependencies
       - run:
-          name: Update ubuntu and install Jekyll
+          name: buildSiteOrNot
           command: |
-            sudo apt-get update
-            sudo apt-get install -y ruby ruby-dev
-            sudo gem install jekyll
-      - run:
-          name: Configure Git user
-          command: |
-            git config --global user.name "Univalence"
-            git config --global user.email "${UNIVALENCE_EMAIL}"
-      - run:
-          name: Regenerate Web site
-          command: cat /dev/null | sbt publishMicrosite
-      - save_cache: *save_cache_dependencies
+            build() {
+              sudo apt-get update
+              sudo apt-get install -y ruby ruby-dev
+              sudo gem install jekyll
+              git config --global user.name "Univalence"
+              git config --global user.email "${UNIVALENCE_EMAIL}"
+              cat /dev/null | sbt publishMicrosite
+            }
+            .circleci/hasNotChanged build.sbt site && echo "skipping build" || build
 
 workflows:
   master:
