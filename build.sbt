@@ -157,7 +157,17 @@ lazy val site = project
     micrositeGithubOwner := "univalence",
     micrositeGithubRepo  := "spark-tools",
     micrositeBaseUrl     := "/spark-tools",
-    name                 := "spark-tools-site"
+    name                 := "spark-tools-site",
+    makeMicrosite := {
+      makeMicrosite.value
+      import java.nio.file._
+      Files.copy(Paths.get("site/src/main/resources/microsite/static/.circleci"),
+        Paths.get("site/target/site/.circleci")
+      )
+
+    }
+
+
   )
 
 lazy val sparkTest = (project in file("spark-test"))
@@ -247,8 +257,8 @@ lazy val minisiteConfiguration =
     micrositeFavicons := Seq(MicrositeFavicon("favicon16x16.png", "16x16"),
                              MicrositeFavicon("favicon32x32.png", "32x32"),
                              MicrositeFavicon("favicon64x64.png", "64x64")),
-    micrositeCssDirectory := (resourceDirectory in Compile).value / "microsite" / "css",
-    micrositeStaticDirectory := (resourceDirectory in Compile).value / "microsite" / ".circleci"
+    micrositeCssDirectory := (resourceDirectory in Compile).value / "microsite" / "css"
+    //, micrositeStaticDirectory := (resourceDirectory in Compile).value / "microsite" / ".circleci"
   )
 
 def addTestLibs: SettingsDefinition =
