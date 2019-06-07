@@ -38,7 +38,7 @@ class DataFrameComparisonTest extends FunSuite with SparkTest {
   test("should not assertEquals ordered between DF with different contents") {
     val dfUT       = Seq(1, 2, 3).toDF("id")
     val dfExpected = Seq(1, 3, 4).toDF("id")
-    dfUT.assertEquals(dfExpected)
+
     assertThrows[SparkTestError] {
       dfUT.assertEquals(dfExpected)
     }
