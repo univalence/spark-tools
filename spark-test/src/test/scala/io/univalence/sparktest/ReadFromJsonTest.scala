@@ -12,7 +12,7 @@ class ReadFromJsonTest extends FunSuite with SparkTest {
     //manage json option for jackson
     val df = dataframe("{a:1}", "{a:2}")
 
-    df.as[Long].assertEquals(Seq(1L, 2L))
+    //df.as[Long].assertEquals(Seq(1L, 2L))
 
     df.as[Long].assertContains(1, 2)
     df.as[Long].assertContains(1)

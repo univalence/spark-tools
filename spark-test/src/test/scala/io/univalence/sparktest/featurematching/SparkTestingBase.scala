@@ -62,7 +62,7 @@ class SparkTestingBase extends FunSuite with SparkTest {
     val input1 = sc.parallelize(List(1, 2, 3)).toDS
     val input2 = sc.parallelize(List(4, 5, 6)).toDS
 
-    intercept[AssertionError] {
+    intercept[SparkTestError] {
       input1 assertEquals input2 // not equal
     }
   }

@@ -6,7 +6,7 @@ import org.apache.spark.sql._
 import scala.reflect.ClassTag
 import io.univalence.sparktest.RowComparer._
 import io.univalence.sparktest.SchemaComparison.{AddField, ChangeFieldType, RemoveField, SchemaModification}
-import io.univalence.sparktest.ValueComparison.{ObjectModification, ValueModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
+import io.univalence.sparktest.ValueComparison.{ObjectModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
 import io.univalence.sparktest.internal.DatasetUtils
 import org.apache.spark.sql.types.StructType
 
@@ -106,7 +106,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def assertEquals[B](otherDs: Dataset[B],
+    /*def assertEquals[B](otherDs: Dataset[B],
                         checkRowOrder: Boolean      = false,
                         ignoreNullableFlag: Boolean = false,
                         ignoreSchemaFlag: Boolean   = false): Unit =
@@ -127,10 +127,25 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
             throw new AssertionError(s"The data set content is different :\n${displayErr(thisDs, otherDs)}")
           }
         }
+      }*/
+
+    def reduceColumn[B](otherDs: Dataset[B]): Try[(DataFrame, DataFrame)] = {
+      thisDs.toDF.reduceColumn(otherDs.toDF)
+    }
+
+
+    // TODO : Faire sans les toDF !
+    def assertEquals[B](otherDs: Dataset[B])(implicit encB: Encoder[B]): Unit = {
+      // Compare Schema and try to reduce it
+      val (reducedThisDf, reducedOtherDf) = thisDs.reduceColumn(otherDs).get
+      if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
+        val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf)
+        throw ValueError(valueMods, thisDs.toDF, otherDs.toDF)
       }
+    }
 
     def assertEquals(seq: Seq[T]): Unit =
-      assertEquals(seq.toDS(), ignoreSchemaFlag = true)
+      assertEquals(seq.toDS())
 
     def assertApproxEquals(otherDs: Dataset[T], approx: Double, ignoreNullableFlag: Boolean = false): Unit = {
       val rows1  = thisDs.toDF.collect()
@@ -147,13 +162,13 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def displayErr(df: Dataset[_], otherDf: Dataset[_]): String = {
+    /*def displayErr(df: Dataset[_], otherDf: Dataset[_]): String = {
       val actual   = df.collect().toSeq
       val expected = otherDf.collect().toSeq
       val errors   = expected.zip(actual).filter(x => x._1 != x._2)
 
       errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
-    }
+    }*/
 
   }
 
@@ -163,8 +178,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     DatasetUtils.cacheIfNotCached(thisDf)
 
     /**
-      * Delete columns that are not in otherDf, cast to the type of otherDf
-      *
+      * Depending on the configuration, try to modify the schema of the two DataFrames so that they can be compared.
+      * Throw a SchemaError otherwise.
       * @param otherDf
       * @return
       */
