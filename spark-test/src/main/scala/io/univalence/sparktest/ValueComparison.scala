@@ -134,7 +134,7 @@ object ValueComparison {
       val pwi = mod.index.firstName.toString
       mod.valueModification match {
         case ChangeValue(AtomicValue(from), AtomicValue(to)) =>
-          s"in value at $pwi, $to was diff to $from"
+          s"in value at $pwi, $to was not equal to $from"
         case AddValue(AtomicValue(value)) =>
           s"in value at $pwi, $value was added"
         case RemoveValue(AtomicValue(value)) =>

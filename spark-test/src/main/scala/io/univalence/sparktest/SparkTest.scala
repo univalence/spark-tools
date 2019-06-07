@@ -5,14 +5,8 @@ import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
 import io.univalence.sparktest.RowComparer._
-import io.univalence.sparktest.SchemaComparison.{ AddField, ChangeFieldType, RemoveField, SchemaModification }
-import io.univalence.sparktest.ValueComparison.{
-  compareValue,
-  fromRow,
-  toStringModifications,
-  toStringRowsMods,
-  ObjectModification
-}
+import io.univalence.sparktest.SchemaComparison.{AddField, ChangeFieldType, RemoveField, SchemaModification}
+import io.univalence.sparktest.ValueComparison.{ObjectModification, ValueModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
 import io.univalence.sparktest.internal.DatasetUtils
 import org.apache.spark.sql.types.StructType
 
@@ -20,7 +14,7 @@ import scala.util.Try
 
 case class SparkTestConfiguration(failOnMissingOriginalCol: Boolean         = false,
                                   failOnChangedDataTypeExpectedCol: Boolean = true,
-                                  failOnMissingExpectedCol: Boolean         = false)
+                                  failOnMissingExpectedCol: Boolean         = true)
 
 trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
@@ -46,6 +40,36 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   protected def _sqlContext: SQLContext = ss.sqlContext
 
   trait SparkTestError extends Exception
+
+  case class SchemaError(modifications: Seq[SchemaModification]) extends SparkTestError {
+    override def getMessage: String =
+      modifications.foldLeft("") {
+        case (msgs, error) =>
+          error match {
+            case SchemaModification(p, RemoveField(_)) =>
+              if (configuration.failOnMissingOriginalCol)
+                s"$msgs\nField ${p.firstName} was not in the expected DataFrame."
+              else msgs
+            case SchemaModification(p, ChangeFieldType(from, to)) =>
+              if (configuration.failOnChangedDataTypeExpectedCol)
+                s"$msgs\nField ${p.firstName} ($from) was not the same datatype as expected ($to)."
+              else msgs
+            case SchemaModification(p, AddField(_)) =>
+              if (configuration.failOnMissingExpectedCol)
+                s"$msgs\nField ${p.firstName} was not in the original DataFrame."
+              else msgs
+          }
+      }
+  }
+
+  case class ValueError(
+                         modifications: Seq[Seq[ObjectModification]],
+                         thisDf: DataFrame,
+                         otherDf: DataFrame) extends SparkTestError {
+    override def getMessage: String =
+      thisDf.reportErrorComparison(otherDf, modifications)
+
+  }
 
   // ========================== DATASET ====================================
 
@@ -135,27 +159,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   // ========================== DATAFRAME ====================================
 
-  case class SchemaError(modifications: Seq[SchemaModification]) extends Exception {
-    override def getMessage: String =
-      modifications.foldLeft("") {
-        case (msgs, error) =>
-          error match {
-            case SchemaModification(p, RemoveField(_)) =>
-              if (configuration.failOnMissingOriginalCol)
-                s"$msgs\nField ${p.firstName} was not in the expected DataFrame."
-              else msgs
-            case SchemaModification(p, ChangeFieldType(from, to)) =>
-              if (configuration.failOnChangedDataTypeExpectedCol)
-                s"$msgs\nField ${p.firstName} ($from) was not the same datatype as expected ($to)."
-              else msgs
-            case SchemaModification(p, AddField(_)) =>
-              if (configuration.failOnMissingExpectedCol)
-                s"$msgs\nField ${p.firstName} was not in the original DataFrame."
-              else msgs
-          }
-      }
-  }
-
   implicit class SparkTestDfOps(thisDf: DataFrame) {
     DatasetUtils.cacheIfNotCached(thisDf)
 
@@ -196,7 +199,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
       if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
         val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf)
-        thisDf.reportErrorComparison(otherDf, valueMods)
+        throw ValueError(valueMods, thisDf, otherDf)
       }
     }
 
@@ -213,7 +216,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def reportErrorComparison(otherDf: DataFrame, modifications: Seq[Seq[ObjectModification]]): Unit = {
+    def reportErrorComparison(otherDf: DataFrame, modifications: Seq[Seq[ObjectModification]]): String = {
       val rowsDF1 = thisDf.collect()
       val rowsDF2 = otherDf.collect()
 
@@ -226,8 +229,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         toStringModifications(diffs) ++ toStringRowsMods(diffs, rowsDF1(index), rowsDF2(index))
       }
 
-      throw new AssertionError(s"The data set content is different :\n\n${rows.take(10).mkString("\n\n")}\n")
-
+      s"The data set content is different :\n\n${rows.take(10).mkString("\n\n")}\n"
     }
 
     def assertColumnEquality(rightLabel: String, leftLabel: String): Unit =

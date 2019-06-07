@@ -2,13 +2,13 @@ package io.univalence.sparktest
 
 import org.scalatest.FunSuite
 
-class GettingStartedTest extends FunSuite with SparkTest{
+class GettingStartedTest extends FunSuite with SparkTest {
 
   test("some test"){
     val df1 = dataframe("{a:1, b:true}", "{a:2, b:false}")
     val df2 = dataframe("{a:1}", "{a:3}")
 
-    assertThrows[AssertionError] {
+    assertThrows[SparkTestError] {
       /*
       The data set content is different :
 

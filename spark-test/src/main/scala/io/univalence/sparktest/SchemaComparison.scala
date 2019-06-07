@@ -1,6 +1,5 @@
 package io.univalence.sparktest
 
-import io.univalence.sparktest.SchemaComparison.{AddField, ChangeFieldType, RemoveField, SchemaModification}
 import io.univalence.typedpath.{ArrayPath, FieldPath, Path, PathOrRoot, Root}
 import org.apache.spark.sql.types.{ArrayType, DataType, StructField, StructType}
 

@@ -10,6 +10,7 @@ class DataFrameComparisonTest extends FunSuite with SparkTest {
   val sharedSparkSession: SparkSession = ss
   val sc: SparkContext                 = ss.sparkContext
 
+  // TODO : unordered
   ignore("should assertEquals unordered between equal DF") {
     val dfUT       = Seq(1, 2, 3).toDF("id")
     val dfExpected = Seq(3, 2, 1).toDF("id")
@@ -17,14 +18,15 @@ class DataFrameComparisonTest extends FunSuite with SparkTest {
     dfUT.assertEquals(dfExpected)
   }
 
-  /*test("should not assertEquals unordered between DF with different contents") {
+  // TODO : unordered
+  ignore("should not assertEquals unordered between DF with different contents") {
     val dfUT       = Seq(1, 2, 3).toDF("id")
     val dfExpected = Seq(2, 1, 4).toDF("id")
 
-    assertThrows[AssertionError] {
+    assertThrows[SparkTestError] {
       dfUT.assertEquals(dfExpected)
     }
-  }*/
+  }
 
   test("should assertEquals ordered between equal DF") {
     val dfUT       = Seq(1, 2, 3).toDF("id")
@@ -36,23 +38,21 @@ class DataFrameComparisonTest extends FunSuite with SparkTest {
   test("should not assertEquals ordered between DF with different contents") {
     val dfUT       = Seq(1, 2, 3).toDF("id")
     val dfExpected = Seq(1, 3, 4).toDF("id")
-
-    assertThrows[AssertionError] {
+    dfUT.assertEquals(dfExpected)
+    assertThrows[SparkTestError] {
       dfUT.assertEquals(dfExpected)
     }
   }
 
-  ignore("should not assertEquals between DF with different schema") {
+  test("should not assertEquals between DF with different schema") {
     val dfUT       = Seq(1, 2, 3).toDF("id")
     val dfExpected = Seq(1, 2, 3).toDF("di")
 
-    //TODO : Build an ADT for Errors, AssertionError is too generic
-    assertThrows[AssertionError] {
+    assertThrows[SparkTestError] {
       dfUT.assertEquals(dfExpected)
     }
   }
 
-  // TODO : Add tests when not equal for comparisons with Seq, List
   ignore("assertEquals (DF & Seq) : a DF and a Seq with the same content are equal") {
     val seq = Seq(1, 2, 3)
     val df = ss.createDataFrame(
