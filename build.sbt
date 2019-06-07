@@ -157,17 +157,7 @@ lazy val site = project
     micrositeGithubOwner := "univalence",
     micrositeGithubRepo  := "spark-tools",
     micrositeBaseUrl     := "/spark-tools",
-    name                 := "spark-tools-site",
-    makeMicrosite := {
-      makeMicrosite.value
-      import java.nio.file._
-      Files.copy(Paths.get("site/src/main/resources/microsite/static/.circleci"),
-        Paths.get("site/target/site/.circleci")
-      )
-
-    }
-
-
+    name                 := "spark-tools-site"
   )
 
 lazy val sparkTest = (project in file("spark-test"))

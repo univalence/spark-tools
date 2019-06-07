@@ -172,6 +172,7 @@ jobs:
               sudo gem install jekyll
               git config --global user.name "Univalence"
               git config --global user.email "${UNIVALENCE_EMAIL}"
+              export SBT_GHPAGES_COMMIT_MESSAGE='publishing microSite [ci skip]'
               cat /dev/null | sbt publishMicrosite
             }
             .circleci/hasNotChanged build.sbt site && echo "skipping build" || build
