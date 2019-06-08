@@ -62,7 +62,8 @@ lazy val sparkTools = (project in file("."))
     description  := "Spark tools",
     startYear    := Option(2019),
     homepage     := Option(url("https://github.com/univalence/spark-tools")),
-    releaseEarly := {}
+    releaseEarly := {},
+    test         := {}
   )
 
 lazy val sparkZio = (project in file("spark-zio"))
@@ -164,7 +165,7 @@ lazy val sparkTest = (project in file("spark-test"))
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     name        := "spark-test",
-    description := "Spark Test are tools to easily make Spark tests",
+    description := "Spark Test are tools to easily make test using Spark",
     startYear   := Some(2019),
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/spark-test")),
     useSpark(sparkVersion = "2.1.1")(modules = "sql"),

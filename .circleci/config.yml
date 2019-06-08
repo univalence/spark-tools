@@ -20,7 +20,7 @@ aliases:
 
   - &update_dependencies
     name: "Update all the dependencies"
-    command: .circleci/hasNotChanged build.sbt && echo "SKIPPING DEPS UPDATE" || cat /dev/null | sbt coverage +update
+    command: .circleci/hasNotChanged build.sbt && echo "SKIPPING DEPS UPDATE" || cat /dev/null | sbt update +fenek/update +sparkTest/update
 
 
   - &save_cache_dependencies
