@@ -93,7 +93,7 @@ commands:
       - run:
           name: Deliver all projects to maven central
           command: |
-            cat /dev/null | sbt centrifuge/releaseEarly sparkZio/releaseEarly plumbus/releaseEarly typedpath/releaseEarly fenek/releaseEarly sparkTest/releaseEarly
+            cat /dev/null | sbt centrifuge/releaseEarly sparkZio/releaseEarly plumbus/releaseEarly +typedpath/releaseEarly fenek/releaseEarly +sparkTest/releaseEarly
 
 
 jobs:
