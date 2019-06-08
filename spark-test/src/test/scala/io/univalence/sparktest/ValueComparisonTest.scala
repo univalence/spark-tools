@@ -104,8 +104,10 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
   test("From null to a value should be an AddValue modification") {
     val df1 = dataframe("{a: null, b: false}")
     val df2 = dataframe("{a: 2}")
-    assert(compareValue(fromRow(df1.first), fromRow(df2.first)) ==
-      ArrayBuffer(ObjectModification(index"b",RemoveValue(AtomicValue(false))),
-        ObjectModification(index"a",AddValue(AtomicValue(2)))))
+    assert(
+      compareValue(fromRow(df1.first), fromRow(df2.first)) ==
+        ArrayBuffer(ObjectModification(index"b", RemoveValue(AtomicValue(false))),
+                    ObjectModification(index"a", AddValue(AtomicValue(2))))
+    )
   }
 }

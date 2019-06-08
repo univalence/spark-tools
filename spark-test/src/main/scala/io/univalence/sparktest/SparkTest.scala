@@ -5,8 +5,14 @@ import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
 import io.univalence.sparktest.RowComparer._
-import io.univalence.sparktest.SchemaComparison.{AddField, ChangeFieldType, RemoveField, SchemaModification}
-import io.univalence.sparktest.ValueComparison.{ObjectModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
+import io.univalence.sparktest.SchemaComparison.{ AddField, ChangeFieldType, RemoveField, SchemaModification }
+import io.univalence.sparktest.ValueComparison.{
+  compareValue,
+  fromRow,
+  toStringModifications,
+  toStringRowsMods,
+  ObjectModification
+}
 import io.univalence.sparktest.internal.DatasetUtils
 import org.apache.spark.sql.types.StructType
 
@@ -62,10 +68,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
   }
 
-  case class ValueError(
-                         modifications: Seq[Seq[ObjectModification]],
-                         thisDf: DataFrame,
-                         otherDf: DataFrame) extends SparkTestError {
+  case class ValueError(modifications: Seq[Seq[ObjectModification]], thisDf: DataFrame, otherDf: DataFrame)
+      extends SparkTestError {
     override def getMessage: String =
       thisDf.reportErrorComparison(otherDf, modifications)
 
@@ -129,10 +133,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         }
       }*/
 
-    def reduceColumn[B](otherDs: Dataset[B]): Try[(DataFrame, DataFrame)] = {
+    def reduceColumn[B](otherDs: Dataset[B]): Try[(DataFrame, DataFrame)] =
       thisDs.toDF.reduceColumn(otherDs.toDF)
-    }
-
 
     // TODO : Faire sans les toDF !
     def assertEquals[B](otherDs: Dataset[B])(implicit encB: Encoder[B]): Unit = {

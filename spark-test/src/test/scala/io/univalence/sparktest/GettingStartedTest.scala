@@ -4,7 +4,7 @@ import org.scalatest.FunSuite
 
 class GettingStartedTest extends FunSuite with SparkTest {
 
-  test("some test"){
+  test("some test") {
     val df1 = dataframe("{a:1, b:true}", "{a:2, b:false}")
     val df2 = dataframe("{a:1}", "{a:3}")
 
@@ -20,12 +20,12 @@ class GettingStartedTest extends FunSuite with SparkTest {
     }
   }
 
-  test("some test with custom configuration"){
+  test("some test with custom configuration") {
     val df1 = dataframe("{a:1, b:true}")
     val df2 = dataframe("{a:1, c:false}")
 
-    withConfiguration(failOnMissingExpectedCol = false, failOnMissingOriginalCol = false)({df1.assertEquals(df2)})
+    withConfiguration(failOnMissingExpectedCol = false, failOnMissingOriginalCol = false)({ df1.assertEquals(df2) })
   }
 }
 
-case class A(a:Int)
+case class A(a: Int)

@@ -1,9 +1,9 @@
 package io.univalence.sparktest
 
-import io.univalence.typedpath.{ArrayPath, FieldPath, Path, PathOrRoot, Root}
-import org.apache.spark.sql.types.{ArrayType, DataType, StructField, StructType}
+import io.univalence.typedpath.{ ArrayPath, FieldPath, Path, PathOrRoot, Root }
+import org.apache.spark.sql.types.{ ArrayType, DataType, StructField, StructType }
 
-import scala.util.{Failure, Try}
+import scala.util.{ Failure, Try }
 
 object SchemaComparison {
 
