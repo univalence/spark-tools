@@ -56,13 +56,14 @@ lazy val projectDescription =
 
 lazy val sparkTools = (project in file("."))
   .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio, site, sparkTest)
-  .settings(
-    name        := "spark-tools",
-    description := "Spark tools",
-    startYear   := Some(2019),
-    homepage    := Some(url("https://github.com/univalence/spark-tools"))
-  )
   .settings(projectDescription, defaultConfiguration)
+  .settings(
+    name         := "spark-tools",
+    description  := "Spark tools",
+    startYear    := Option(2019),
+    homepage     := Option(url("https://github.com/univalence/spark-tools")),
+    releaseEarly := {}
+  )
 
 lazy val sparkZio = (project in file("spark-zio"))
   .settings(
@@ -107,9 +108,10 @@ lazy val fenek = project
   .dependsOn(typedpath, sparkTest % "test -> compile")
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
-    description := "Fenek is for better mapping",
-    homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/fenek")),
-    startYear   := Some(2018),
+    description        := "Fenek is for better mapping",
+    homepage           := Some(url("https://github.com/univalence/spark-tools/tree/master/fenek")),
+    startYear          := Some(2018),
+    crossScalaVersions := List(libVersion.scala2_11),
     libraryDependencies ++= Seq("joda-time"  % "joda-time"      % libVersion.jodaTime,
                                 "org.json4s" %% "json4s-native" % libVersion.json4s),
     useSpark(libVersion.sparkScala211)("sql"),
@@ -122,27 +124,23 @@ lazy val plumbus =
     .settings(
       description := "Collection of tools for Scala Spark",
       homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/plumbus")),
-      startYear   := Some(2019)
-    )
-    .settings(
+      startYear   := Some(2019),
       useSpark(libVersion.sparkScala212)("sql"),
       libraryDependencies ++= Seq(
         "com.propensive"   %% "magnolia"        % libVersion.magnolia,
         "MrPowers"         % "spark-fast-tests" % "2.3.1_0.15.0" % Test,
         "com.github.scopt" %% "scopt"           % "3.7.1"
       ),
-      addTestLibs
+      addTestLibs,
+      resolvers += "Spark Packages Repo" at "http://dl.bintray.com/spark-packages/maven"
     )
-    .settings(resolvers += "Spark Packages Repo" at "http://dl.bintray.com/spark-packages/maven")
 
 lazy val typedpath = project
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     description := "Typedpath are for refined path",
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/typedpath")),
-    startYear   := Some(2019)
-  )
-  .settings(
+    startYear   := Some(2019),
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value
     ),
@@ -157,19 +155,18 @@ lazy val site = project
     micrositeGithubOwner := "univalence",
     micrositeGithubRepo  := "spark-tools",
     micrositeBaseUrl     := "/spark-tools",
-    name                 := "spark-tools-site"
+    name                 := "spark-tools-site",
+    releaseEarly         := {}
   )
 
 lazy val sparkTest = (project in file("spark-test"))
   .dependsOn(typedpath)
+  .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     name        := "spark-test",
     description := "Spark Test are tools to easily make Spark tests",
     startYear   := Some(2019),
-    homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/spark-test"))
-  )
-  .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
-  .settings(
+    homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/spark-test")),
     useSpark(sparkVersion = "2.1.1")(modules = "sql"),
     addTestLibs
   )
