@@ -1,5 +1,6 @@
 import ScalaSettings._
 import microsites.MicrositeFavicon
+import sbt.Keys.scalacOptions
 
 lazy val projectDescription =
   Def.settings(
@@ -79,7 +80,11 @@ lazy val sparkZio = (project in file("spark-zio"))
     addTestLibs,
     libraryDependencies ++= Seq(
       "org.scalaz" %% "scalaz-zio" % libVersion.zio
-    )
+    ),
+    scalacOptions += "-Yrangepos",
+    scalacOptions += "-Ywarn-unused",
+    addCompilerPlugin(scalafixSemanticdb),
+    scalafixDependencies in ThisBuild += "com.github.vovapolu" %% "scaluzzi" % "0.1.2"
   )
 
 lazy val centrifuge = project
