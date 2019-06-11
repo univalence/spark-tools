@@ -37,7 +37,7 @@ class MyTestClass extends FunSuiteLike with SparkTest {
 ```
 
 ## Comparing DataFrames
-To compare DataFrames, you can simply call the assertEquals method. It throws an AssertionException if they are not equal.
+To compare DataFrames, you can simply call the assertEquals method. It throws an SparkTestError if they are not equal.
 
 For instance, this:
 ```scala
@@ -48,10 +48,19 @@ dfUT.assertEquals(dfExpected)
 ```
 ... throws the following exception:
 ```
-java.lang.AssertionError: The data set content is different:
-[2] was not equal to [1]
-[1] was not equal to [2]
-[4] was not equal to [3]
+io.univalence.sparktest.SparkTest$ValueError: The data set content is different :
+
+in value at id, 2 was not equal to 1
+dataframe({id: 1})
+dataframe({id: 2})
+
+in value at id, 1 was not equal to 2
+dataframe({id: 2})
+dataframe({id: 1})
+
+in value at id, 4 was not equal to 3
+dataframe({id: 3})
+dataframe({id: 4})
 ```
 
 ## Testing with predicates

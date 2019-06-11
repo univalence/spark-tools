@@ -109,7 +109,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         )
       }
     }
-    
+
     def reduceColumn[B](otherDs: Dataset[B]): Try[(DataFrame, DataFrame)] =
       thisDs.toDF.reduceColumn(otherDs.toDF)
 
