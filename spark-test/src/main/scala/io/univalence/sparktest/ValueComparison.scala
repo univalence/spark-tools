@@ -125,6 +125,7 @@ object ValueComparison {
         modification <- modifications
       } yield modification
     }
+
     compareValue(v1, v2, Root)
   }
 
