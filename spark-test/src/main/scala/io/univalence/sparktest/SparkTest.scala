@@ -126,7 +126,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    private def reduceColumn[B](otherDs: Dataset[B]): Try[(DataFrame, DataFrame)] =
+    def reduceColumn[B](otherDs: Dataset[B]): Try[(DataFrame, DataFrame)] =
       thisDs.toDF.reduceColumn(otherDs.toDF)
 
     // TODO : Faire sans les toDF !
@@ -284,10 +284,10 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
 
       if (configuration.maxRowError > 0){
-        val rows = modifications.view.zipWithIndex.filter(_._1.nonEmpty).map(stringify(_)).take(configuration.maxRowError).mkString("\n\n")
+        val rows  = modifications.view.zipWithIndex.filter(_._1.nonEmpty).map(stringify).take(configuration.maxRowError).mkString("\n\n")
         s"The data set content is different :\n\n$rows\n"
-      }else{
-        val rows = modifications.zipWithIndex.filter(_._1.nonEmpty).map(stringify(_)).mkString("\n\n")
+      } else{
+        val rows = modifications.zipWithIndex.filter(_._1.nonEmpty).map(stringify).mkString("\n\n")
         s"The data set content is different :\n\n$rows\n"
       }
     }
@@ -332,6 +332,14 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         case (r1, r2) =>
           if (!areRowsEqual(r1, r2, approx))
             throw new AssertionError(s"$r1 was not equal approx to expected $r2, with a $approx approx")
+      }
+    }
+
+    def assertApproxEquals2(otherDF: DataFrame, approx: Double): Unit = {
+      val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDF).get
+      if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
+        val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf)
+        throw ValueError(valueMods, thisDf, otherDF)
       }
     }
 
