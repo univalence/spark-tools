@@ -61,7 +61,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   protected def _sqlContext: SQLContext = ss.sqlContext
 
-  trait SparkTestError extends Exception
+  sealed trait SparkTestError extends Exception
 
   case class SchemaError(modifications: Seq[SchemaModification]) extends SparkTestError {
     override lazy val getMessage: String =
@@ -126,7 +126,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def reduceColumn[B](otherDs: Dataset[B]): Try[(DataFrame, DataFrame)] =
+    private def reduceColumn[B](otherDs: Dataset[B]): Try[(DataFrame, DataFrame)] =
       thisDs.toDF.reduceColumn(otherDs.toDF)
 
     // TODO : Faire sans les toDF !
@@ -497,10 +497,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 }
 
 object SparkTest {
-
-  def setAllFieldsNullable(sc: StructType): StructType =
-    StructType(sc.map(sf => sf.copy(nullable = true)))
-
   //Comparaison de Row
   case class RowDiff(label: String, left: Any, right: Any) {
     assert(left != right)
@@ -511,29 +507,17 @@ object SparkTest {
 
   def modifyRow(r: Row, rowDiff: RowDiff): Try[Row] = ???
 
-  //Comparaison de schema
-
-  def compareSchema(sc1: StructType, sc2: StructType, ignoreNullableFlag: Boolean): Boolean =
-    if (ignoreNullableFlag) {
-      val newSc1 = setAllFieldsNullable(sc1)
-      val newSc2 = setAllFieldsNullable(sc2)
-      newSc1 != newSc2
-    } else {
-      sc1 != sc2
-    }
-
-  // TODO : To delete
   def displayErrSchema(actualSt: StructType, expectedSt: StructType): String = {
     val errors = expectedSt.zip(actualSt).filter(x => x._1 != x._2)
 
     errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
   }
 
-  trait HasSparkSession {
+  sealed trait HasSparkSession {
     def ss: SparkSession
   }
 
-  trait ReadOps extends HasSparkSession {
+  sealed trait ReadOps extends HasSparkSession {
 
     /**
       * Create a dataframe using a json
