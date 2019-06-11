@@ -67,6 +67,15 @@ lazy val sparkTools = (project in file("."))
     test         := {}
   )
 
+lazy val schema = (project in file("schema"))
+  .dependsOn(typedpath, sparkTest % "test -> compile")
+  .settings(
+    name        := "schema",
+    description := "Utilities to manipulate schema directly",
+    startYear   := Some(2018)
+  )
+  .settings(useSpark(sparkVersion = "2.4.0")(modules = "sql"), addTestLibs)
+
 lazy val sparkZio = (project in file("spark-zio"))
   .settings(
     name        := "spark-zio",
