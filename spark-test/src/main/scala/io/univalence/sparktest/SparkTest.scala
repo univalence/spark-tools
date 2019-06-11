@@ -64,7 +64,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   trait SparkTestError extends Exception
 
   case class SchemaError(modifications: Seq[SchemaModification]) extends SparkTestError {
-    override def getMessage: String =
+    override lazy val getMessage: String =
       modifications.foldLeft("") {
         case (msgs, error) =>
           error match {
@@ -86,8 +86,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   case class ValueError(modifications: Seq[Seq[ObjectModification]], thisDf: DataFrame, otherDf: DataFrame)
       extends SparkTestError {
-    override def getMessage: String =
-      thisDf.reportErrorComparison(otherDf, modifications)
+    override lazy val getMessage: String =
+      thisDf.reportErrorComparisonLight(otherDf, modifications)
 
   }
 
@@ -208,7 +208,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       */
     def assertEquals(otherDf: DataFrame): Unit = {
       val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDf).get
-
       if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
         val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf)
         throw ValueError(valueMods, thisDf, otherDf)
@@ -237,10 +236,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       val rows1 = thisDf.collect()
       val rows2 = otherDf.collect()
 
-      rows1.zipAll(rows2, null, null).foldLeft(Seq(): Seq[Seq[ObjectModification]]) {
-        case (acc, (curr1, curr2)) =>
-          acc :+ compareValue(fromRow(curr1), fromRow(curr2))
-      }
+      rows1.zipAll(rows2, null, null).view.map(r => compareValue(fromRow(r._1), fromRow(r._2)))
     }
 
     /**
@@ -287,8 +283,13 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         toStringModifications(diffs) ++ toStringRowsMods(diffs, rowsDF1(index), rowsDF2(index))
       }
 
-      val rows = modifications.zipWithIndex.filter(_._1.nonEmpty).map(stringify(_)).take(1).mkString("\n\n")
-      s"The data set content is different :\n\n$rows\n"
+      if (configuration.maxRowError > 0){
+        val rows = modifications.view.zipWithIndex.filter(_._1.nonEmpty).map(stringify(_)).take(configuration.maxRowError).mkString("\n\n")
+        s"The data set content is different :\n\n$rows\n"
+      }else{
+        val rows = modifications.zipWithIndex.filter(_._1.nonEmpty).map(stringify(_)).mkString("\n\n")
+        s"The data set content is different :\n\n$rows\n"
+      }
     }
 
     def assertColumnEquality(rightLabel: String, leftLabel: String): Unit =
@@ -557,14 +558,14 @@ object SparkTest {
 
     def dfFromJsonFile(path: String): DataFrame = ss.read.json(path)
 
-    def dataset[T](value: T*): Dataset[T] = {
+    def dataset[T: Encoder](value: T*): Dataset[T] = {
       assert(value.nonEmpty)
-      ???
+      ss.createDataset(value)
     }
 
     def loadJson(filenames: String*): DataFrame = {
       assert(filenames.nonEmpty)
-      ???
+      ss.read.json(filenames: _*)
     }
 
   }

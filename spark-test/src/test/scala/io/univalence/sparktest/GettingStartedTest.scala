@@ -26,6 +26,17 @@ class GettingStartedTest extends FunSuite with SparkTest {
 
     withConfiguration(failOnMissingExpectedCol = false, failOnMissingOriginalCol = false)({ df1.assertEquals(df2) })
   }
+
+  test("test view") {
+    val df1 = dataframe("{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}")
+    val df2 = dataframe("{a:1, b:false}", "{a:1, b:false}", "{a:1, b:false}", "{a:1, b:false}", "{a:1, b:false}", "{a:1, b:false}")
+
+    assertThrows[SparkTestError] {
+      withConfiguration(maxRowError = 2)({
+        df1.assertEquals(df2)
+      })
+    }
+  }
 }
 
 case class A(a: Int)

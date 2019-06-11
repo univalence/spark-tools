@@ -125,6 +125,7 @@ object ValueComparison {
         modification <- modifications
       } yield modification
     }
+
     compareValue(v1, v2, Root)
   }
 
@@ -156,8 +157,8 @@ object ValueComparison {
     * @return                 Stringified version of the sequence of modifications
     */
   def toStringRowsMods(modifications: Seq[ObjectModification], row1: Row, row2: Row): String = {
-    val stringifyRow1 = toStringRowMods(row1, modifications)
-    val stringifyRow2 = toStringRowMods(row2, modifications)
+    val stringifyRow1 = toStringRowMods(modifications, row1)
+    val stringifyRow2 = toStringRowMods(modifications, row2)
     s"\n$stringifyRow1\n$stringifyRow2"
   }
 
