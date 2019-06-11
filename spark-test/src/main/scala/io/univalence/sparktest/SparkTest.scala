@@ -20,22 +20,38 @@ import scala.util.Try
 
 case class SparkTestConfiguration(failOnMissingOriginalCol: Boolean         = false,
                                   failOnChangedDataTypeExpectedCol: Boolean = true,
-                                  failOnMissingExpectedCol: Boolean         = true)
+                                  failOnMissingExpectedCol: Boolean         = true,
+                                  maxRowError: Int                          = -1)
 
 trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   private var configuration: SparkTestConfiguration = SparkTestConfiguration()
 
+  /**
+    * You can wrapped your Spark-Test's function using a configuration to customise the behaviour of the function
+    * Each functions who can be modified using the configuration have the tag @configuration
+    *
+    * Example:
+    * withConfiguration(failOnMissingExpectedCol = false, failOnMissingOriginalCol = false)({ df1.assertEquals(df2) })
+    * result: ignore if there are any extra columns in df1 or df2
+    *
+    * failOnMissingOriginalCol: if true, Return an exception if a colonne appear in the original Dtaframe but not in the expected one
+    * failOnChangedDataTypeExpectedCol: if true, Return an exception if both colonne don't have the same DataType
+    * failOnMissingExpectedCol: if true, Return an exception if a colonne appear in the expected Dtaframe but not in the original one
+    * maxRowError: if > 0, print maxRowError's rows during the error handling else print every row's errors
+    */
   def withConfiguration(
     failOnMissingOriginalCol: Boolean         = configuration.failOnMissingOriginalCol,
     failOnChangedDataTypeExpectedCol: Boolean = configuration.failOnChangedDataTypeExpectedCol,
-    failOnMissingExpectedCol: Boolean         = configuration.failOnMissingExpectedCol
+    failOnMissingExpectedCol: Boolean         = configuration.failOnMissingExpectedCol,
+    maxRowError: Int                          = configuration.maxRowError
   )(body: => Unit): Unit = {
     val old = configuration
     configuration = configuration.copy(
       failOnMissingOriginalCol         = failOnMissingOriginalCol,
       failOnChangedDataTypeExpectedCol = failOnChangedDataTypeExpectedCol,
-      failOnMissingExpectedCol         = failOnMissingExpectedCol
+      failOnMissingExpectedCol         = failOnMissingExpectedCol,
+      maxRowError                      = maxRowError
     )
     body
     configuration = old
@@ -153,8 +169,10 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     /**
       * Depending on the configuration, try to modify the schema of the two DataFrames so that they can be compared.
       * Throw a SchemaError otherwise.
-      * @param otherDf
-      * @return
+      *
+      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol
+      * @param otherDf        DataFrame to compare to
+      * @return               Both reduced Dataframes
       */
     def reduceColumn(otherDf: DataFrame): Try[(DataFrame, DataFrame)] = {
       val modifications = SchemaComparison.compareSchema(thisDf.schema, otherDf.schema)
@@ -181,8 +199,14 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       })
     }
 
+    /**
+      * Verify if two Dataframes are equals, can be custom using the Spark-Test configuration
+      *
+      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol, maxRowError
+      * @param otherDf        DataFrame to compare to
+      * @return               An exception if both Dataframes are not equals
+      */
     def assertEquals(otherDf: DataFrame): Unit = {
-      // Compare Schema and try to reduce it
       val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDf).get
 
       if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
@@ -191,11 +215,24 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
+    /**
+      * Verify if if the Dataframe and the Sequence are equals, can be custom using the Spark-Test configuration
+      *
+      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol, maxRowError
+      * @param seq            Sequence to compare to
+      * @return               An exception if the Dataframe and the Sequence are not equals
+      */
     def assertEquals[T: Encoder](seq: Seq[T]): Unit = {
       val dfFromSeq = ss.createDataFrame(ss.sparkContext.parallelize(seq.map(Row(_))), thisDf.schema)
       assertEquals(dfFromSeq)
     }
 
+    /**
+      * Gives each modifications for each row between this Dataframe and otherDf
+      *
+      * @param otherDf          DataFrame to compare to
+      * @return                 Return the Sequence of modifications for each rows
+      */
     def getRowsDifferences(otherDf: DataFrame): Seq[Seq[ObjectModification]] = {
       val rows1 = thisDf.collect()
       val rows2 = otherDf.collect()
@@ -206,6 +243,14 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
+    /**
+      * Return a stringified version of the first modifications between this Dataframe and otherDf
+      * The number of showed modifications can be modified using the Spark-Test configuration's value: maxRowError
+      *
+      * @param otherDf          DataFrame to compare to
+      * @param modifications    Sequence of modifications for each rows
+      * @return                 Stringified version of modifications
+      */
     def reportErrorComparison(otherDf: DataFrame, modifications: Seq[Seq[ObjectModification]]): String = {
       val rowsDF1 = thisDf.collect()
       val rowsDF2 = otherDf.collect()
@@ -220,6 +265,30 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
 
       s"The data set content is different :\n\n${rows.take(10).mkString("\n\n")}\n"
+    }
+
+    // In progress
+    /**
+      * Return a stringified version of the first modifications between this Dataframe and otherDf
+      * The number of showed modifications can be modified using the Spark-Test configuration's value: maxRowError
+      *
+      * @configuration          maxRowError
+      * @param otherDf          DataFrame to compare to
+      * @param modifications    Sequence of modifications for each rows
+      * @return                 Stringified version of modifications
+      */
+    def reportErrorComparisonLight(otherDf: DataFrame, modifications: Seq[Seq[ObjectModification]]): String = {
+      val rowsDF1 = thisDf.collect()
+      val rowsDF2 = otherDf.collect()
+
+      def stringify(sequence: (Seq[ObjectModification], Int)): String = {
+        val diffs = sequence._1
+        val index = sequence._2
+        toStringModifications(diffs) ++ toStringRowsMods(diffs, rowsDF1(index), rowsDF2(index))
+      }
+
+      val rows = modifications.zipWithIndex.filter(_._1.nonEmpty).map(stringify(_)).take(1).mkString("\n\n")
+      s"The data set content is different :\n\n$rows\n"
     }
 
     def assertColumnEquality(rightLabel: String, leftLabel: String): Unit =
@@ -465,6 +534,19 @@ object SparkTest {
 
   trait ReadOps extends HasSparkSession {
 
+    /**
+      * Create a dataframe using a json
+      *
+      * Example:
+      * val df = dataframe("{a:1, b:true}", "{a:2, b:false}")
+      * | a |   b   |
+      * +---+-------+
+      * | 1 | true  |
+      * | 2 | false |
+      *
+      * @param json   json's agruments, each argument represent one line of our dataframe
+      * @return       a dataframe
+      */
     def dataframe(json: String*): DataFrame = {
       assert(json.nonEmpty)
       val _ss = ss

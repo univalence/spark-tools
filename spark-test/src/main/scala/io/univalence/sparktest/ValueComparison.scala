@@ -35,6 +35,12 @@ object ValueComparison {
     case _       => AtomicValue(a)
   }
 
+  /**
+    * Transform a row in an ObjectValue component
+    *
+    * @param r      the row to be converted
+    * @return       the ObjectValue's transposition of the row
+    */
   def fromRow(r: Row): ObjectValue =
     r match {
       case g: GenericRowWithSchema =>
@@ -56,8 +62,13 @@ object ValueComparison {
 
     }
 
+  //TODO find invariants
+  /**
+    * For each key k in left or right, return a resulting Seq that contains a tuple with the list of
+    * values for that key in left or right.
+    * See RDD's cogroup function for more information
+    */
   private def cogroup[K, A, B](left: Seq[A], right: Seq[B])(f1: A => K, f2: B => K): Seq[(K, (Seq[A], Seq[B]))] = {
-    //TODO find invariants
     val mappedLeft: Map[K, Seq[A]]  = left.groupBy(f1)
     val mappedRight: Map[K, Seq[B]] = right.groupBy(f2)
 
@@ -65,6 +76,13 @@ object ValueComparison {
     keys.map(key => (key, (mappedLeft.getOrElse(key, Seq.empty), mappedRight.getOrElse(key, Seq.empty))))
   }
 
+  /**
+    * Compare two ObjectValue together, see the function fromRow and ADT about values for more information
+    *
+    * @param v1     The original ObjectValue
+    * @param v2     The Expected ObjectValue
+    * @return       Sequence of ObjectModification between v1 and v2
+    */
   def compareValue(v1: ObjectValue, v2: ObjectValue): Seq[ObjectModification] = {
     def compareValue(v1: ObjectValue, v2: ObjectValue, prefix: IndexOrRoot): Seq[ObjectModification] = {
       def loop(v1: Value, v2: Value, prefix: Index): Seq[ObjectModification] = (v1, v2) match {
@@ -110,7 +128,14 @@ object ValueComparison {
     compareValue(v1, v2, Root)
   }
 
-  private def toStringRowMods(row: Row, modifications: Seq[ObjectModification]): String = {
+  /**
+    * Transform a row in String putting modification in first position
+    *
+    * @param modifications    Sequence of modifications from one row
+    * @param row              Row to stringify
+    * @return                 Stringified version of the row
+    */
+  private def toStringRowMods(modifications: Seq[ObjectModification], row: Row): String = {
     def toStringValue[A](value: A): String = value match {
       case values: mutable.WrappedArray[_] =>
         s"[${values.mkString(", ")}]"
@@ -122,12 +147,26 @@ object ValueComparison {
     s"dataframe({${(modifiedFields ++ otherFields).map(x => s"$x: ${toStringValue(row.getAs(x))}").mkString(", ")}})"
   }
 
+  /**
+    * Transform a both orginal and expected Dataframe's row in String
+    *
+    * @param modifications    Sequence of modifications from one row
+    * @param row1             Row from the original Dataframe
+    * @param row2             Row from the expected Dataframe
+    * @return                 Stringified version of the sequence of modifications
+    */
   def toStringRowsMods(modifications: Seq[ObjectModification], row1: Row, row2: Row): String = {
     val stringifyRow1 = toStringRowMods(row1, modifications)
     val stringifyRow2 = toStringRowMods(row2, modifications)
     s"\n$stringifyRow1\n$stringifyRow2"
   }
 
+  /**
+    * Transform a list of modification from one row in String
+    *
+    * @param modifications    Sequence of modifications from one row
+    * @return                 Stringified version of the sequence of modifications
+    */
   def toStringModifications(modifications: Seq[ObjectModification]): String = {
 
     def stringMod(mod: ObjectModification): String = {
