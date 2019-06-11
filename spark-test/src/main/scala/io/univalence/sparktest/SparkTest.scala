@@ -109,30 +109,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         )
       }
     }
-
-    /*def assertEquals[B](otherDs: Dataset[B],
-                        checkRowOrder: Boolean      = false,
-                        ignoreNullableFlag: Boolean = false,
-                        ignoreSchemaFlag: Boolean   = false): Unit =
-      if (!ignoreSchemaFlag && SchemaComparison.compareSchema(thisDs.schema, otherDs.schema).nonEmpty)
-        throw new AssertionError(
-          s"The data set schema is different :\n${SparkTest.displayErrSchema(thisDs.schema, otherDs.schema)}"
-        )
-      else {
-        if (checkRowOrder) {
-          if (!thisDs.collect().sameElements(otherDs.collect())) {
-            throw new AssertionError(s"The data set content is different :\n${displayErr(thisDs, otherDs)}")
-          }
-        } else {
-          if (otherDs.toDF
-                .except(thisDs.toDF)
-                .head(1)
-                .nonEmpty || thisDs.toDF.except(otherDs.toDF).head(1).nonEmpty) { // if sparkSQL => anti join ?
-            throw new AssertionError(s"The data set content is different :\n${displayErr(thisDs, otherDs)}")
-          }
-        }
-      }*/
-
+    
     def reduceColumn[B](otherDs: Dataset[B]): Try[(DataFrame, DataFrame)] =
       thisDs.toDF.reduceColumn(otherDs.toDF)
 
@@ -140,14 +117,17 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     def assertEquals[B](otherDs: Dataset[B])(implicit encB: Encoder[B]): Unit = {
       // Compare Schema and try to reduce it
       val (reducedThisDf, reducedOtherDf) = thisDs.reduceColumn(otherDs).get
+
       if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
         val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf)
         throw ValueError(valueMods, thisDs.toDF, otherDs.toDF)
       }
     }
 
-    def assertEquals(seq: Seq[T]): Unit =
-      assertEquals(seq.toDS())
+    def assertEquals(seq: Seq[T]): Unit = {
+      val dfFromSeq = ss.createDataFrame(ss.sparkContext.parallelize(seq.map(Row(_))), thisDs.schema)
+      assertEquals(dfFromSeq.as[T])
+    }
 
     def assertApproxEquals(otherDs: Dataset[T], approx: Double, ignoreNullableFlag: Boolean = false): Unit = {
       val rows1  = thisDs.toDF.collect()
@@ -163,15 +143,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
             throw new AssertionError(s"$r1 was not equal approx to expected $r2, with a $approx approx")
       }
     }
-
-    /*def displayErr(df: Dataset[_], otherDf: Dataset[_]): String = {
-      val actual   = df.collect().toSeq
-      val expected = otherDf.collect().toSeq
-      val errors   = expected.zip(actual).filter(x => x._1 != x._2)
-
-      errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
-    }*/
-
   }
 
   // ========================== DATAFRAME ====================================
@@ -220,8 +191,10 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def assertEquals[T: Encoder](seq: Seq[T]): Unit =
-      assertEquals(seq.toDF)
+    def assertEquals[T: Encoder](seq: Seq[T]): Unit = {
+      val dfFromSeq = ss.createDataFrame(ss.sparkContext.parallelize(seq.map(Row(_))), thisDf.schema)
+      assertEquals(dfFromSeq)
+    }
 
     def getRowsDifferences(otherDf: DataFrame): Seq[Seq[ObjectModification]] = {
       val rows1 = thisDf.collect()

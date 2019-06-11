@@ -118,10 +118,21 @@ class DataSetComparisonTest extends FunSuite with SparkTest {
   }
 
   // TODO : Add tests when not equal for comparisons with Seq
-  ignore("assertEquals (DS & Seq) : a DS and a Seq with the same content are equal") {
+  test("assertEquals (DS & Seq) : a DS and a Seq with the same content are equal") {
     val seq = Seq(1, 2, 3)
     val ds  = seq.toDF("id").as[Int]
 
     ds.assertEquals(seq)
+  }
+
+  test("assertEquals (DS & Seq) : a DS and a Seq with different content are not equal") {
+    val seq = Seq(1, 2, 3)
+    val ds  = seq.toDF("id").as[Int]
+
+    val seqEx = Seq(1, 3, 3)
+
+    assertThrows[SparkTestError] {
+      ds.assertEquals(seqEx)
+    }
   }
 }

@@ -53,7 +53,7 @@ class DataFrameComparisonTest extends FunSuite with SparkTest {
     }
   }
 
-  ignore("assertEquals (DF & Seq) : a DF and a Seq with the same content are equal") {
+  test("assertEquals (DF & Seq) : a DF and a Seq with the same content are equal") {
     val seq = Seq(1, 2, 3)
     val df = ss.createDataFrame(
       sc.parallelize(seq.map(Row(_))),
@@ -61,6 +61,15 @@ class DataFrameComparisonTest extends FunSuite with SparkTest {
     )
 
     df.assertEquals(seq)
+  }
+
+  test("assertEquals (DF & Seq) : a DF and a Seq with different content are not equal") {
+    val df = Seq(1, 3, 3).toDF("number")
+    val seqEx = Seq(1, 2, 3)
+
+    assertThrows[SparkTestError] {
+      df.assertEquals(seqEx)
+    }
   }
 
   /*test("assertEquals (DF & Map) : a DF and a Map with the same content are equal") {
