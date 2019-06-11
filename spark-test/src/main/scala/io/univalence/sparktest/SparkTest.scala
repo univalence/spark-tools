@@ -64,7 +64,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   trait SparkTestError extends Exception
 
   case class SchemaError(modifications: Seq[SchemaModification]) extends SparkTestError {
-    override def getMessage: String =
+    override lazy val getMessage: String =
       modifications.foldLeft("") {
         case (msgs, error) =>
           error match {
@@ -86,7 +86,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   case class ValueError(modifications: Seq[Seq[ObjectModification]], thisDf: DataFrame, otherDf: DataFrame)
       extends SparkTestError {
-    override def getMessage: String =
+    override lazy val getMessage: String =
       thisDf.reportErrorComparisonLight(otherDf, modifications)
 
   }
