@@ -565,7 +565,7 @@ object SparkTest {
 
     def loadJson(filenames: String*): DataFrame = {
       assert(filenames.nonEmpty)
-      ???
+      ss.read.json(filenames: _*)
     }
 
   }
