@@ -557,9 +557,9 @@ object SparkTest {
 
     def dfFromJsonFile(path: String): DataFrame = ss.read.json(path)
 
-    def dataset[T](value: T*): Dataset[T] = {
+    def dataset[T: Encoder](value: T*): Dataset[T] = {
       assert(value.nonEmpty)
-      ???
+      ss.createDataset(value)
     }
 
     def loadJson(filenames: String*): DataFrame = {
