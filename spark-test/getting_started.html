@@ -28,7 +28,7 @@
 </code></pre></div></div>
 
 <h2 id="comparing-dataframes">Comparing DataFrames</h2>
-<p>To compare DataFrames, you can simply call the assertEquals method. It throws an AssertionException if they are not equal.</p>
+<p>To compare DataFrames, you can simply call the assertEquals method. It throws an SparkTestError if they are not equal.</p>
 
 <p>For instance, this:</p>
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">val</span> <span class="n">dfUT</span>       <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">).</span><span class="n">toDF</span><span class="o">(</span><span class="s">"id"</span><span class="o">)</span>
@@ -37,10 +37,19 @@
 <span class="n">dfUT</span><span class="o">.</span><span class="n">assertEquals</span><span class="o">(</span><span class="n">dfExpected</span><span class="o">)</span>
 </code></pre></div></div>
 <p>… throws the following exception:</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>java.lang.AssertionError: The data set content is different:
-[2] was not equal to [1]
-[1] was not equal to [2]
-[4] was not equal to [3]
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>io.univalence.sparktest.SparkTest$ValueError: The data set content is different :
+
+in value at id, 2 was not equal to 1
+dataframe({id: 1})
+dataframe({id: 2})
+
+in value at id, 1 was not equal to 2
+dataframe({id: 2})
+dataframe({id: 1})
+
+in value at id, 4 was not equal to 3
+dataframe({id: 3})
+dataframe({id: 4})
 </code></pre></div></div>
 
 <h2 id="testing-with-predicates">Testing with predicates</h2>
