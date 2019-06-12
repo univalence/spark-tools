@@ -139,19 +139,25 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       assertEquals(dfFromSeq.as[T])
     }
 
-    def assertApproxEquals(otherDs: Dataset[T], approx: Double, ignoreNullableFlag: Boolean = false): Unit = {
-      val rows1  = thisDs.toDF.collect()
-      val rows2  = otherDs.toDF.collect()
-      val zipped = rows1.zip(rows2)
-      if (SchemaComparison.compareSchema(thisDs.schema, otherDs.schema).nonEmpty)
-        throw new AssertionError(
-          s"The data set schema is different:\n${SparkTest.displayErrSchema(thisDs.schema, otherDs.schema)}"
-        )
-      zipped.foreach {
-        case (r1, r2) =>
-          if (!areRowsEqual(r1, r2, approx))
-            throw new AssertionError(s"$r1 was not equal approx to expected $r2, with a $approx approx")
-      }
+    def assertApproxEquals(otherDs: Dataset[T], approx: Double): Unit = {
+      val (reducedThisDs, reducedOtherDs) = thisDs.reduceColumn(otherDs).get
+
+      val rows1  = reducedThisDs.collect()
+      val rows2  = reducedOtherDs.collect()
+
+      val valueMods: Seq[Seq[ObjectModification]] =
+        rows1
+          .zipAll(rows2, null, null)
+          .view
+          .filter {
+            case (r1, r2) =>
+              if (!areRowsEqual(r1, r2, approx)) true
+              else false
+            case _ => true
+          }
+          .map(r => compareValue(fromRow(r._1), fromRow(r._2)))
+
+      if (valueMods.nonEmpty) throw ValueError(valueMods, reducedThisDs, reducedOtherDs)
     }
   }
 

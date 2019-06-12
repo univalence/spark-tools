@@ -79,7 +79,7 @@ class SparkTestingBase extends FunSuite with SparkTest {
     val input1 = sc.parallelize(List[(Int, Double)]((1, 1.1), (2, 2.2), (3, 3.3))).toDS
     val input2 = sc.parallelize(List[(Int, Double)]((1, 1.2), (2, 2.3), (3, 3.4))).toDS
 
-    intercept[AssertionError] {
+    intercept[SparkTestError] {
       input1.assertApproxEquals(input2, 0.05)
     }
 
