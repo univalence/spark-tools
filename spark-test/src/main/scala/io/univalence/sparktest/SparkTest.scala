@@ -519,12 +519,6 @@ object SparkTest {
 
   def modifyRow(r: Row, rowDiff: RowDiff): Try[Row] = ???
 
-  def displayErrSchema(actualSt: StructType, expectedSt: StructType): String = {
-    val errors = expectedSt.zip(actualSt).filter(x => x._1 != x._2)
-
-    errors.map(diff => s"${diff._1} was not equal to ${diff._2}").mkString("\n")
-  }
-
   sealed trait HasSparkSession {
     def ss: SparkSession
   }
