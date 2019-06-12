@@ -5,14 +5,8 @@ import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
 import io.univalence.sparktest.RowComparer._
-import io.univalence.sparktest.SchemaComparison.{ AddField, ChangeFieldType, RemoveField, SchemaModification }
-import io.univalence.sparktest.ValueComparison.{
-  compareValue,
-  fromRow,
-  toStringModifications,
-  toStringRowsMods,
-  ObjectModification
-}
+import io.univalence.sparktest.SchemaComparison.{AddField, ChangeFieldType, RemoveField, SchemaModification}
+import io.univalence.sparktest.ValueComparison.{ChangeValue, ObjectModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
 import io.univalence.sparktest.internal.DatasetUtils
 import org.apache.spark.sql.types.StructType
 
@@ -284,10 +278,19 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
 
       if (configuration.maxRowError > 0){
-        val rows  = modifications.view.zipWithIndex.filter(_._1.nonEmpty).map(stringify).take(configuration.maxRowError).mkString("\n\n")
+        val rows = modifications
+          .view
+          .zipWithIndex
+          .filter(_._1.nonEmpty)
+          .map(stringify)
+          .take(configuration.maxRowError).mkString("\n\n")
         s"The data set content is different :\n\n$rows\n"
-      } else{
-        val rows = modifications.zipWithIndex.filter(_._1.nonEmpty).map(stringify).mkString("\n\n")
+      } else {
+        val rows = modifications
+          .zipWithIndex
+          .filter(_._1.nonEmpty)
+          .map(stringify)
+          .mkString("\n\n")
         s"The data set content is different :\n\n$rows\n"
       }
     }
@@ -313,34 +316,29 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * If the DataFrames match the instances of Double, Float, or Timestamp, 'approx' will be used to compare an
       * approximate equality of the two DFs.
       *
-      * @param otherDf            DataFrame to compare to
+      * @param otherDF            DataFrame to compare to
       * @param approx             double for the approximate comparison. If the absolute value of the difference between
       *                           two values is less than approx, then the two values are considered equal.
-      * @param ignoreNullableFlag flag to decide if nullable is ignored or not
       */
-    def assertApproxEquals(otherDf: DataFrame, approx: Double, ignoreNullableFlag: Boolean = false): Unit = {
-      val rows1  = thisDf.collect()
-      val rows2  = otherDf.collect()
-      val zipped = rows1.zip(rows2)
-      if (SchemaComparison
-            .compareSchema(thisDf.schema, otherDf.schema)
-            .nonEmpty) //(SparkTest.compareSchema(thisDf.schema, otherDf.schema, ignoreNullableFlag))
-        throw new AssertionError(
-          s"The data set schema is different\n${SparkTest.displayErrSchema(thisDf.schema, otherDf.schema)}"
-        )
-      zipped.foreach {
-        case (r1, r2) =>
-          if (!areRowsEqual(r1, r2, approx))
-            throw new AssertionError(s"$r1 was not equal approx to expected $r2, with a $approx approx")
-      }
-    }
-
-    def assertApproxEquals2(otherDF: DataFrame, approx: Double): Unit = {
+    def assertApproxEquals(otherDF: DataFrame, approx: Double): Unit = {
       val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDF).get
-      if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
-        val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf)
-        throw ValueError(valueMods, thisDf, otherDF)
-      }
+
+      val rows1  = reducedThisDf.collect()
+      val rows2  = reducedOtherDf.collect()
+
+      val valueMods: Seq[Seq[ObjectModification]] =
+        rows1
+          .zipAll(rows2, null, null)
+          .view
+          .filter {
+            case (r1, r2) =>
+              if (!areRowsEqual(r1, r2, approx)) true
+              else false
+            case _ => true
+          }
+          .map(r => compareValue(fromRow(r._1), fromRow(r._2)))
+
+      if (valueMods.nonEmpty) throw ValueError(valueMods, reducedThisDf, reducedOtherDf)
     }
 
     /**
