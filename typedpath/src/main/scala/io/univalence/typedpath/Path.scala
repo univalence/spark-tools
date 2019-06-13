@@ -57,10 +57,10 @@ object PathMacro {
               //improve checks on name
               reify(FieldPath(lit(name).splice, parent.splice).get)
             case (parent, Path.Dot) => parent
-            case (parent, Path.Slash) if c.typecheck(parent.tree).tpe <:< typeOf[Path] =>
+            case (parent, Path.Brackets) if c.typecheck(parent.tree).tpe <:< typeOf[Path] =>
               reify(ArrayPath(parent.splice.asInstanceOf[Path]))
 
-            case (parent, Path.Slash) =>
+            case (parent, Path.Brackets) =>
               c.abort(
                 c.enclosingPosition,
                 s"${Option(parent.actualType).getOrElse("")} can't create array from root : ${parent.tree} $string"
@@ -109,7 +109,7 @@ object Path {
 
   sealed trait ValidToken extends Token
   case object Dot extends ValidToken // "."
-  case object Slash extends ValidToken //  "/"
+  case object Brackets extends ValidToken
   case class NamePart(name: String) extends ValidToken // "[a-zA-Z0-9_]+"
   case class ErrorToken(part: String) extends Token
 
@@ -128,7 +128,7 @@ object Path {
       }
 
       val Dot   = StartWithChar('.')
-      val Slash = StartWithChar('/')
+      val Brackets = StartWithPattern("\\[\\]")
       val Name  = StartWithPattern("\\w+")
       val Error = StartWithPattern("[^\\w/.]+")
     }
@@ -136,7 +136,7 @@ object Path {
     val tokenOf: String => Option[(Token, String)] = {
       case ""                         => None
       case Pattern.Dot(rest)          => Some((Dot, rest))
-      case Pattern.Slash(rest)        => Some((Slash, rest))
+      case Pattern.Brackets(_, rest)  => Some((Brackets, rest))
       case Pattern.Name(name, rest)   => Some((NamePart(name), rest))
       case Pattern.Error(error, rest) => Some((ErrorToken(error), rest))
       case error                      => Some((ErrorToken(error), ""))
@@ -158,7 +158,7 @@ object Path {
       if (tokens.isEmpty) ""
       else if (tokens.size == 1) tokens.head match {
         case Dot               => "."
-        case Slash             => "/"
+        case Brackets           => "[]"
         case NamePart(name)    => name
         case ErrorToken(error) => error
       } else tokens.map(x => stringify(x)).mkString
@@ -201,7 +201,7 @@ object Path {
       validToken.foldLeft[Try[PathOrRoot]](Try(Root))({
         case (parent, NamePart(name)) => parent.flatMap(FieldPath(name, _))
         case (parent, Dot)            => parent //Meh c'est un peu étrange, mais par construction
-        case (parent, Slash) =>
+        case (parent, Brackets) =>
           parent.flatMap({
             case n: Path => Try(ArrayPath(n))
             case _       => Failure(new Exception(s"cannot create an array at the root $string"))
@@ -324,5 +324,5 @@ object FieldPath {
 }
 
 case class ArrayPath(parent: Path) extends Path {
-  override def toString: String = s"$parent/"
+  override def toString: String = s"$parent[]"
 }

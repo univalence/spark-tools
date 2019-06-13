@@ -10,17 +10,17 @@ class PathSpec extends FunSuite {
 
   test("tokenize") {
 
-    assert(Token.tokenize("abc/def") == Seq(NamePart("abc"), Slash, NamePart("def")))
+    assert(Token.tokenize("abc[].def") == Seq(NamePart("abc"), Brackets, Dot, NamePart("def")))
 
     assert(
-      Token.tokenize("$abc/def") ==
-        Seq(ErrorToken("$"), NamePart("abc"), Slash, NamePart("def"))
+      Token.tokenize("$abc[].def") ==
+        Seq(ErrorToken("$"), NamePart("abc"), Brackets, Dot, NamePart("def"))
     )
 
   }
 
   test("create error") {
-    val f = Path.create("$abc/(edf").asInstanceOf[Failure[_]]
+    val f = Path.create("$abc[].(edf").asInstanceOf[Failure[_]]
     assert(f.exception.getMessage.contains("[$]"))
     assert(f.exception.getMessage.contains("[(]"))
 
@@ -60,12 +60,12 @@ class PathSpec extends FunSuite {
     assert(ghi.parent == abc)
 
     val lol: FieldPath  = path"lol" //
-    val comp: FieldPath = path"$abc/$lol"
+    val comp: FieldPath = path"$abc[].$lol"
 
     assert(comp.name == "lol")
     assert(comp.parent == ArrayPath(abc))
 
-    val comp2: ArrayPath = path"$comp/"
+    val comp2: ArrayPath = path"$comp[]"
 
     assert(comp2.parent == comp)
 
@@ -78,11 +78,11 @@ class PathSpec extends FunSuite {
   //TODO @Harrison fix it!
   test("createPath") {
     assert(
-      Path.create("abcd.edfg//hijk") ==
+      Path.create("abcd.edfg[][].hijk") ==
         FieldPath("hijk", ArrayPath(ArrayPath(FieldPath("edfg", FieldPath("abcd", Root).get).get)))
     )
 
-    assert(Path.create("abc///") == Try(ArrayPath(ArrayPath(ArrayPath(FieldPath("abc", Root).get)))))
+    assert(Path.create("abc[][][]") == Try(ArrayPath(ArrayPath(ArrayPath(FieldPath("abc", Root).get)))))
     /*
 
     //TO TEST
@@ -106,7 +106,7 @@ class PathSpec extends FunSuite {
 
     assert(Path.create("").get == Root)
     assert(Path.create("abc") == FieldPath("abc", Root))
-    assert(Path.create("abc.def/").get == ArrayPath(FieldPath("def", FieldPath("abc", Root).get).get))
+    assert(Path.create("abc.def[]").get == ArrayPath(FieldPath("def", FieldPath("abc", Root).get).get))
 
     /*
     {:abc {:def 1}}   abc.def
