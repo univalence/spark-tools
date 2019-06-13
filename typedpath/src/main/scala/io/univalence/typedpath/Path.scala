@@ -240,7 +240,7 @@ object Index {
   }
 
   final case class ArrayIndex(idx: Int, parent: Index) extends Index {
-    assert(idx > 0)
+    assert(idx >= 0)
     override def toString: String = parent.toString + s"[$idx]"
   }
   //case class ArrayLastElement(parent: Index) extends Index

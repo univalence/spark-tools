@@ -43,7 +43,7 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
     assert(
       compareValue(fromRow(df1.first), fromRow(df2.first)) ==
         ArrayBuffer(
-          ObjectModification(index"set[2]", AddValue(AtomicValue(mutable.WrappedArray.make(Array("2", "5")))))
+          ObjectModification(index"set[1]", AddValue(AtomicValue(mutable.WrappedArray.make(Array("2", "5")))))
         )
     )
   }

@@ -105,7 +105,7 @@ object ValueComparison {
         av1.values.zipAll(av2.values, NullValue, NullValue).zipWithIndex.foldLeft(Seq(): Seq[ObjectModification]) {
           case (acc, ((curr1, curr2), index)) =>
             //peut-être qu'il faut faire un index dans les paths : abc.def[0]
-            acc ++ loop(curr1, curr2, ArrayIndex(index + 1, prefix))
+            acc ++ loop(curr1, curr2, ArrayIndex(index, prefix))
         }
 
       for {

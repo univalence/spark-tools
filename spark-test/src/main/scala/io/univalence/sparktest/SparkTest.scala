@@ -548,7 +548,7 @@ object SparkTest {
 
     def dfFromJsonFile(path: String): DataFrame = ss.read.json(path)
 
-    def dataset[T: Encoder](value: T*): Dataset[T] = {
+    def dataset[T: Encoder: ClassTag](value: T*): Dataset[T] = {
       assert(value.nonEmpty)
       ss.createDataset(value)
     }
