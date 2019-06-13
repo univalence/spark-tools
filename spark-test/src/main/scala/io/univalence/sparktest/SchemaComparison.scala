@@ -1,6 +1,6 @@
 package io.univalence.sparktest
 
-import io.univalence.strings.{ ArrayPath, FieldPath, Path, PathOrRoot, Root }
+import io.univalence.strings.{ ArrayKey, FieldKey, Key, KeyOrRoot, Root }
 import org.apache.spark.sql.types.{ ArrayType, DataType, StructField, StructType }
 
 import scala.util.{ Failure, Try }
@@ -19,7 +19,7 @@ object SchemaComparison {
 
   //final case object SetNonNullable extends FieldModification
 
-  final case class SchemaModification(path: Path, fieldModification: FieldModification)
+  final case class SchemaModification(path: Key, fieldModification: FieldModification)
 
   /**
     * Compare two schemas returning differences between both
@@ -42,12 +42,12 @@ object SchemaComparison {
     */
   def compareSchema(sc1: StructType, sc2: StructType): Seq[SchemaModification] = {
 
-    def compareSchema(sc1: StructType, sc2: StructType, prefix: PathOrRoot): Seq[SchemaModification] = {
-      def compareDataType(d1: DataType, d2: DataType, prefix: Path): Seq[SchemaModification] =
+    def compareSchema(sc1: StructType, sc2: StructType, prefix: KeyOrRoot): Seq[SchemaModification] = {
+      def compareDataType(d1: DataType, d2: DataType, prefix: Key): Seq[SchemaModification] =
         (d1, d2) match {
           case (a, b) if a == b                 => Nil
           case (s1: StructType, s2: StructType) => compareSchema(s1, s2, prefix)
-          case (a1: ArrayType, a2: ArrayType)   => compareDataType(a1.elementType, a2.elementType, ArrayPath(prefix))
+          case (a1: ArrayType, a2: ArrayType)   => compareDataType(a1.elementType, a2.elementType, ArrayKey(prefix))
           case (a, b)                           => Seq(SchemaModification(prefix, ChangeFieldType(a, b)))
         }
 
@@ -58,7 +58,7 @@ object SchemaComparison {
 
         left: Option[StructField]  = sc1.fields.find(_.name == fieldname)
         right: Option[StructField] = sc2.fields.find(_.name == fieldname)
-        path: Path                 = FieldPath(FieldPath.createName(fieldname).get, prefix)
+        path: Key                 = FieldKey(FieldKey.createName(fieldname).get, prefix)
 
         modifications: Seq[SchemaModification] = (left, right) match {
           case (Some(l), None)    => Seq(SchemaModification(path, RemoveField(l.dataType)))
@@ -101,12 +101,12 @@ object SchemaComparison {
     */
   def modifySchema(sc: StructType, schemaModification: SchemaModification): Try[StructType] = {
 
-    def loopDt(dataType: DataType, paths: List[Path], fieldModification: FieldModification): DataType =
+    def loopDt(dataType: DataType, paths: List[Key], fieldModification: FieldModification): DataType =
       dataType match {
         case st: StructType => loopSt(st, paths, fieldModification)
         case at: ArrayType =>
           paths match {
-            case ArrayPath(_) :: xs => ArrayType(loopDt(at.elementType, xs, fieldModification))
+            case ArrayKey(_) :: xs => ArrayType(loopDt(at.elementType, xs, fieldModification))
             case _                  => throw UnreachablePath
           }
         case _ =>
@@ -120,17 +120,17 @@ object SchemaComparison {
     def applyN[A](f: A => A, n: Int): A => A =
       if (n <= 0) identity else f andThen applyN(f, n - 1)
 
-    def loopSt(sc: StructType, paths: List[Path], fieldModification: FieldModification): StructType =
+    def loopSt(sc: StructType, paths: List[Key], fieldModification: FieldModification): StructType =
       (paths, fieldModification) match {
-        case (List(FieldPath(name, _)), AddField(dt)) =>
+        case (List(FieldKey(name, _)), AddField(dt)) =>
           if (!sc.fieldNames.contains(name)) StructType(sc.fields :+ StructField(name, dt))
           else throw DuplicatedField(name)
 
-        case (List(FieldPath(name, _)), RemoveField(_)) =>
+        case (List(FieldKey(name, _)), RemoveField(_)) =>
           if (sc.fieldNames.contains(name)) StructType(sc.filter(field => field.name != name))
           else throw NotFoundField(name)
 
-        case (FieldPath(name, _) :: xs, ChangeFieldType(_, to)) if xs.forall(_.isInstanceOf[ArrayPath]) =>
+        case (FieldKey(name, _) :: xs, ChangeFieldType(_, to)) if xs.forall(_.isInstanceOf[ArrayKey]) =>
           if (sc.fieldNames.contains(name))
             StructType(
               sc.map(
@@ -144,14 +144,14 @@ object SchemaComparison {
 
         //case (FieldPath(name, _) :: xs, action) if xs.forall(_.isInstanceOf[ArrayPath]) =>
 
-        case (FieldPath(name, _) :: xs, action) if xs.nonEmpty =>
+        case (FieldKey(name, _) :: xs, action) if xs.nonEmpty =>
           if (sc.fieldNames.contains(name))
             StructType(sc.fields.map(x => if (x.name == name) StructField(name, loopDt(x.dataType, xs, action)) else x))
           else
             throw NotFoundField(name)
       }
 
-    Try(loopSt(sc, schemaModification.path.allPaths, schemaModification.fieldModification)).recoverWith({
+    Try(loopSt(sc, schemaModification.path.allKeys, schemaModification.fieldModification)).recoverWith({
       case a: ApplyModificationError =>
         val source = ApplyModificationErrorWithSource(a, sc, schemaModification)
         source.getCause

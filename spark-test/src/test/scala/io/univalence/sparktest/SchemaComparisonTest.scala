@@ -40,21 +40,21 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
   test("A field removed should return a SchemaModification RemoveField") {
     val sc1 = struct("number" -> integer, "name" -> integer)
     val sc2 = struct("number" -> integer)
-    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(path"name", RemoveField(integer))))
+    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(key"name", RemoveField(integer))))
   }
 
   test("A field added should return a SchemaModification with AddField") {
     val sc1 = struct("number" -> integer)
     val sc2 = struct("number" -> integer, "name" -> integer)
 
-    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(path"name", AddField(integer))))
+    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(key"name", AddField(integer))))
   }
 
   test("A field changed should return a SchemaModification with ChangeField") {
     val sc1 = struct("number" -> integer)
     val sc2 = struct("number" -> double)
 
-    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(path"number", ChangeFieldType(integer, DoubleType))))
+    assert(compareSchema(sc1, sc2) == Seq(SchemaModification(key"number", ChangeFieldType(integer, DoubleType))))
   }
 
   test(
@@ -66,16 +66,16 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
 
     assert(
       compareSchema(sc1, sc2) == Seq(
-        SchemaModification(path"number", RemoveField(integer)),
-        SchemaModification(path"name", ChangeFieldType(integer, double)),
-        SchemaModification(path"rebmun", AddField(integer))
+        SchemaModification(key"number", RemoveField(integer)),
+        SchemaModification(key"name", ChangeFieldType(integer, double)),
+        SchemaModification(key"rebmun", AddField(integer))
       )
     )
   }
 
   test("Adding a field while the field exists should return a Duplicated Field error") {
     val sc = struct("number" -> integer)
-    val sm = SchemaModification(path"number", AddField(integer))
+    val sm = SchemaModification(key"number", AddField(integer))
 
     assert(
       modifySchema(sc, sm) ==
@@ -85,7 +85,7 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
 
   test("Adding a field while the field not exists should return a Success with the new StructType") {
     val sc = struct("number" -> integer)
-    val sm = SchemaModification(path"rebmun", AddField(integer))
+    val sm = SchemaModification(key"rebmun", AddField(integer))
 
     assert(
       modifySchema(sc, sm) ==
@@ -95,7 +95,7 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
 
   test("Removing a field while the field is inexistant should return a Not Found Field error") {
     val sc = struct("number" -> integer)
-    val sm = SchemaModification(path"name", RemoveField(integer))
+    val sm = SchemaModification(key"name", RemoveField(integer))
 
     assert(
       modifySchema(sc, sm) ==
@@ -105,7 +105,7 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
 
   test("Removing a field while the field is existant should return a Success with the new StructType") {
     val sc = struct("number" -> integer, "rebmun" -> integer)
-    val sm = SchemaModification(path"rebmun", RemoveField(integer))
+    val sm = SchemaModification(key"rebmun", RemoveField(integer))
 
     assert(
       modifySchema(sc, sm) ==
@@ -115,7 +115,7 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
 
   test("Updating a field type while the field is inexistant should return a Not Found Field error") {
     val sc = struct("number" -> integer)
-    val sm = SchemaModification(path"name", ChangeFieldType(integer, DoubleType))
+    val sm = SchemaModification(key"name", ChangeFieldType(integer, DoubleType))
 
     assert(
       modifySchema(sc, sm) ==
@@ -125,7 +125,7 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
 
   test("Updating a field type while the field is existant should return a Success with the new StructType") {
     val sc = struct("number" -> integer)
-    val sm = SchemaModification(path"number", ChangeFieldType(integer, double))
+    val sm = SchemaModification(key"number", ChangeFieldType(integer, double))
 
     assert(
       modifySchema(sc, sm) ==

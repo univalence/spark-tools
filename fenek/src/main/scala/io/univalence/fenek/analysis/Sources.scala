@@ -3,12 +3,12 @@ package io.univalence.fenek.analysis
 import io.univalence.fenek.Expr
 import io.univalence.fenek.Expr.UntypedExpr
 import io.univalence.fenek.generic.GenericExpr
-import io.univalence.strings.Path
+import io.univalence.strings.Key
 
 object Sources {
 
   //TODO Test and redo
-  def getSources(expr: UntypedExpr): Vector[Path] =
+  def getSources(expr: UntypedExpr): Vector[Key] =
     /*
     def loop(genericExpr: GenericExpr, suffix: Vector[String] = Vector.empty): Vector[Path] =
       genericExpr.expr.value match {

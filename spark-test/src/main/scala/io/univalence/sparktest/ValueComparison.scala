@@ -1,7 +1,7 @@
 package io.univalence.sparktest
 
 import io.univalence.strings.Index.{ ArrayIndex, FieldIndex }
-import io.univalence.strings.{ FieldPath, Index, IndexOrRoot, Root }
+import io.univalence.strings.{ FieldKey, Index, IndexOrRoot, Root }
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.{ ArrayType, StructType }
@@ -113,7 +113,7 @@ object ValueComparison {
 
         left        = Option(leftField.headOption.getOrElse((Nil, NullValue))._2)
         right       = Option(rightField.headOption.getOrElse((Nil, NullValue))._2)
-        path: Index = FieldIndex(FieldPath.createName(name).get, prefix)
+        path: Index = FieldIndex(FieldKey.createName(name).get, prefix)
 
         modifications: Seq[ObjectModification] = (left, right) match {
           case (Some(l), None)    => Seq(ObjectModification(path, RemoveValue(l)))

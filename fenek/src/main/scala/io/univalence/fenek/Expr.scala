@@ -2,7 +2,7 @@ package io.univalence.fenek
 
 import io.univalence.fenek.Expr.Ops.{ IsEmpty, JsonMap, Lit, Map1, Map2, Map3, SelectField, TypeCasted }
 import io.univalence.fenek.Expr.{ StructField, UntypedExpr }
-import io.univalence.strings.{ FieldPath, Path }
+import io.univalence.strings.{ FieldKey, Key }
 import org.json4s.JsonAST._
 
 import scala.language.implicitConversions
@@ -27,7 +27,7 @@ sealed class Expr[+A] {
 
   import Expr._
 
-  def select(path: FieldPath) = SelectField(path, this)
+  def select(path: FieldKey) = SelectField(path, this)
 
   def firstElement: UntypedExpr = Ops.FirstElement(self)
 
@@ -87,12 +87,12 @@ object Expr {
 
   type UntypedExpr = Expr[Any]
 
-  implicit def pathToExpr(path: Path): UntypedExpr = {
+  implicit def pathToExpr(path: Key): UntypedExpr = {
     import io.univalence.strings._
 
     path match {
-      case f: FieldPath => Expr.Ops.RootField(f)
-      case ArrayPath(_) => throw new Exception("repetition path (array) not supported in fenek")
+      case f: FieldKey => Expr.Ops.RootField(f)
+      case ArrayKey(_) => throw new Exception("repetition path (array) not supported in fenek")
     }
 
   }
@@ -165,7 +165,7 @@ object Expr {
 
       implicit def encoder[A: Encoder]: Aux[A, A] = instance(a => a)
       implicit def expr[A]: Aux[Expr[A], A]       = instance(a => a)
-      implicit val path: Aux[Path, Any]           = instance(a => a)
+      implicit val path: Aux[Key, Any]           = instance(a => a)
     }
 
     def merge[B](caseWhenExprTyped1: CaseWhenExpr[B], caseWhenExprTyped2: CaseWhenExpr[B]): CaseWhenExpr[B] =
@@ -186,8 +186,8 @@ object Expr {
 
     case class Remove[B](source: Expr[B], toRemove: Seq[Expr[B]]) extends Expr[B]
     case class LastElement(expr: UntypedExpr) extends UntypedExpr
-    case class RootField(path: FieldPath) extends UntypedExpr
-    case class SelectField(path: FieldPath, source: UntypedExpr) extends Ops
+    case class RootField(path: FieldKey) extends UntypedExpr
+    case class SelectField(path: FieldKey, source: UntypedExpr) extends Ops
     case class Size(source: UntypedExpr) extends Ops
     case class DateDiff(datepart: Expr[String], startdate: UntypedExpr, enddate: UntypedExpr) extends Ops
     case class Left(characterExpr: Expr[String], n: Expr[Int]) extends Expr[String]

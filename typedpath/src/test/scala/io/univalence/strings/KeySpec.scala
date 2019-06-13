@@ -4,9 +4,9 @@ import org.scalatest.FunSuite
 
 import scala.util.{ Failure, Try }
 
-class PathSpec extends FunSuite {
+class KeySpec extends FunSuite {
 
-  import Path._
+  import Key._
 
   test("tokenize") {
 
@@ -20,14 +20,14 @@ class PathSpec extends FunSuite {
   }
 
   test("create error") {
-    val f = Path.create("$abc[].(edf").asInstanceOf[Failure[_]]
+    val f = Key.create("$abc[].(edf").asInstanceOf[Failure[_]]
     assert(f.exception.getMessage.contains("[$]"))
     assert(f.exception.getMessage.contains("[(]"))
 
   }
 
   test("interpolation") {
-    import Path._
+    import Key._
 
     val prefix = "abc"
 
@@ -49,27 +49,27 @@ class PathSpec extends FunSuite {
     //check Illtyped
     //val r2: ArrayPath = path"$r.def/"
 
-    val abc: FieldPath = path"abc"
+    val abc: FieldKey = key"abc"
 
     assert(abc.name == "abc")
     assert(abc.parent == Root)
 
-    val ghi: FieldPath = path"$abc.ghi"
+    val ghi: FieldKey = key"$abc.ghi"
 
     assert(ghi.name == "ghi")
     assert(ghi.parent == abc)
 
-    val lol: FieldPath  = path"lol" //
-    val comp: FieldPath = path"$abc[].$lol"
+    val lol: FieldKey  = key"lol" //
+    val comp: FieldKey = key"$abc[].$lol"
 
     assert(comp.name == "lol")
-    assert(comp.parent == ArrayPath(abc))
+    assert(comp.parent == ArrayKey(abc))
 
-    val comp2: ArrayPath = path"$comp[]"
+    val comp2: ArrayKey = key"$comp[]"
 
     assert(comp2.parent == comp)
 
-    val comp3: ArrayPath = path"$comp2"
+    val comp3: ArrayKey = key"$comp2"
 
     assert(comp3 == comp2)
 
@@ -78,11 +78,11 @@ class PathSpec extends FunSuite {
   //TODO @Harrison fix it!
   test("createPath") {
     assert(
-      Path.create("abcd.edfg[][].hijk") ==
-        FieldPath("hijk", ArrayPath(ArrayPath(FieldPath("edfg", FieldPath("abcd", Root).get).get)))
+      Key.create("abcd.edfg[][].hijk") ==
+        FieldKey("hijk", ArrayKey(ArrayKey(FieldKey("edfg", FieldKey("abcd", Root).get).get)))
     )
 
-    assert(Path.create("abc[][][]") == Try(ArrayPath(ArrayPath(ArrayPath(FieldPath("abc", Root).get)))))
+    assert(Key.create("abc[][][]") == Try(ArrayKey(ArrayKey(ArrayKey(FieldKey("abc", Root).get)))))
     /*
 
     //TO TEST
@@ -100,13 +100,13 @@ class PathSpec extends FunSuite {
 
   test("error") {
 
-    assert(Path.create("123").isFailure)
+    assert(Key.create("123").isFailure)
   }
   test("follow up") {
 
-    assert(Path.create("").get == Root)
-    assert(Path.create("abc") == FieldPath("abc", Root))
-    assert(Path.create("abc.def[]").get == ArrayPath(FieldPath("def", FieldPath("abc", Root).get).get))
+    assert(Key.create("").get == Root)
+    assert(Key.create("abc") == FieldKey("abc", Root))
+    assert(Key.create("abc.def[]").get == ArrayKey(FieldKey("def", FieldKey("abc", Root).get).get))
 
     /*
     {:abc {:def 1}}   abc.def

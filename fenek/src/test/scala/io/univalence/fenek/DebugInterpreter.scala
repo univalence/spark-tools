@@ -207,7 +207,7 @@ object DebugInterpreter {
 
   def main(args: Array[String]): Unit = {
 
-    import io.univalence.strings.Path._
+    import io.univalence.strings.Key._
 
     val a: UntypedExpr = path"a"
     val b: UntypedExpr = path"b"

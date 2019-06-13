@@ -1,11 +1,11 @@
 package io.univalence
 
 package object strings {
-  implicit class PathHelper(val sc: StringContext) extends AnyVal {
-    def path(args: Path*): Path = macro PathMacro.pathMacro
+  implicit class KeyHelper(val sc: StringContext) extends AnyVal {
+    def key(args: Key*): Key = macro KeyMacro.keyMacro
 
     //TODO : replace with macro
-    def name(args: Nothing*): String with FieldName = FieldPath.createName(sc.raw()).get
+    def name(args: Nothing*): String with FieldName = FieldKey.createName(sc.raw()).get
 
     def index(args: Nothing*): Index = Index.create(sc.raw()).get
   }

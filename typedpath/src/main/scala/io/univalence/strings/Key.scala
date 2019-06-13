@@ -7,7 +7,7 @@ import scala.reflect.macros.whitebox
 import scala.util.matching.Regex
 import scala.util.{ Failure, Success, Try }
 
-object PathMacro {
+object KeyMacro {
 
   //interleave(Seq(poteau, poteau, poteau), Seq(cloture,cloture)) == Seq(poteau, cloture, poteau, cloture, poteau)
   def interleave[A, B](xa: Seq[A], xb: Seq[B]): Seq[Either[A, B]] = {
@@ -20,7 +20,7 @@ object PathMacro {
     go(xa, xb, Vector.empty)
   }
 
-  def pathMacro(c: whitebox.Context)(args: c.Expr[PathOrRoot]*): c.Expr[Path] = {
+  def keyMacro(c: whitebox.Context)(args: c.Expr[KeyOrRoot]*): c.Expr[Key] = {
     import c.universe._
 
     def lit(s: String): c.Expr[String] = c.Expr[String](Literal(Constant(s)))
@@ -34,33 +34,33 @@ object PathMacro {
       })
     }
 
-    val allParts: Seq[Either[String, c.Expr[PathOrRoot]]] = interleave(strings, args)
+    val allParts: Seq[Either[String, c.Expr[KeyOrRoot]]] = interleave(strings, args)
 
-    def create(string: String, base: c.Expr[PathOrRoot]): c.Expr[PathOrRoot] =
+    def create(string: String, base: c.Expr[KeyOrRoot]): c.Expr[KeyOrRoot] =
       if (string.isEmpty) base
       else {
 
-        import Path._
+        import Key._
         val tokens: Seq[Token] = Token.tokenize(string)
-        if (tokens.exists(_.isInstanceOf[Path.ErrorToken])) {
+        if (tokens.exists(_.isInstanceOf[Key.ErrorToken])) {
 
-          val error = Path.highlightErrors(tokens: _*)
-          c.abort(c.enclosingPosition, s"invalid path $error")
+          val error = Key.highlightErrors(tokens: _*)
+          c.abort(c.enclosingPosition, s"invalid key $error")
         } else {
 
-          val validTokens: Seq[Path.ValidToken] = tokens.collect({ case s: Path.ValidToken => s })
+          val validTokens: Seq[Key.ValidToken] = tokens.collect({ case s: Key.ValidToken => s })
 
-          validTokens.foldLeft[c.Expr[PathOrRoot]](
+          validTokens.foldLeft[c.Expr[KeyOrRoot]](
             base
           )({
-            case (parent, Path.NamePart(name)) =>
+            case (parent, Key.NamePart(name)) =>
               //improve checks on name
-              reify(FieldPath(lit(name).splice, parent.splice).get)
-            case (parent, Path.Dot) => parent
-            case (parent, Path.Brackets) if c.typecheck(parent.tree).tpe <:< typeOf[Path] =>
-              reify(ArrayPath(parent.splice.asInstanceOf[Path]))
+              reify(FieldKey(lit(name).splice, parent.splice).get)
+            case (parent, Key.Dot) => parent
+            case (parent, Key.Brackets) if c.typecheck(parent.tree).tpe <:< typeOf[Key] =>
+              reify(ArrayKey(parent.splice.asInstanceOf[Key]))
 
-            case (parent, Path.Brackets) =>
+            case (parent, Key.Brackets) =>
               c.abort(
                 c.enclosingPosition,
                 s"${Option(parent.actualType).getOrElse("")} can't create array from root : ${parent.tree} $string"
@@ -74,36 +74,36 @@ object PathMacro {
 
     if (!allParts.exists({
           case Left(x)  => x.nonEmpty
-          case Right(p) => p.actualType <:< typeOf[Path]
+          case Right(p) => p.actualType <:< typeOf[Key]
         })) {
-      val text = "can't turn into a NonEmptyPath. Use case object Root instead if you want to target the Root."
+      val text = "can't turn into a NonEmptyKey. Use case object Root instead if you want to target the Root."
       c.abort(
         c.enclosingPosition,
-        s"path [${allParts.filterNot(_.left.exists(_.isEmpty)).map(_.fold(identity, _.tree)).mkString(" - ")}] $text"
+        s"key [${allParts.filterNot(_.left.exists(_.isEmpty)).map(_.fold(identity, _.tree)).mkString(" - ")}] $text"
       )
     }
 
     //.foldLeft[c.Expr[Path]] ...
-    val res = allParts.foldLeft[c.Expr[PathOrRoot]](reify(Root))({
+    val res = allParts.foldLeft[c.Expr[KeyOrRoot]](reify(Root))({
       case (base, Left("")) => base
       case (base, Left(x))  => create(x, base)
       case (base, Right(x)) => {} match {
-        case _ if x.actualType == typeOf[ArrayPath] =>
-          reify(Path.combineToArray(base.splice, x.splice.asInstanceOf[ArrayPath]))
-        case _ if x.actualType == typeOf[FieldPath] =>
-          reify(Path.combineToField(base.splice, x.splice.asInstanceOf[FieldPath]))
+        case _ if x.actualType == typeOf[ArrayKey] =>
+          reify(Key.combineToArray(base.splice, x.splice.asInstanceOf[ArrayKey]))
+        case _ if x.actualType == typeOf[FieldKey] =>
+          reify(Key.combineToField(base.splice, x.splice.asInstanceOf[FieldKey]))
         case _ =>
-          reify(Path.combineToPath(base.splice, x.splice))
+          reify(Key.combineToKey(base.splice, x.splice))
       }
     })
 
-    res.asInstanceOf[c.Expr[Path]]
+    res.asInstanceOf[c.Expr[Key]]
   }
 }
 
-sealed trait PathOrRoot
+sealed trait KeyOrRoot
 
-object Path {
+object Key {
 
   sealed trait Token
 
@@ -172,38 +172,38 @@ object Path {
       })
       .mkString
 
-  def combineToPath(prefix: PathOrRoot, suffix: PathOrRoot): PathOrRoot =
+  def combineToKey(prefix: KeyOrRoot, suffix: KeyOrRoot): KeyOrRoot =
     suffix match {
       case Root         => prefix
-      case f: FieldPath => combineToField(prefix, f)
-      case a: ArrayPath => combineToArray(prefix, a)
+      case f: FieldKey => combineToField(prefix, f)
+      case a: ArrayKey => combineToArray(prefix, a)
     }
 
-  def combineToArray(prefix: PathOrRoot, suffix: ArrayPath): ArrayPath =
-    ArrayPath(combineToPath(prefix, suffix.parent).asInstanceOf[Path])
+  def combineToArray(prefix: KeyOrRoot, suffix: ArrayKey): ArrayKey =
+    ArrayKey(combineToKey(prefix, suffix.parent).asInstanceOf[Key])
 
-  def combineToField(prefix: PathOrRoot, suffix: FieldPath): FieldPath =
-    suffix.copy(parent = combineToPath(prefix, suffix.parent))
+  def combineToField(prefix: KeyOrRoot, suffix: FieldKey): FieldKey =
+    suffix.copy(parent = combineToKey(prefix, suffix.parent))
 
-  def create(string: String): Try[PathOrRoot] = {
+  def create(string: String): Try[KeyOrRoot] = {
     val tokens = Token.tokenize(string)
     if (tokens.exists(_.isInstanceOf[ErrorToken])) {
 
       Failure(
         new Exception(
-          s"invalid string ${highlightErrors(tokens: _*)} as a path"
+          s"invalid string ${highlightErrors(tokens: _*)} as a key"
         )
       )
 
     } else {
       val validToken = tokens.collect({ case v: ValidToken => v })
 
-      validToken.foldLeft[Try[PathOrRoot]](Try(Root))({
-        case (parent, NamePart(name)) => parent.flatMap(FieldPath(name, _))
+      validToken.foldLeft[Try[KeyOrRoot]](Try(Root))({
+        case (parent, NamePart(name)) => parent.flatMap(FieldKey(name, _))
         case (parent, Dot)            => parent //Meh c'est un peu étrange, mais par construction
         case (parent, Brackets) =>
           parent.flatMap({
-            case n: Path => Try(ArrayPath(n))
+            case n: Key => Try(ArrayKey(n))
             case _       => Failure(new Exception(s"cannot create an array at the root $string"))
           })
 
@@ -215,7 +215,7 @@ object Path {
 
 sealed trait IndexOrRoot
 
-case object Root extends PathOrRoot with IndexOrRoot
+case object Root extends KeyOrRoot with IndexOrRoot
 
 sealed trait Index extends IndexOrRoot {
 
@@ -255,7 +255,7 @@ object Index {
         case x  => part.splitAt(x)
       }
 
-      val index = FieldIndex(FieldPath.createName(name).get, parent)
+      val index = FieldIndex(FieldKey.createName(name).get, parent)
       if (idx == null)
         index
       else {
@@ -275,37 +275,37 @@ object Index {
   }
 }
 
-sealed trait Path extends PathOrRoot {
+sealed trait Key extends KeyOrRoot {
 
-  def firstName: String with FieldPath.Name =
+  def firstName: String with FieldKey.Name =
     this match {
-      case FieldPath(name, Root) => name
-      case FieldPath(_, p: Path) => p.firstName
-      case ArrayPath(parent)     => parent.firstName
+      case FieldKey(name, Root) => name
+      case FieldKey(_, p: Key) => p.firstName
+      case ArrayKey(parent)     => parent.firstName
     }
 
-  def allPaths: List[Path] = {
-    def loop(path: Path, stack: List[Path]): List[Path] =
-      path match {
-        case FieldPath(_, Root)         => path :: stack
-        case FieldPath(_, parent: Path) => loop(parent, path :: stack)
-        case ArrayPath(parent)          => loop(parent, path :: stack)
+  def allKeys: List[Key] = {
+    def loop(key: Key, stack: List[Key]): List[Key] =
+      key match {
+        case FieldKey(_, Root)         => key :: stack
+        case FieldKey(_, parent: Key) => loop(parent, key :: stack)
+        case ArrayKey(parent)          => loop(parent, key :: stack)
       }
     loop(this, Nil)
   }
 }
 
-case class FieldPath(name: String with FieldPath.Name, parent: PathOrRoot) extends Path {
+case class FieldKey(name: String with FieldKey.Name, parent: KeyOrRoot) extends Key {
   override def toString: String = parent match {
     case Root         => name
-    case f: FieldPath => s"$f.$name"
-    case a: ArrayPath => s"$a$name"
+    case f: FieldKey => s"$f.$name"
+    case a: ArrayKey => s"$a$name"
   }
 }
 
 sealed trait FieldName
 
-object FieldPath {
+object FieldKey {
   type Name = FieldName
 
   def createName(string: String): Try[String with Name] = {
@@ -317,10 +317,10 @@ object FieldPath {
       )
   }
 
-  def apply(name: String, parent: PathOrRoot): Try[FieldPath] =
-    createName(name).map(new FieldPath(_, parent))
+  def apply(name: String, parent: KeyOrRoot): Try[FieldKey] =
+    createName(name).map(new FieldKey(_, parent))
 }
 
-case class ArrayPath(parent: Path) extends Path {
+case class ArrayKey(parent: Key) extends Key {
   override def toString: String = s"$parent[]"
 }
