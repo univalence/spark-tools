@@ -1,6 +1,6 @@
 package io.univalence
 
-package object typedpath {
+package object strings {
   implicit class PathHelper(val sc: StringContext) extends AnyVal {
     def path(args: Path*): Path = macro PathMacro.pathMacro
 

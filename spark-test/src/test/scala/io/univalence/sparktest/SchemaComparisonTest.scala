@@ -20,7 +20,7 @@ object SchemaBuilder {
 }
 
 class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
-  import io.univalence.typedpath._
+  import io.univalence.strings._
 
   import SchemaBuilder._
 

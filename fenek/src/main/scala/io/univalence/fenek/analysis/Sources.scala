@@ -3,7 +3,7 @@ package io.univalence.fenek.analysis
 import io.univalence.fenek.Expr
 import io.univalence.fenek.Expr.UntypedExpr
 import io.univalence.fenek.generic.GenericExpr
-import io.univalence.typedpath.Path
+import io.univalence.strings.Path
 
 object Sources {
 

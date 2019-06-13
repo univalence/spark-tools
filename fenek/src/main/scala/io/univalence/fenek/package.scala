@@ -1,7 +1,7 @@
 package io.univalence
 
 import io.univalence.fenek.Expr.{ StructField, UntypedExpr }
-import io.univalence.typedpath.Path
+import io.univalence.strings.Path
 
 package object fenek {
   implicit class fieldOps(name: String) {

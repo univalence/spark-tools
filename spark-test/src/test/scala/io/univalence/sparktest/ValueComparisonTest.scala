@@ -10,7 +10,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class ValueComparisonTest extends FunSuiteLike with SparkTest {
-  import io.univalence.typedpath._
+  import io.univalence.strings._
 
   val sharedSparkSession: SparkSession = ss
   val sc: SparkContext                 = ss.sparkContext

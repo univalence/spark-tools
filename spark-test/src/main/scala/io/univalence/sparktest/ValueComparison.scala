@@ -1,7 +1,7 @@
 package io.univalence.sparktest
 
-import io.univalence.typedpath.Index.{ ArrayIndex, FieldIndex }
-import io.univalence.typedpath.{ FieldPath, Index, IndexOrRoot, Root }
+import io.univalence.strings.Index.{ ArrayIndex, FieldIndex }
+import io.univalence.strings.{ FieldPath, Index, IndexOrRoot, Root }
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.{ ArrayType, StructType }

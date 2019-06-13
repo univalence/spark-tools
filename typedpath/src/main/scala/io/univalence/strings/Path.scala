@@ -1,6 +1,6 @@
-package io.univalence.typedpath
+package io.univalence.strings
 
-import io.univalence.typedpath.Index.{ ArrayIndex, FieldIndex }
+import io.univalence.strings.Index.{ ArrayIndex, FieldIndex }
 
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox

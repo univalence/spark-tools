@@ -1,4 +1,4 @@
-package io.univalence.typedpath
+package io.univalence.strings
 
 object FenekSyntaxTest {
 
