@@ -128,7 +128,7 @@ class UnionTest extends FunSuite {
   import JsonInterpreterTest._
 
   test("build query") {
-    val q: Query = struct("tata" <<- path"toto") where ((path"age".as[Int] |> (_ > 10)) orElse path"age".isEmpty)
+    val q: Query = struct("tata" <<- key"toto") where ((key"age".as[Int] |> (_ > 10)) orElse key"age".isEmpty)
 
     val f = JsonInterpreter.query(q)
 
@@ -140,7 +140,7 @@ class UnionTest extends FunSuite {
 
     assert(f("{toto:0}") == Try(Seq(tata)))
 
-    val q2 = q.union(q.andWhere(path"age".as[Int] |> (_ > 11)))
+    val q2 = q.union(q.andWhere(key"age".as[Int] |> (_ > 11)))
 
     val f2 = JsonInterpreter.query(q2)
 
@@ -150,8 +150,8 @@ class UnionTest extends FunSuite {
   }
 
   ignore("union") {
-    val x = struct("c" <<- path"a")
-    val y = struct("c" <<- path"b")
+    val x = struct("c" <<- key"a")
+    val y = struct("c" <<- key"b")
 
     val z: Query = x union y
 
@@ -182,14 +182,14 @@ class JsonInterpreterTest extends FunSuite {
 
     val caseWhenExpr2: CaseWhenExpr[Any] = Else -> 1
 
-    val expr1 = path"gppTypeProduit".caseWhen("KTTR" -> path"ktStartCommitmentDate", Else -> dateparution, x)
+    val expr1 = key"gppTypeProduit".caseWhen("KTTR" -> key"ktStartCommitmentDate", Else -> dateparution, x)
 
-    val expr2 = path"ktInvoicingType".caseWhen(
-      "STANDARD" -> est_annulé.caseWhen(true -> dateparution, false -> path"ktStartCommitmentDate"),
+    val expr2 = key"ktInvoicingType".caseWhen(
+      "STANDARD" -> est_annulé.caseWhen(true -> dateparution, false -> key"ktStartCommitmentDate"),
       Else       -> expr1
     )
 
-    val da_deb_periode = path"gppTypeProduit" caseWhen ("KTREMB" -> daValidVente, "KTREGU" -> daValidVente) orElse expr2
+    val da_deb_periode = key"gppTypeProduit" caseWhen ("KTREMB" -> daValidVente, "KTREGU" -> daValidVente) orElse expr2
 
     val tx = struct("da_deb_periode" <<- da_deb_periode, "expr1" <<- expr1, "expr2" <<- expr2)
 
@@ -250,7 +250,7 @@ class JsonInterpreterTest extends FunSuite {
   }
 
   test("<*> & |> avec int operation not working 2") {
-    val TR = path"iterationinvoicenumber".as[Int] <*> 12 |> (_ % _) caseWhen (Else -> false, 1 -> true)
+    val TR = key"iterationinvoicenumber".as[Int] <*> 12 |> (_ % _) caseWhen (Else -> false, 1 -> true)
 
     val tx = struct("expr" <<- TR)
     val s: StructChecker = tx
@@ -270,8 +270,8 @@ class JsonInterpreterTest extends FunSuite {
 
   test("testTx") {
 
-    val a  = path"a"
-    val tx = struct(path"a" as "b", "b" <<- a, "c" <<- 2, "d" <<- a)
+    val a  = key"a"
+    val tx = struct(key"a" as "b", "b" <<- a, "c" <<- 2, "d" <<- a)
 
     tx.check(in = """{a:1}""", """{b:1, c:2, d:1}""")
     //tx.check2("a" -> 1)("b" -> 1,"c" -> 2,"d" -> 1)
@@ -282,7 +282,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("cleanDate") {
 
-    val tx = struct("dt" <<- path"dt".left(10))
+    val tx = struct("dt" <<- key"dt".left(10))
 
     tx.check(
       """{dt : "2018-10-25T15:00:31+00:00"}""",
@@ -294,7 +294,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("addDate") {
 
-    val tx = struct("dt" <<- path"dt".left(10).dateAdd("day", 1))
+    val tx = struct("dt" <<- key"dt".left(10).dateAdd("day", 1))
 
     tx.check(
       """{dt : "2018-10-25T15:00:31+00:00"}""",
@@ -306,7 +306,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("datediff") {
 
-    val tx = struct("interval" <<- path"start".datediff("month", path"end"))
+    val tx = struct("interval" <<- key"start".datediff("month", key"end"))
 
     tx.check(
       """{end : "2018-10-25", start : "2018-10-24"}""",
@@ -321,7 +321,7 @@ class JsonInterpreterTest extends FunSuite {
 
   test("niveauPack") {
 
-    val tx = struct("niveauPack" <<- (path"configuration" #> {
+    val tx = struct("niveauPack" <<- (key"configuration" #> {
       case JArray(arr) =>
         arr
           .map(x => x \\ "niveauPack")
@@ -337,32 +337,32 @@ class JsonInterpreterTest extends FunSuite {
   }
 
   test("when") {
-    val tx = struct("toto" <<- path"tata".caseWhen(false -> "titi"))
+    val tx = struct("toto" <<- key"tata".caseWhen(false -> "titi"))
 
     tx.check("""{tata:false}""", """{toto:"titi"}""")
   }
 
   test("nested") {
-    struct("c" <<- path"a.b").check("{a:{b:1}}", "{c:1}")
+    struct("c" <<- key"a.b").check("{a:{b:1}}", "{c:1}")
   }
 
   //p => path
   //j => json  {a:1, b:$b}
 
   test("isEmpty") {
-    struct("c" <<- path"a".isEmpty).check("""{a:1}""", """{c:false}""")
+    struct("c" <<- key"a".isEmpty).check("""{a:1}""", """{c:false}""")
 
-    struct("c" <<- path"a".isEmpty).check("""{b:1}""", """{c:true}""")
+    struct("c" <<- key"a".isEmpty).check("""{b:1}""", """{c:true}""")
   }
 
   test("caseWhen") {
-    struct("c" <<- path"a".caseWhen(true -> "ok", false -> "no"))
+    struct("c" <<- key"a".caseWhen(true -> "ok", false -> "no"))
       .check("""{a:true}""", """{c:"ok"}""")
 
-    struct("c" <<- path"a".caseWhen(true -> "ok", false -> "no"))
+    struct("c" <<- key"a".caseWhen(true -> "ok", false -> "no"))
       .check("""{a:false}""", """{"c":"no"}""")
 
-    struct("c" <<- path"a".caseWhen(true -> "ok", false -> "no"))
+    struct("c" <<- key"a".caseWhen(true -> "ok", false -> "no"))
       .check("""{a:1}""", """{}""")
   }
 }

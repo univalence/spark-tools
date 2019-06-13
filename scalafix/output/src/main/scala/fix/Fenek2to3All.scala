@@ -17,18 +17,18 @@ object Fenek2to3All {
 
 
   //The >.syntax
-  val expr2: Expr[String] = path"toto.tata.titi".as[String] |> (_ + "!")
+  val expr2: Expr[String] = key"toto.tata.titi".as[String] |> (_ + "!")
 
 
   //The caseWhen syntax
   val expr3: Expr[Int] = expr caseWhen (1 -> 2 , 2 -> 3)
 
 
-  val dm = path"dm"
+  val dm = key"dm"
 
-  val code = path"$dm.pack.code"
+  val code = key"$dm.pack.code"
 
-  val combo: Struct = struct("abc"  <<- path"toto")
+  val combo: Struct = struct("abc"  <<- key"toto")
 
   type T3 = Expr[Any]
 }

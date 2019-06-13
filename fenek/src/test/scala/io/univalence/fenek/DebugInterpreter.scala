@@ -209,12 +209,12 @@ object DebugInterpreter {
 
     import io.univalence.strings.Key._
 
-    val a: UntypedExpr = path"a"
-    val b: UntypedExpr = path"b"
+    val a: UntypedExpr = key"a"
+    val b: UntypedExpr = key"b"
 
     val ab = a.as[Int] <*> b.as[Int]
 
-    val x = path"a" caseWhen (1 -> (ab |> (_ + _)), 2 -> (ab |> ((a, b) => { println("toto"); a - b })), Else -> 3)
+    val x = key"a" caseWhen (1 -> (ab |> (_ + _)), 2 -> (ab |> ((a, b) => { println("toto"); a - b })), Else -> 3)
 
     val function = tx(struct("x" <<- x, "y" <<- x.as[Int]))
 

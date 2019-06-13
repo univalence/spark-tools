@@ -92,9 +92,9 @@ object StaticAnalysis {
     import io.univalence.strings._
     import io.univalence.fenek.Expr._
 
-    val ab = path"a".as[Int] <*> path"b".as[Int]
+    val ab = key"a".as[Int] <*> key"b".as[Int]
 
-    val x = path"a".caseWhen(1 -> (ab |> (_ + _)), 2 -> (ab |> (_ - _)), Else -> 3)
+    val x = key"a".caseWhen(1 -> (ab |> (_ + _)), 2 -> (ab |> (_ - _)), Else -> 3)
 
     staticAnalysis(x).foreach({
       case PosExpr(level, index, expr) =>

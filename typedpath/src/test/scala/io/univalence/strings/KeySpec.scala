@@ -76,7 +76,7 @@ class KeySpec extends FunSuite {
   }
 
   //TODO @Harrison fix it!
-  test("createPath") {
+  test("create Key") {
     assert(
       Key.create("abcd.edfg[][].hijk") ==
         FieldKey("hijk", ArrayKey(ArrayKey(FieldKey("edfg", FieldKey("abcd", Root).get).get)))

@@ -8,7 +8,7 @@ class SchemaTest extends FunSuite with SparkTest {
 
   test("testMove") {
 
-    val m = Schema.move(path"a", path"b").andThen(_.get)
+    val m = Schema.move(key"a", key"b").andThen(_.get)
 
     def check(in: String, out: String): Unit =
       m(dataframe(in)).assertEquals(dataframe(out))

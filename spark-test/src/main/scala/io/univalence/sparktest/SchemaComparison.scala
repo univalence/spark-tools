@@ -31,9 +31,9 @@ object SchemaComparison {
     *
     * Result :
     * Seq(
-    *   SchemaModification(path"number", RemoveField(int)),
-    *   SchemaModification(path"name", ChangeFieldType(int, double)),
-    *   SchemaModification(path"rebmun", AddField(int))
+    *   SchemaModification(key"number", RemoveField(int)),
+    *   SchemaModification(key"name", ChangeFieldType(int, double)),
+    *   SchemaModification(key"rebmun", AddField(int))
     * )
     *
     * @param sc1 The entry schema
@@ -89,7 +89,7 @@ object SchemaComparison {
     *
     * Example :
     * val sc = struct("number" -> int)
-    * val sm = SchemaModification(path"rebmun", AddField(int))
+    * val sm = SchemaModification(key"rebmun", AddField(int))
     * modifySchema(sc, sm)
     *
     * Result :
