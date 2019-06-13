@@ -240,7 +240,6 @@ object Index {
   }
 
   final case class ArrayIndex(idx: Int, parent: Index) extends Index {
-    assert(idx >= 0)
     override def toString: String = parent.toString + s"[$idx]"
   }
   //case class ArrayLastElement(parent: Index) extends Index
@@ -257,11 +256,10 @@ object Index {
       }
 
       val index = FieldIndex(FieldPath.createName(name).get, parent)
-
       if (idx == null)
         index
       else {
-        val Idx = "\\[(\\d+)\\]".r
+        val Idx = "\\[(\\-?\\d+)\\]".r
         Idx
           .findAllMatchIn(idx)
           .foldLeft[Index](index)((i, s) => ArrayIndex(s.group(1).toInt, i))
