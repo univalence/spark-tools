@@ -185,7 +185,7 @@ object ValueComparison {
   }
 
   /**
-    * Transform a both orginal and expected Dataframe's row in String
+    * Transform both an original and expected Dataframe's row in String
     *
     * @param modifications    Sequence of modifications from one row
     * @param row1             Row from the original Dataframe

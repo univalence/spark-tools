@@ -4,11 +4,9 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
-import io.univalence.sparktest.RowComparer._
 import io.univalence.sparktest.SchemaComparison.{AddField, ChangeFieldType, RemoveField, SchemaModification}
-import io.univalence.sparktest.ValueComparison.{ChangeValue, ObjectModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
+import io.univalence.sparktest.ValueComparison.{ObjectModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
 import io.univalence.sparktest.internal.DatasetUtils
-import org.apache.spark.sql.types.StructType
 
 import scala.util.Try
 
@@ -22,17 +20,20 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   private var configuration: SparkTestConfiguration = SparkTestConfiguration()
 
   /**
-    * You can wrapped your Spark-Test's function using a configuration to customise the behaviour of the function
+    * You can wrap your Spark-Test's function using a configuration to customize the behaviour of the function
     * Each functions who can be modified using the configuration have the tag @configuration
     *
     * Example:
     * withConfiguration(failOnMissingExpectedCol = false, failOnMissingOriginalCol = false)({ df1.assertEquals(df2) })
     * result: ignore if there are any extra columns in df1 or df2
     *
-    * failOnMissingOriginalCol: if true, Return an exception if a colonne appear in the original Dtaframe but not in the expected one
-    * failOnChangedDataTypeExpectedCol: if true, Return an exception if both colonne don't have the same DataType
-    * failOnMissingExpectedCol: if true, Return an exception if a colonne appear in the expected Dtaframe but not in the original one
-    * maxRowError: if > 0, print maxRowError's rows during the error handling else print every row's errors
+    * failOnMissingOriginalCol:         if true, Return an exception if a column appear in the original DataFrame
+    *                                   but not in the expected one
+    * failOnChangedDataTypeExpectedCol: if true, Return an exception if both columns don't have the same DataType
+    * failOnMissingExpectedCol:         if true, Return an exception if a column appear in the expected DataFrame
+    *                                   but not in the original one
+    * maxRowError:                      if > 0, print maxRowError's rows during the error handling else print
+    *                                   every row's errors
     */
   def withConfiguration(
     failOnMissingOriginalCol: Boolean         = configuration.failOnMissingOriginalCol,
@@ -173,9 +174,10 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     /**
-      * Comparison between two DataFrames, can be custom using the Spark-Test configuration
+      * Comparison between two DataFrames, can be customized using the Spark-Test configuration
       *
-      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol, maxRowError
+      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol,
+      *                       maxRowError
       * @param otherDf        DataFrame to compare to
       * @return               An exception if both Dataframes are not equals
       */
@@ -188,14 +190,15 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     /**
-      * Approximate comparison between two DataFrames, can be custom using the Spark-Test configuration
+      * Approximate comparison between two DataFrames, can be customized using the Spark-Test configuration
       * If the DataFrames match the instances of Double, Float, or Timestamp, 'approx' will be used to compare an
       * approximate equality of the two DFs.
       *
-      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol, maxRowError
-      * @param otherDf           DataFrame to compare to
-      * @param approx             double for the approximate comparison. If the absolute value of the difference between
-      *                           two values is less than approx, then the two values are considered equal.
+      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol,
+      *                       maxRowError
+      * @param otherDf        DataFrame to compare to
+      * @param approx         double for the approximate comparison. If the absolute value of the difference between
+      *                       two values is less than approx, then the two values are considered equal.
       */
     def assertApproxEquals(otherDf: DataFrame, approx: Double): Unit = {
       val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDf).get
@@ -206,9 +209,10 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     /**
-      * Verify if if the Dataframe and the Sequence are equals, can be custom using the Spark-Test configuration
+      * Verify if the DataFrame and Sequence are equals, can be customized using the Spark-Test configuration
       *
-      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol, maxRowError
+      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol,
+      *                       maxRowError
       * @param seq            Sequence to compare to
       * @return               An exception if the Dataframe and the Sequence are not equals
       */
@@ -218,7 +222,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     /**
-      * Gives each modifications for each row between this Dataframe and otherDf
+      * Return each modifications for each row between this DataFrame and otherDf
       *
       * @param otherDf          DataFrame to compare to
       * @return                 Return the Sequence of modifications for each rows
@@ -231,7 +235,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     /**
-      * Return a stringified version of the first modifications between this Dataframe and otherDf
+      * Return a stringified version of the first modifications between this DataFrame and otherDf
       * The number of showed modifications can be modified using the Spark-Test configuration's value: maxRowError
       *
       * @param otherDf          DataFrame to compare to
