@@ -1,5 +1,7 @@
 package io.univalence.sparktest
 
+import java.sql.Timestamp
+
 import io.univalence.strings.Index.{ ArrayIndex, FieldIndex }
 import io.univalence.strings.{ FieldKey, Index, IndexOrRoot, Root }
 import org.apache.spark.sql.Row
@@ -7,6 +9,7 @@ import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.{ ArrayType, StructType }
 
 import scala.collection.mutable
+import scala.math.abs
 
 object ValueComparison {
 
@@ -83,13 +86,15 @@ object ValueComparison {
     * @param v2     The Expected ObjectValue
     * @return       Sequence of ObjectModification between v1 and v2
     */
-  def compareValue(v1: ObjectValue, v2: ObjectValue): Seq[ObjectModification] = {
+  def compareValue(v1: ObjectValue, v2: ObjectValue, approx: Double = 0): Seq[ObjectModification] = {
     def compareValue(v1: ObjectValue, v2: ObjectValue, prefix: IndexOrRoot): Seq[ObjectModification] = {
       def loop(v1: Value, v2: Value, prefix: Index): Seq[ObjectModification] = (v1, v2) match {
-        case (c1: AtomicValue, c2: AtomicValue) => compareAtomicValue(c1, c2, prefix)
-        case (c1: ArrayValue, c2: ArrayValue)   => compareArrayValue(c1, c2, prefix)
-        case (c1: ObjectValue, c2: ObjectValue) => compareValue(c1, c2, prefix)
+        case (c1: AtomicValue, c2: AtomicValue) if approx <= 0 => compareAtomicValue(c1, c2, prefix)
+        case (c1: AtomicValue, c2: AtomicValue)                => compareAtomicValueApprox(c1, c2, prefix, approx)
+        case (c1: ArrayValue, c2: ArrayValue)                  => compareArrayValue(c1, c2, prefix)
+        case (c1: ObjectValue, c2: ObjectValue)                => compareValue(c1, c2, prefix)
 
+        case (NullValue, NullValue) => Nil
         case (l, NullValue) => Seq(ObjectModification(prefix, RemoveValue(l)))
         case (NullValue, r) => Seq(ObjectModification(prefix, AddValue(r)))
         case (l, r)         => Seq(ObjectModification(prefix, ChangeValue(l, r))) // Not sure
@@ -99,6 +104,32 @@ object ValueComparison {
         (av1, av2) match {
           case (AtomicValue(c1), AtomicValue(c2)) if c1 == c2 => Nil
           case _                                              => Seq(ObjectModification(prefix, ChangeValue(av1, av2)))
+        }
+
+      def compareAtomicValueApprox(av1: AtomicValue,
+                                   av2: AtomicValue,
+                                   prefix: Index,
+                                   approx: Double): Seq[ObjectModification] =
+        (av1, av2) match {
+          case (AtomicValue(c1), AtomicValue(c2)) if c1.isInstanceOf[Float] && c2.isInstanceOf[Float] => {
+            val (v1, v2) = (c1.asInstanceOf[Float], c2.asInstanceOf[Float])
+            if (java.lang.Float.isNaN(v1) || java.lang.Float.isNaN(v2) || (abs(v1 - v2) > approx))
+              Seq(ObjectModification(prefix, ChangeValue(av1, av2)))
+            else Nil
+          }
+          case (AtomicValue(c1), AtomicValue(c2)) if c1.isInstanceOf[Double] && c2.isInstanceOf[Double] => {
+            val (v1, v2) = (c1.asInstanceOf[Double], c2.asInstanceOf[Double])
+            if (java.lang.Double.isNaN(v1) || java.lang.Double.isNaN(v2) || (abs(v1 - v2) > approx))
+              Seq(ObjectModification(prefix, ChangeValue(av1, av2)))
+            else Nil
+          }
+          case (AtomicValue(c1), AtomicValue(c2)) if c1.isInstanceOf[Timestamp] && c2.isInstanceOf[Timestamp] => {
+            val (v1, v2) = (c1.asInstanceOf[Timestamp], c2.asInstanceOf[Timestamp])
+            if ((abs(v1.getTime - v2.getTime) > approx))
+              Seq(ObjectModification(prefix, ChangeValue(av1, av2)))
+            else Nil
+          }
+          case (v1, v2) => compareAtomicValue(v1, v2, prefix)
         }
 
       def compareArrayValue(av1: ArrayValue, av2: ArrayValue, prefix: Index): Seq[ObjectModification] =

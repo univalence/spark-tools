@@ -200,7 +200,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     /**
-      * Verify if two Dataframes are equals, can be custom using the Spark-Test configuration
+      * Comparison between two DataFrames, can be custom using the Spark-Test configuration
       *
       * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol, maxRowError
       * @param otherDf        DataFrame to compare to
@@ -210,6 +210,24 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDf).get
       if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
         val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf)
+        throw ValueError(valueMods, thisDf, otherDf)
+      }
+    }
+
+    /**
+      * Approximate comparison between two DataFrames, can be custom using the Spark-Test configuration
+      * If the DataFrames match the instances of Double, Float, or Timestamp, 'approx' will be used to compare an
+      * approximate equality of the two DFs.
+      *
+      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol, maxRowError
+      * @param otherDf           DataFrame to compare to
+      * @param approx             double for the approximate comparison. If the absolute value of the difference between
+      *                           two values is less than approx, then the two values are considered equal.
+      */
+    def assertApproxEquals2(otherDf: DataFrame, approx: Double): Unit = {
+      val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDf).get
+      val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf, approx)
+      if (valueMods.filter(ms => ms.nonEmpty).size != 0){
         throw ValueError(valueMods, thisDf, otherDf)
       }
     }
@@ -232,11 +250,11 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * @param otherDf          DataFrame to compare to
       * @return                 Return the Sequence of modifications for each rows
       */
-    def getRowsDifferences(otherDf: DataFrame): Seq[Seq[ObjectModification]] = {
+    def getRowsDifferences(otherDf: DataFrame, approx: Double = 0): Seq[Seq[ObjectModification]] = {
       val rows1 = thisDf.collect()
       val rows2 = otherDf.collect()
 
-      rows1.zipAll(rows2, null, null).view.map(r => compareValue(fromRow(r._1), fromRow(r._2)))
+      rows1.zipAll(rows2, null, null).view.map(r => compareValue(fromRow(r._1), fromRow(r._2), approx))
     }
 
     /**
@@ -412,9 +430,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       //
       val expectedKeyed: RDD[(T, Int)] = thisRdd.map(_  -> 1)
       val resultKeyed: RDD[(T, Int)]   = otherRdd.map(_ -> 1)
-
-      //TODO : ReduceByKey + Cogroup give us 5 stages, we have to do the cogroup directly to have only 3 stages
-      // and ReduceByKey can be done in the mapping post cogroup : DONE ?
 
       expectedKeyed
         .cogroup(resultKeyed)

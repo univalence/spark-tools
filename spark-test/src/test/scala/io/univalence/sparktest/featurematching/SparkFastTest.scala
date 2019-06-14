@@ -103,7 +103,7 @@ class SparkFastTest extends FunSuite with SparkTest {
     )
 
     //assertApproximateDataFrameEquality(sourceDF, expectedDF, 0.1)
-    sourceDF.assertApproxEquals(expectedDF, 0.1)
+    sourceDF.assertApproxEquals2(expectedDF, 0.1)
   }
 
 }
