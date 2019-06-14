@@ -130,11 +130,11 @@ object ValueComparison {
           }
           case (AtomicValue(c1), AtomicValue(c2)) if c1.isInstanceOf[Timestamp] && c2.isInstanceOf[Timestamp] => {
             val (v1, v2) = (c1.asInstanceOf[Timestamp], c2.asInstanceOf[Timestamp])
-            if ((abs(v1.getTime - v2.getTime) > approx))
+            if (abs(v1.getTime - v2.getTime) > approx)
               Seq(ObjectModification(prefix, ChangeValue(av1, av2)))
             else Nil
           }
-          case (v1, v2) => compareAtomicValue(v1, v2, prefix)
+          case _ => compareAtomicValue(av1, av2, prefix)
         }
 
       def compareArrayValue(av1: ArrayValue, av2: ArrayValue, prefix: Index): Seq[ObjectModification] =

@@ -197,10 +197,10 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * @param approx             double for the approximate comparison. If the absolute value of the difference between
       *                           two values is less than approx, then the two values are considered equal.
       */
-    def assertApproxEquals2(otherDf: DataFrame, approx: Double): Unit = {
+    def assertApproxEquals(otherDf: DataFrame, approx: Double): Unit = {
       val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDf).get
       val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf, approx)
-      if (valueMods.filter(ms => ms.nonEmpty).size != 0){
+      if (valueMods.exists(_.nonEmpty)) {
         throw ValueError(valueMods, thisDf, otherDf)
       }
     }
@@ -290,36 +290,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
           .mkString("\n\n")
         s"The data set content is different :\n\n$rows\n"
       }
-    }
-
-    /**
-      * Approximate comparison between two DataFrames.
-      * If the DataFrames match the instances of Double, Float, or Timestamp, 'approx' will be used to compare an
-      * approximate equality of the two DFs.
-      *
-      * @param otherDF            DataFrame to compare to
-      * @param approx             double for the approximate comparison. If the absolute value of the difference between
-      *                           two values is less than approx, then the two values are considered equal.
-      */
-    def assertApproxEquals(otherDF: DataFrame, approx: Double): Unit = {
-      val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDF).get
-
-      val rows1  = reducedThisDf.collect()
-      val rows2  = reducedOtherDf.collect()
-
-      val valueMods: Seq[Seq[ObjectModification]] =
-        rows1
-          .zipAll(rows2, null, null)
-          .view
-          .filter {
-            case (r1, r2) =>
-              if (!areRowsEqual(r1, r2, approx)) true
-              else false
-            case _ => true
-          }
-          .map(r => compareValue(fromRow(r._1), fromRow(r._2)))
-
-      if (valueMods.nonEmpty) throw ValueError(valueMods, reducedThisDf, reducedOtherDf)
     }
 
     /**
