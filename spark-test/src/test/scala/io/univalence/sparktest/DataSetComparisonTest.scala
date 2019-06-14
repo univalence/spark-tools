@@ -135,9 +135,4 @@ class DataSetComparisonTest extends FunSuite with SparkTest {
       ds.assertEquals(seqEx)
     }
   }
-
-  test("dzadazd") {
-    val ds = dsFromValues(A(1), A(2))
-    ds.show()
-  }
 }
