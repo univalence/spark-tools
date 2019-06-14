@@ -112,4 +112,11 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
                     ObjectModification(index".a", AddValue(AtomicValue(2))))
     )
   }
+
+  test("From null to null should not return any error"){
+    val df1 = dataframe("{a: null}")
+    val df2 = dataframe("{a: null}")
+    assert(compareValue(fromRow(df1.first), fromRow(df2.first)) == Seq())
+
+  }
 }

@@ -31,6 +31,11 @@ object ValueComparison {
 
   final case class ObjectModification(index: Index, valueModification: ValueDiff) extends ValueModification
 
+  /**
+    * Convert any value in a TermValue
+    * @param a      the value to be converted
+    * @return
+    */
   def termValue(a: Any): TermValue = a match {
     case null    => NullValue
     case None    => NullValue
@@ -39,7 +44,7 @@ object ValueComparison {
   }
 
   /**
-    * Transform a row in an ObjectValue component
+    * Transform a row in an ObjectValue component which is composed by ObjectValue, ArrayValue and TermValue
     *
     * @param r      the row to be converted
     * @return       the ObjectValue's transposition of the row

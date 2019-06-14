@@ -120,45 +120,18 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def reduceColumn[B](otherDs: Dataset[B]): Try[(DataFrame, DataFrame)] =
-      thisDs.toDF.reduceColumn(otherDs.toDF)
-
     // TODO : Faire sans les toDF !
-    def assertEquals[B](otherDs: Dataset[B])(implicit encB: Encoder[B]): Unit = {
-      // Compare Schema and try to reduce it
-      val (reducedThisDf, reducedOtherDf) = thisDs.reduceColumn(otherDs).get
+    def assertEquals[B](otherDs: Dataset[B])(implicit encB: Encoder[B]): Unit =
+      thisDs.toDF.assertEquals(otherDs.toDF)
 
-      if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
-        val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf)
-        throw ValueError(valueMods, thisDs.toDF, otherDs.toDF)
-      }
-    }
 
     def assertEquals(seq: Seq[T]): Unit = {
       val dfFromSeq = ss.createDataFrame(ss.sparkContext.parallelize(seq.map(Row(_))), thisDs.schema)
       assertEquals(dfFromSeq.as[T])
     }
 
-    def assertApproxEquals(otherDs: Dataset[T], approx: Double): Unit = {
-      val (reducedThisDs, reducedOtherDs) = thisDs.reduceColumn(otherDs).get
-
-      val rows1  = reducedThisDs.collect()
-      val rows2  = reducedOtherDs.collect()
-
-      val valueMods: Seq[Seq[ObjectModification]] =
-        rows1
-          .zipAll(rows2, null, null)
-          .view
-          .filter {
-            case (r1, r2) =>
-              if (!areRowsEqual(r1, r2, approx)) true
-              else false
-            case _ => true
-          }
-          .map(r => compareValue(fromRow(r._1), fromRow(r._2)))
-
-      if (valueMods.nonEmpty) throw ValueError(valueMods, reducedThisDs, reducedOtherDs)
-    }
+    def assertApproxEquals(otherDs: Dataset[T], approx: Double): Unit =
+      thisDs.toDF.assertApproxEquals(otherDs.toDF, approx)
   }
 
   // ========================== DATAFRAME ====================================
@@ -319,22 +292,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
-    def assertColumnEquality(rightLabel: String, leftLabel: String): Unit =
-      if (compareColumn(rightLabel, leftLabel))
-        throw new AssertionError("Columns are different")
-
-    def compareColumn(rightLabel: String, leftLabel: String): Boolean = {
-      val elements =
-        thisDf
-          .select(
-            rightLabel,
-            leftLabel
-          )
-          .collect()
-
-      elements.exists(r => r(0) != r(1))
-    }
-
     /**
       * Approximate comparison between two DataFrames.
       * If the DataFrames match the instances of Double, Float, or Timestamp, 'approx' will be used to compare an
@@ -385,6 +342,22 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       println(s2cc.schemaToCaseClass(thisDf.schema, className))
     } //PrintCaseClass Definition from Dataframe inspection
 
+    // ========================== SHOULD REMOVE ?? ====================================
+    def assertColumnEquality(rightLabel: String, leftLabel: String): Unit =
+      if (compareColumn(rightLabel, leftLabel))
+        throw new AssertionError("Columns are different")
+
+    def compareColumn(rightLabel: String, leftLabel: String): Boolean = {
+      val elements =
+        thisDf
+          .select(
+            rightLabel,
+            leftLabel
+          )
+          .collect()
+
+      elements.exists(r => r(0) != r(1))
+    }
   }
 
   // ========================== RDD ====================================
@@ -443,23 +416,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         }
         .take(1)
         .headOption
-      // Group them together and filter for difference
-      /*
-      expectedKeyed
-        .reduceByKey(_ + _)
-        .cogroup(resultKeyed.reduceByKey(_ + _))
-        .filter {
-          case (_, (i1, i2)) =>
-            i1.isEmpty || i2.isEmpty || i1.head != i2.head
-        }
-        .take(1)
-        .headOption
-        .map {
-          case (v, (i1, i2)) =>
-            (v, i1.headOption.getOrElse(0), i2.headOption.getOrElse(0))
-        }
-
-     */
     }
 
     def assertEqualsWithOrder(otherRdd: RDD[T]): Unit =
@@ -524,16 +480,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 }
 
 object SparkTest {
-  //Comparaison de Row
-  case class RowDiff(label: String, left: Any, right: Any) {
-    assert(left != right)
-  }
-
-  def compareRow(r1: Row, r2: Row, schema: StructType): Seq[RowDiff] =
-    ???
-
-  def modifyRow(r: Row, rowDiff: RowDiff): Try[Row] = ???
-
   sealed trait HasSparkSession {
     def ss: SparkSession
   }
