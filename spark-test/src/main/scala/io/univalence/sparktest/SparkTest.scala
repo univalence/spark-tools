@@ -509,9 +509,11 @@ object SparkTest {
 
     def dfFromJsonFile(path: String): DataFrame = ss.read.json(path)
 
-    def dataset[T: Encoder: ClassTag](value: T*): Dataset[T] = {
+    def dsFromValues[T: Encoder: ClassTag](value: T*): Dataset[T] = {
       assert(value.nonEmpty)
-      ss.createDataset(value)
+      val _ss = ss
+      import _ss.implicits._
+      ss.sparkContext.parallelize(value, 1).toDS
     }
 
     def loadJson(filenames: String*): DataFrame = {
