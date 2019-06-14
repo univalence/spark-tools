@@ -43,7 +43,7 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
     assert(
       compareValue(fromRow(df1.first), fromRow(df2.first)) ==
         ArrayBuffer(
-          ObjectModification(index"set[1]", AddValue(AtomicValue(mutable.WrappedArray.make(Array("2", "5")))))
+          ObjectModification(index".set[1]", AddValue(AtomicValue(mutable.WrappedArray.make(Array("2", "5")))))
         )
     )
   }
@@ -59,7 +59,7 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
 
     assert(
       compareValue(fromRow(df1.first), fromRow(df2.first)) ==
-        ArrayBuffer(ObjectModification(index"id2", RemoveValue(AtomicValue(2))))
+        ArrayBuffer(ObjectModification(index".id2", RemoveValue(AtomicValue(2))))
     )
   }
 
@@ -74,7 +74,7 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
 
     assert(
       compareValue(fromRow(df1.first), fromRow(df2.first)) ==
-        ArrayBuffer(ObjectModification(index"id2", AddValue(AtomicValue(4))))
+        ArrayBuffer(ObjectModification(index".id2", AddValue(AtomicValue(4))))
     )
   }
 
@@ -97,8 +97,10 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
       StructType(List(StructField("number", IntegerType, nullable = false)))
     )
 
-    // Normal qu'il y ait une modification ?
-    println(compareValue(fromRow(df1.first), fromRow(df2.first)))
+    assert(
+      compareValue(fromRow(df1.first), fromRow(df2.first)) ==
+        ArrayBuffer(ObjectModification(index".number", ChangeValue(AtomicValue("1"), AtomicValue(1))))
+    )
   }
 
   test("From null to a value should be an AddValue modification") {
@@ -106,8 +108,8 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
     val df2 = dataframe("{a: 2}")
     assert(
       compareValue(fromRow(df1.first), fromRow(df2.first)) ==
-        ArrayBuffer(ObjectModification(index"b", RemoveValue(AtomicValue(false))),
-                    ObjectModification(index"a", AddValue(AtomicValue(2))))
+        ArrayBuffer(ObjectModification(index".b", RemoveValue(AtomicValue(false))),
+                    ObjectModification(index".a", AddValue(AtomicValue(2))))
     )
   }
 }

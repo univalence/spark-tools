@@ -246,7 +246,7 @@ object Index {
 
   def create(index: String): Try[Index] = Try {
 
-    val parts: Array[String] = index.split('.')
+    val parts: Array[String] = index.split('.').filter(!_.isEmpty)
 
     def computeIndex(parent: IndexOrRoot, part: String): IndexOrRoot = {
 
