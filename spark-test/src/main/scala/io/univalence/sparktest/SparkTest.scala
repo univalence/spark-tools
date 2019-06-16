@@ -4,8 +4,14 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
-import io.univalence.sparktest.SchemaComparison.{AddField, ChangeFieldType, RemoveField, SchemaModification}
-import io.univalence.sparktest.ValueComparison.{ObjectModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
+import io.univalence.sparktest.SchemaComparison.{ AddField, ChangeFieldType, RemoveField, SchemaModification }
+import io.univalence.sparktest.ValueComparison.{
+  compareValue,
+  fromRow,
+  toStringModifications,
+  toStringRowsMods,
+  ObjectModification
+}
 import io.univalence.sparktest.internal.DatasetUtils
 
 import scala.util.Try
@@ -125,7 +131,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     def assertEquals[B](otherDs: Dataset[B])(implicit encB: Encoder[B]): Unit =
       thisDs.toDF.assertEquals(otherDs.toDF)
 
-
     def assertEquals(seq: Seq[T]): Unit = {
       val dfFromSeq = ss.createDataFrame(ss.sparkContext.parallelize(seq.map(Row(_))), thisDs.schema)
       assertEquals(dfFromSeq.as[T])
@@ -202,7 +207,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       */
     def assertApproxEquals(otherDf: DataFrame, approx: Double): Unit = {
       val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDf).get
-      val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf, approx)
+      val valueMods                       = reducedThisDf.getRowsDifferences(reducedOtherDf, approx)
       if (valueMods.exists(_.nonEmpty)) {
         throw ValueError(valueMods, thisDf, otherDf)
       }
@@ -278,17 +283,15 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
         toStringModifications(diffs) ++ toStringRowsMods(diffs, rowsDF1(index), rowsDF2(index))
       }
 
-      if (configuration.maxRowError > 0){
-        val rows = modifications
-          .view
-          .zipWithIndex
+      if (configuration.maxRowError > 0) {
+        val rows = modifications.view.zipWithIndex
           .filter(_._1.nonEmpty)
           .map(stringify)
-          .take(configuration.maxRowError).mkString("\n\n")
+          .take(configuration.maxRowError)
+          .mkString("\n\n")
         s"The data set content is different :\n\n$rows\n"
       } else {
-        val rows = modifications
-          .zipWithIndex
+        val rows = modifications.zipWithIndex
           .filter(_._1.nonEmpty)
           .map(stringify)
           .mkString("\n\n")

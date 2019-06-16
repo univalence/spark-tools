@@ -45,9 +45,9 @@ class ReadFromJsonTest extends FunSuite with SparkTest {
   }
 
   test("load Json from multiple files") {
-    val path = "spark-test/src/test/resources/jsonTest.json"
+    val path  = "spark-test/src/test/resources/jsonTest.json"
     val path2 = "spark-test/src/test/resources/jsonTest2.json"
-    val df = loadJson(path, path2)
+    val df    = loadJson(path, path2)
 
     assert(df.count == 9)
   }

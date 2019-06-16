@@ -165,7 +165,7 @@ object Expr {
 
       implicit def encoder[A: Encoder]: Aux[A, A] = instance(a => a)
       implicit def expr[A]: Aux[Expr[A], A]       = instance(a => a)
-      implicit val path: Aux[Key, Any]           = instance(a => a)
+      implicit val path: Aux[Key, Any]            = instance(a => a)
     }
 
     def merge[B](caseWhenExprTyped1: CaseWhenExpr[B], caseWhenExprTyped2: CaseWhenExpr[B]): CaseWhenExpr[B] =

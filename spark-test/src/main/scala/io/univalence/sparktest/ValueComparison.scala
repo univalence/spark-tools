@@ -100,9 +100,9 @@ object ValueComparison {
         case (c1: ObjectValue, c2: ObjectValue)                => compareValue(c1, c2, prefix)
 
         case (NullValue, NullValue) => Nil
-        case (l, NullValue) => Seq(ObjectModification(prefix, RemoveValue(l)))
-        case (NullValue, r) => Seq(ObjectModification(prefix, AddValue(r)))
-        case (l, r)         => Seq(ObjectModification(prefix, ChangeValue(l, r))) // Not sure
+        case (l, NullValue)         => Seq(ObjectModification(prefix, RemoveValue(l)))
+        case (NullValue, r)         => Seq(ObjectModification(prefix, AddValue(r)))
+        case (l, r)                 => Seq(ObjectModification(prefix, ChangeValue(l, r))) // Not sure
       }
 
       def compareAtomicValue(av1: AtomicValue, av2: AtomicValue, prefix: Index): Seq[ObjectModification] =

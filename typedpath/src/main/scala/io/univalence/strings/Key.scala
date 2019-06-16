@@ -127,10 +127,10 @@ object Key {
           if (string.nonEmpty && string.head == char) Some(string.tail) else None
       }
 
-      val Dot   = StartWithChar('.')
+      val Dot      = StartWithChar('.')
       val Brackets = StartWithPattern("\\[\\]")
-      val Name  = StartWithPattern("\\w+")
-      val Error = StartWithPattern("[^\\w/.]+")
+      val Name     = StartWithPattern("\\w+")
+      val Error    = StartWithPattern("[^\\w/.]+")
     }
 
     val tokenOf: String => Option[(Token, String)] = {
@@ -158,7 +158,7 @@ object Key {
       if (tokens.isEmpty) ""
       else if (tokens.size == 1) tokens.head match {
         case Dot               => "."
-        case Brackets           => "[]"
+        case Brackets          => "[]"
         case NamePart(name)    => name
         case ErrorToken(error) => error
       } else tokens.map(x => stringify(x)).mkString
@@ -174,7 +174,7 @@ object Key {
 
   def combineToKey(prefix: KeyOrRoot, suffix: KeyOrRoot): KeyOrRoot =
     suffix match {
-      case Root         => prefix
+      case Root        => prefix
       case f: FieldKey => combineToField(prefix, f)
       case a: ArrayKey => combineToArray(prefix, a)
     }
@@ -204,7 +204,7 @@ object Key {
         case (parent, Brackets) =>
           parent.flatMap({
             case n: Key => Try(ArrayKey(n))
-            case _       => Failure(new Exception(s"cannot create an array at the root $string"))
+            case _      => Failure(new Exception(s"cannot create an array at the root $string"))
           })
 
       })
@@ -280,16 +280,16 @@ sealed trait Key extends KeyOrRoot {
   def firstName: String with FieldKey.Name =
     this match {
       case FieldKey(name, Root) => name
-      case FieldKey(_, p: Key) => p.firstName
+      case FieldKey(_, p: Key)  => p.firstName
       case ArrayKey(parent)     => parent.firstName
     }
 
   def allKeys: List[Key] = {
     def loop(key: Key, stack: List[Key]): List[Key] =
       key match {
-        case FieldKey(_, Root)         => key :: stack
+        case FieldKey(_, Root)        => key :: stack
         case FieldKey(_, parent: Key) => loop(parent, key :: stack)
-        case ArrayKey(parent)          => loop(parent, key :: stack)
+        case ArrayKey(parent)         => loop(parent, key :: stack)
       }
     loop(this, Nil)
   }
@@ -297,7 +297,7 @@ sealed trait Key extends KeyOrRoot {
 
 case class FieldKey(name: String with FieldKey.Name, parent: KeyOrRoot) extends Key {
   override def toString: String = parent match {
-    case Root         => name
+    case Root        => name
     case f: FieldKey => s"$f.$name"
     case a: ArrayKey => s"$a$name"
   }

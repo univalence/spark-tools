@@ -64,7 +64,7 @@ class DataFrameComparisonTest extends FunSuite with SparkTest {
   }
 
   test("assertEquals (DF & Seq) : a DF and a Seq with different content are not equal") {
-    val df = Seq(1, 3, 3).toDF("number")
+    val df    = Seq(1, 3, 3).toDF("number")
     val seqEx = Seq(1, 2, 3)
 
     assertThrows[SparkTestError] {

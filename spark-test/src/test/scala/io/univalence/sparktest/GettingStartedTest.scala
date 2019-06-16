@@ -28,8 +28,14 @@ class GettingStartedTest extends FunSuite with SparkTest {
   }
 
   test("test view") {
-    val df1 = dataframe("{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}")
-    val df2 = dataframe("{a:1, b:false}", "{a:1, b:false}", "{a:1, b:false}", "{a:1, b:false}", "{a:1, b:false}", "{a:1, b:false}")
+    val df1 =
+      dataframe("{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}", "{a:1, b:true}")
+    val df2 = dataframe("{a:1, b:false}",
+                        "{a:1, b:false}",
+                        "{a:1, b:false}",
+                        "{a:1, b:false}",
+                        "{a:1, b:false}",
+                        "{a:1, b:false}")
 
     assertThrows[SparkTestError] {
       withConfiguration(maxRowError = 2)({

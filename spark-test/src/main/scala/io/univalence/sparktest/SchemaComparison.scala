@@ -58,7 +58,7 @@ object SchemaComparison {
 
         left: Option[StructField]  = sc1.fields.find(_.name == fieldname)
         right: Option[StructField] = sc2.fields.find(_.name == fieldname)
-        path: Key                 = FieldKey(FieldKey.createName(fieldname).get, prefix)
+        path: Key                  = FieldKey(FieldKey.createName(fieldname).get, prefix)
 
         modifications: Seq[SchemaModification] = (left, right) match {
           case (Some(l), None)    => Seq(SchemaModification(path, RemoveField(l.dataType)))
@@ -107,7 +107,7 @@ object SchemaComparison {
         case at: ArrayType =>
           paths match {
             case ArrayKey(_) :: xs => ArrayType(loopDt(at.elementType, xs, fieldModification))
-            case _                  => throw UnreachablePath
+            case _                 => throw UnreachablePath
           }
         case _ =>
           fieldModification match {
