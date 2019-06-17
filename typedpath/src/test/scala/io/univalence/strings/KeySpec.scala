@@ -75,7 +75,6 @@ class KeySpec extends FunSuite {
 
   }
 
-  //TODO @Harrison fix it!
   test("create Key") {
     assert(
       Key.create("abcd.edfg[][].hijk") ==
@@ -83,19 +82,6 @@ class KeySpec extends FunSuite {
     )
 
     assert(Key.create("abc[][][]") == Try(ArrayKey(ArrayKey(ArrayKey(FieldKey("abc", Root).get)))))
-    /*
-
-    //TO TEST
-
-    ""
-  "abc"
-  "abc/"
-  "abc.def/"
-  "abc.def/ghi"
-  "abc.def//"
-
-  ["abc" "def" :/ "ghi"]
-   */
   }
 
   test("error") {
