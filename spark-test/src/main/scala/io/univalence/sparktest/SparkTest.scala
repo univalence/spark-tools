@@ -88,7 +88,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   case class ValueError(modifications: Seq[Seq[ObjectModification]], thisDf: DataFrame, otherDf: DataFrame)
       extends SparkTestError {
     override lazy val getMessage: String =
-      thisDf.reportErrorComparisonLight(otherDf, modifications)
+      thisDf.reportErrorComparison(otherDf, modifications)
 
   }
 
@@ -240,31 +240,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     /**
-      * Return a stringified version of the first modifications between this DataFrame and otherDf
-      * The number of showed modifications can be modified using the Spark-Test configuration's value: maxRowError
-      *
-      * @param otherDf          DataFrame to compare to
-      * @param modifications    Sequence of modifications for each rows
-      * @return                 Stringified version of modifications
-      */
-    def reportErrorComparison(otherDf: DataFrame, modifications: Seq[Seq[ObjectModification]]): String = {
-      val rowsDF1 = thisDf.collect()
-      val rowsDF2 = otherDf.collect()
-
-      val rows = for {
-        rowModifications <- modifications.zipWithIndex
-        diffs = rowModifications._1
-        index = rowModifications._2
-        if diffs.nonEmpty
-      } yield {
-        toStringModifications(diffs) ++ toStringRowsMods(diffs, rowsDF1(index), rowsDF2(index))
-      }
-
-      s"The data set content is different :\n\n${rows.take(10).mkString("\n\n")}\n"
-    }
-
-    // In progress
-    /**
       * Return a stringified version of the first modifications between this Dataframe and otherDf
       * The number of showed modifications can be modified using the Spark-Test configuration's value: maxRowError
       *
@@ -273,7 +248,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * @param modifications    Sequence of modifications for each rows
       * @return                 Stringified version of modifications
       */
-    def reportErrorComparisonLight(otherDf: DataFrame, modifications: Seq[Seq[ObjectModification]]): String = {
+    def reportErrorComparison(otherDf: DataFrame, modifications: Seq[Seq[ObjectModification]]): String = {
       val rowsDF1 = thisDf.collect()
       val rowsDF2 = otherDf.collect()
 
