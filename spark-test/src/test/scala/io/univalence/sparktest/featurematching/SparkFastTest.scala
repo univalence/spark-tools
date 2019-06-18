@@ -77,6 +77,10 @@ class SparkFastTest extends FunSuite with SparkTest {
     //assertSmallDatasetEquality(sourceDF, expectedDF, ignoreNullable = true) // OK
     //assertSmallDatasetEquality(sourceDF, expectedDF, ignoreNullable = false) // not equal
     sourceDF.assertEquals(expectedDF)
+
+    assertThrows[SparkTestError] {
+      withConfiguration(failOnNullable = true)(sourceDF.assertEquals(expectedDF))
+    }
   }
 
   test("approximate dataframe equality") {

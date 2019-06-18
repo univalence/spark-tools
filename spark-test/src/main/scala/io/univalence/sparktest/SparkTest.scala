@@ -4,21 +4,17 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
-import io.univalence.sparktest.SchemaComparison.{ AddField, ChangeFieldType, RemoveField, SchemaModification }
-import io.univalence.sparktest.ValueComparison.{
-  compareValue,
-  fromRow,
-  toStringModifications,
-  toStringRowsMods,
-  ObjectModification
-}
+import io.univalence.sparktest.SchemaComparison.{AddField, ChangeFieldType, RemoveField, SchemaModification, SetNonNullable, SetNullable}
+import io.univalence.sparktest.ValueComparison.{ObjectModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
 import io.univalence.sparktest.internal.DatasetUtils
+import org.apache.spark.sql.types.{StructField, StructType}
 
 import scala.util.Try
 
 case class SparkTestConfiguration(failOnMissingOriginalCol: Boolean         = false,
                                   failOnChangedDataTypeExpectedCol: Boolean = true,
                                   failOnMissingExpectedCol: Boolean         = true,
+                                  failOnNullable: Boolean                   = false,
                                   maxRowError: Int                          = -1)
 
 trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
@@ -45,6 +41,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     failOnMissingOriginalCol: Boolean         = configuration.failOnMissingOriginalCol,
     failOnChangedDataTypeExpectedCol: Boolean = configuration.failOnChangedDataTypeExpectedCol,
     failOnMissingExpectedCol: Boolean         = configuration.failOnMissingExpectedCol,
+    failOnNullable: Boolean                   = configuration.failOnNullable,
     maxRowError: Int                          = configuration.maxRowError
   )(body: => Unit): Unit = {
     val old = configuration
@@ -52,6 +49,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       failOnMissingOriginalCol         = failOnMissingOriginalCol,
       failOnChangedDataTypeExpectedCol = failOnChangedDataTypeExpectedCol,
       failOnMissingExpectedCol         = failOnMissingExpectedCol,
+      failOnNullable                   = failOnNullable,
       maxRowError                      = maxRowError
     )
     body
@@ -80,6 +78,14 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
             case SchemaModification(p, AddField(_)) =>
               if (configuration.failOnMissingExpectedCol)
                 s"$msgs\nField ${p.firstName} was not in the original DataFrame."
+              else msgs
+            case SchemaModification(p, SetNullable) =>
+              if (configuration.failOnNullable)
+                s"$msgs\nExpected field ${p.firstName} to be nullable."
+              else msgs
+            case SchemaModification(p, SetNonNullable) =>
+              if (configuration.failOnNullable)
+                s"$msgs\nExpected field ${p.firstName} to be non-nullable."
               else msgs
           }
       }
@@ -171,6 +177,15 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
                 if (!configuration.failOnMissingExpectedCol)
                   (df1, df2.drop(p.firstName))
                 else throw SchemaError(modifications)
+              case SchemaModification(p, SetNullable) =>
+                if (!configuration.failOnNullable)
+                  (df1, SparkTest.setNullable(df2, p.firstName, nullable = true))
+                else throw SchemaError(modifications)
+              case SchemaModification(p, SetNonNullable) =>
+                if (!configuration.failOnNullable)
+                  (df1, SparkTest.setNullable(df2, p.firstName, nullable = false))
+                else throw SchemaError(modifications)
+
             }
         }
       } else {
@@ -473,6 +488,15 @@ object SparkTest {
       ss.read.json(filenames: _*)
     }
 
+  }
+
+  private def setNullable(df: DataFrame, field: String, nullable: Boolean) : DataFrame = {
+    val schema = df.schema
+    val newSchema = StructType(schema.map {
+      case StructField(f, t, _, m) if f.equals(field) => StructField(f, t, nullable = nullable, m)
+      case y: StructField => y
+    })
+    df.sqlContext.createDataFrame(df.rdd, newSchema)
   }
 
 }

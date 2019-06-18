@@ -15,9 +15,9 @@ object SchemaComparison {
 
   final case class ChangeFieldType(from: DataType, to: DataType) extends FieldModification
 
-  //final case object SetNullable extends FieldModification
+  final case object SetNullable extends FieldModification
 
-  //final case object SetNonNullable extends FieldModification
+  final case object SetNonNullable extends FieldModification
 
   final case class SchemaModification(path: Key, fieldModification: FieldModification)
 
@@ -51,6 +51,14 @@ object SchemaComparison {
           case (a, b)                           => Seq(SchemaModification(prefix, ChangeFieldType(a, b)))
         }
 
+      def compareNullable(n1: Boolean, n2: Boolean, prefix: Key): Seq[SchemaModification] =
+        (n1, n2) match {
+          case (false, false) => Nil
+          case (true, true) => Nil
+          case (false, true) => Seq(SchemaModification(prefix, SetNullable))
+          case (true, false) => Seq(SchemaModification(prefix, SetNonNullable))
+        }
+
       val allFields = (sc1.fieldNames ++ sc2.fieldNames).distinct
 
       for {
@@ -64,7 +72,8 @@ object SchemaComparison {
           case (Some(l), None)    => Seq(SchemaModification(path, RemoveField(l.dataType)))
           case (None, Some(r))    => Seq(SchemaModification(path, AddField(r.dataType)))
           case (None, None)       => Nil
-          case (Some(l), Some(r)) => compareDataType(l.dataType, r.dataType, path)
+          case (Some(l), Some(r)) =>
+            compareDataType(l.dataType, r.dataType, path) ++ compareNullable(l.nullable, r.nullable, path)
         }
 
         modification <- modifications
@@ -129,6 +138,18 @@ object SchemaComparison {
         case (List(FieldKey(name, _)), RemoveField(_)) =>
           if (sc.fieldNames.contains(name)) StructType(sc.filter(field => field.name != name))
           else throw NotFoundField(name)
+
+        case (List(FieldKey(name, _)), SetNullable) =>
+          if (sc.fieldNames.contains(name))
+            StructType(sc.map(field => if (field.name == name) field.copy(nullable = true) else field))
+          else
+            throw NotFoundField(name)
+
+        case (List(FieldKey(name, _)), SetNonNullable) =>
+          if (sc.fieldNames.contains(name))
+            StructType(sc.map(field => if (field.name == name) field.copy(nullable = false) else field))
+          else
+            throw NotFoundField(name)
 
         case (FieldKey(name, _) :: xs, ChangeFieldType(_, to)) if xs.forall(_.isInstanceOf[ArrayKey]) =>
           if (sc.fieldNames.contains(name))

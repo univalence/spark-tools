@@ -11,12 +11,15 @@ import org.scalatest.prop.PropertyChecks
 
 import scala.util.{ Failure, Success }
 
+case class DtAndNull(dt: DataType, nullable: Boolean = true)
+
 object SchemaBuilder {
-  def string: StringType                            = StringType
-  def double: DoubleType                            = DoubleType
-  def integer: IntegerType                          = IntegerType
-  def array(dataType: DataType): ArrayType          = ArrayType(dataType)
-  def struct(args: (String, DataType)*): StructType = StructType(args.map({ case (k, b) => StructField(k, b) }))
+  def string: StringType                                       = StringType
+  def double: DoubleType                                       = DoubleType
+  def integer: IntegerType                                     = IntegerType
+  def array(dataType: DataType): ArrayType                     = ArrayType(dataType)
+  def struct(args: (String, DtAndNull)*): StructType =
+    StructType(args.map({ case (k, DtAndNull(d, b)) => StructField(k, d, b) }))
 }
 
 class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
@@ -33,26 +36,26 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
   }
 
   test("Two identical schema have no schema modification") {
-    val sc1 = struct("number" -> integer)
+    val sc1 = struct("number" -> DtAndNull(integer))
     assert(compareSchema(sc1, sc1) == Nil)
   }
 
   test("A field removed should return a SchemaModification RemoveField") {
-    val sc1 = struct("number" -> integer, "name" -> integer)
-    val sc2 = struct("number" -> integer)
+    val sc1 = struct("number" -> DtAndNull(integer), "name" -> DtAndNull(integer))
+    val sc2 = struct("number" -> DtAndNull(integer))
     assert(compareSchema(sc1, sc2) == Seq(SchemaModification(key"name", RemoveField(integer))))
   }
 
   test("A field added should return a SchemaModification with AddField") {
-    val sc1 = struct("number" -> integer)
-    val sc2 = struct("number" -> integer, "name" -> integer)
+    val sc1 = struct("number" -> DtAndNull(integer))
+    val sc2 = struct("number" -> DtAndNull(integer), "name" -> DtAndNull(integer))
 
     assert(compareSchema(sc1, sc2) == Seq(SchemaModification(key"name", AddField(integer))))
   }
 
   test("A field changed should return a SchemaModification with ChangeField") {
-    val sc1 = struct("number" -> integer)
-    val sc2 = struct("number" -> double)
+    val sc1 = struct("number" -> DtAndNull(integer))
+    val sc2 = struct("number" -> DtAndNull(double))
 
     assert(compareSchema(sc1, sc2) == Seq(SchemaModification(key"number", ChangeFieldType(integer, DoubleType))))
   }
@@ -61,8 +64,8 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
     "A field removed, a field added, and a field changed should return a" +
       "SchemaModification with RemoveField, AddField, and ChangeField"
   ) {
-    val sc1 = struct("number" -> integer, "name" -> integer)
-    val sc2 = struct("rebmun" -> integer, "name" -> double)
+    val sc1 = struct("number" -> DtAndNull(integer), "name" -> DtAndNull(integer))
+    val sc2 = struct("rebmun" -> DtAndNull(integer), "name" -> DtAndNull(double))
 
     assert(
       compareSchema(sc1, sc2) == Seq(
@@ -74,7 +77,7 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
   }
 
   test("Adding a field while the field exists should return a Duplicated Field error") {
-    val sc = struct("number" -> integer)
+    val sc = struct("number" -> DtAndNull(integer))
     val sm = SchemaModification(key"number", AddField(integer))
 
     assert(
@@ -84,17 +87,17 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
   }
 
   test("Adding a field while the field not exists should return a Success with the new StructType") {
-    val sc = struct("number" -> integer)
+    val sc = struct("number" -> DtAndNull(integer))
     val sm = SchemaModification(key"rebmun", AddField(integer))
 
     assert(
       modifySchema(sc, sm) ==
-        Success(struct("number" -> integer, "rebmun" -> integer))
+        Success(struct("number" -> DtAndNull(integer), "rebmun" -> DtAndNull(integer)))
     )
   }
 
   test("Removing a field while the field is inexistant should return a Not Found Field error") {
-    val sc = struct("number" -> integer)
+    val sc = struct("number" -> DtAndNull(integer))
     val sm = SchemaModification(key"name", RemoveField(integer))
 
     assert(
@@ -104,17 +107,17 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
   }
 
   test("Removing a field while the field is existant should return a Success with the new StructType") {
-    val sc = struct("number" -> integer, "rebmun" -> integer)
+    val sc = struct("number" -> DtAndNull(integer), "rebmun" -> DtAndNull(integer))
     val sm = SchemaModification(key"rebmun", RemoveField(integer))
 
     assert(
       modifySchema(sc, sm) ==
-        Success(struct(("number", integer)))
+        Success(struct(("number", DtAndNull(integer))))
     )
   }
 
   test("Updating a field type while the field is inexistant should return a Not Found Field error") {
-    val sc = struct("number" -> integer)
+    val sc = struct("number" -> DtAndNull(integer))
     val sm = SchemaModification(key"name", ChangeFieldType(integer, DoubleType))
 
     assert(
@@ -124,41 +127,49 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
   }
 
   test("Updating a field type while the field is existant should return a Success with the new StructType") {
-    val sc = struct("number" -> integer)
+    val sc = struct("number" -> DtAndNull(integer))
     val sm = SchemaModification(key"number", ChangeFieldType(integer, double))
 
     assert(
       modifySchema(sc, sm) ==
-        Success(struct(("number", DoubleType)))
+        Success(struct(("number", DtAndNull(DoubleType))))
     )
   }
 
   test("property base bug #1") {
-    val s1 = struct("i" -> array(struct("o" -> struct("p" -> double))), "m" -> array(integer)) // 15 shrinks
-    val s2 = struct("i" -> array(struct("v" -> integer))) // 12 shrinks
+    val s1 = struct("i" -> DtAndNull(array(struct("o" -> DtAndNull(struct("p" -> DtAndNull(double)))))), "m" -> DtAndNull(array(integer))) // 15 shrinks
+    val s2 = struct("i" -> DtAndNull(array(struct("v" -> DtAndNull(integer))))) // 12 shrinks
 
     assertInvariant(s1, s2)
   }
 
   test("property base bug #2") {
-    val s1 = struct("k" -> array(integer)) // shrinked manualy
-    val s2 = struct("k" -> array(string)) // 5 shrinks
+    val s1 = struct("k" -> DtAndNull(array(integer))) // shrinked manualy
+    val s2 = struct("k" -> DtAndNull(array(string))) // 5 shrinks
 
     assertInvariant(s1, s2)
   }
 
   test("property base bug #3") {
-    val arg0 = struct("t" -> double, "f" -> array(string)) // 9 shrinks
-    val arg1 = struct("v" -> double, "f" -> double) // 4 shrinks
+    val arg0 = struct("t" -> DtAndNull(double), "f" -> DtAndNull(array(string))) // 9 shrinks
+    val arg1 = struct("v" -> DtAndNull(double), "f" -> DtAndNull(double)) // 4 shrinks
 
     assertInvariant(arg0, arg1)
   }
 
   test("property base bug #4") {
-    val arg0 = struct("e" -> array(array(struct("w" -> string)))) // 12 shrinks + Manualy
-    val arg1 = struct("e" -> array(string)) // 4 shrinks
+    val arg0 = struct("e" -> DtAndNull(array(array(struct("w" -> DtAndNull(string)))))) // 12 shrinks + Manualy
+    val arg1 = struct("e" -> DtAndNull(array(string))) // 4 shrinks
 
     assertInvariant(arg0, arg1)
+  }
+
+  test("property base bug #5") {
+    val arg0 = struct("e" -> DtAndNull(double, nullable = false))
+    val arg1 = struct("e" -> DtAndNull(double, nullable = true))
+
+    assertInvariant(arg0, arg1)
+    assertInvariant(arg1, arg0)
   }
 
   def assertInvariant(s1: StructType, s2: StructType): Unit = {
@@ -273,7 +284,7 @@ object DatatypeGen {
       fieldNames     <- Gen.listOfN(numberOfFields, fieldNames)
       l = fieldNames.distinct.map(x => genDataType(maxDepth - 1).map(x -> _))
       fields <- Gen.sequence(l)
-    } yield struct(fields.asScala: _*)
+    } yield struct(fields.asScala.map { case (n, d) => (n, DtAndNull(d))}: _*)
   }
 
   def genArray(maxDepth: Int): Gen[ArrayType] = genDataType(maxDepth - 1).map(x => ArrayType(x))
