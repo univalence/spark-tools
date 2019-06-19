@@ -185,6 +185,12 @@ lazy val sparkTest = (project in file("spark-test"))
     useSpark(sparkVersion = "2.1.1")(modules = "sql"),
     addTestLibs
   )
+  .settings(
+    scalacOptions += "-Yrangepos",
+    scalacOptions += "-Ywarn-unused",
+    addCompilerPlugin(scalafixSemanticdb),
+    scalafixDependencies in ThisBuild += "com.github.vovapolu" %% "scaluzzi" % "0.1.2"
+  )
 
 // ====
 

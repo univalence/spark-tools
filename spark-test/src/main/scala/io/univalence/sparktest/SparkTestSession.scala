@@ -4,7 +4,7 @@ import org.apache.spark.sql.SparkSession
 
 trait SparkTestSession {
 
-  lazy val spark: SparkSession =
+  def spark: SparkSession =
     SparkSession
       .builder()
       .master("local[1]")

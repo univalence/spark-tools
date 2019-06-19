@@ -2,6 +2,7 @@ package io.univalence.sparktest
 
 import org.apache.spark.sql._
 
+@SuppressWarnings(Array("all"))
 trait SparkTestSQLImplicits /* SQLImplicits */ {
 
   import org.apache.spark.rdd.RDD
