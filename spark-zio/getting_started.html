@@ -4,9 +4,9 @@
 
 <p>If you want to use Spark-ZIO, you will need these:</p>
 
-<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">val</span> <span class="n">runtime</span><span class="k">:</span> <span class="kt">DefaultRuntime</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">DefaultRuntime</span> <span class="o">{}</span>
-<span class="k">val</span> <span class="n">ss</span><span class="k">:</span> <span class="kt">SparkSession</span>        <span class="o">=</span> <span class="nc">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">master</span><span class="o">(</span><span class="s">"local[*]"</span><span class="o">).</span><span class="n">getOrCreate</span><span class="o">()</span>
-<span class="k">val</span> <span class="n">sparkEnv</span><span class="k">:</span> <span class="kt">SparkZIO</span>      <span class="o">=</span> <span class="k">new</span> <span class="nc">SparkZIO</span><span class="o">(</span><span class="n">ss</span><span class="o">)</span>
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">val</span> <span class="nv">runtime</span><span class="k">:</span> <span class="kt">DefaultRuntime</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">DefaultRuntime</span> <span class="o">{}</span>
+<span class="k">val</span> <span class="nv">ss</span><span class="k">:</span> <span class="kt">SparkSession</span>        <span class="o">=</span> <span class="nv">SparkSession</span><span class="o">.</span><span class="py">builder</span><span class="o">.</span><span class="py">master</span><span class="o">(</span><span class="s">"local[*]"</span><span class="o">).</span><span class="py">getOrCreate</span><span class="o">()</span>
+<span class="k">val</span> <span class="nv">sparkEnv</span><span class="k">:</span> <span class="kt">SparkZIO</span>      <span class="o">=</span> <span class="k">new</span> <span class="nc">SparkZIO</span><span class="o">(</span><span class="n">ss</span><span class="o">)</span>
 </code></pre></div></div>
 
 <p>You can obviously change the configuration for your runtime and your SparkSession.</p>
@@ -14,11 +14,11 @@
 <p>Now that you wield the power of Spark and ZIO together, let’s make a simple local Spark job:</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">io.univalence.sparkzio.SparkEnv.TaskS</span>
-<span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">TaskS</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="k">for</span> <span class="o">{</span>
-  <span class="n">df</span> <span class="k">&lt;-</span> <span class="n">sparkEnv</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">parquet</span><span class="o">(</span><span class="n">pathToParquet</span><span class="o">)</span>
-  <span class="k">_</span>  <span class="k">&lt;-</span> <span class="nc">Task</span><span class="o">(</span><span class="n">df</span><span class="o">.</span><span class="n">show</span><span class="o">())</span>
-<span class="o">}</span> <span class="k">yield</span> <span class="o">()</span>
-<span class="n">runtime</span><span class="o">.</span><span class="n">unsafeRun</span><span class="o">(</span><span class="n">program</span><span class="o">)</span>
+<span class="k">val</span> <span class="nv">program</span><span class="k">:</span> <span class="kt">TaskS</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="k">for</span> <span class="o">{</span>
+  <span class="n">df</span> <span class="k">&lt;-</span> <span class="nv">sparkEnv</span><span class="o">.</span><span class="py">read</span><span class="o">.</span><span class="py">parquet</span><span class="o">(</span><span class="n">pathToParquet</span><span class="o">)</span>
+  <span class="k">_</span>  <span class="k">&lt;-</span> <span class="nc">Task</span><span class="o">(</span><span class="nv">df</span><span class="o">.</span><span class="py">show</span><span class="o">())</span>
+<span class="o">}</span> <span class="nf">yield</span> <span class="o">()</span>
+<span class="nv">runtime</span><span class="o">.</span><span class="py">unsafeRun</span><span class="o">(</span><span class="n">program</span><span class="o">)</span>
 </code></pre></div></div>
 </section></div></div></div></div><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script><script src="/spark-tools/highlight/highlight.pack.js"></script><script>hljs.configure({languages:['scala','java','bash']});
 hljs.initHighlighting();

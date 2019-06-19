@@ -26,21 +26,21 @@ if they are different.</p>
 <span class="k">import</span> <span class="nn">org.scalatest.FunSuiteLike</span>
 
 <span class="k">class</span> <span class="nc">MyTestClass</span> <span class="k">extends</span> <span class="nc">FunSuiteLike</span> <span class="k">with</span> <span class="nc">SparkTest</span> <span class="o">{</span>
-    <span class="n">test</span><span class="o">(</span><span class="s">"some test"</span><span class="o">){</span>
+    <span class="nf">test</span><span class="o">(</span><span class="s">"some test"</span><span class="o">){</span>
         <span class="k">case</span> <span class="k">class</span> <span class="nc">A</span><span class="o">(</span><span class="n">a</span><span class="k">:</span><span class="kt">Int</span><span class="o">)</span>
         
-        <span class="k">val</span> <span class="n">df</span> <span class="k">=</span> <span class="n">dataframe</span><span class="o">(</span><span class="s">"{a:1, b:true}"</span><span class="o">,</span> <span class="s">"{a:2, b:false}"</span><span class="o">)</span>
-        <span class="k">val</span> <span class="n">ds</span> <span class="k">=</span> <span class="n">dataset</span><span class="o">(</span><span class="n">A</span><span class="o">(</span><span class="mi">1</span><span class="o">),</span> <span class="n">A</span><span class="o">(</span><span class="mi">3</span><span class="o">))</span>
+        <span class="k">val</span> <span class="nv">df</span> <span class="k">=</span> <span class="nf">dataframe</span><span class="o">(</span><span class="s">"{a:1, b:true}"</span><span class="o">,</span> <span class="s">"{a:2, b:false}"</span><span class="o">)</span>
+        <span class="k">val</span> <span class="nv">ds</span> <span class="k">=</span> <span class="nf">dataset</span><span class="o">(</span><span class="nf">A</span><span class="o">(</span><span class="mi">1</span><span class="o">),</span> <span class="nf">A</span><span class="o">(</span><span class="mi">3</span><span class="o">))</span>
         
-        <span class="n">df</span><span class="o">.</span><span class="n">assertEquals</span><span class="o">(</span><span class="n">ds</span><span class="o">)</span>
+        <span class="nv">df</span><span class="o">.</span><span class="py">assertEquals</span><span class="o">(</span><span class="n">ds</span><span class="o">)</span>
     <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div></div>
 
-<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="nc">AssertionError</span><span class="k">:</span> <span class="kt">The</span> <span class="kt">data</span> <span class="kt">set</span> <span class="kt">content</span> <span class="kt">is</span> <span class="kt">different</span> <span class="kt">:</span>
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">java</span><span class="o">.</span><span class="py">lang</span><span class="o">.</span><span class="py">AssertionError</span><span class="k">:</span> <span class="kt">The</span> <span class="kt">data</span> <span class="kt">set</span> <span class="kt">content</span> <span class="kt">is</span> <span class="kt">different</span> <span class="kt">:</span>
 <span class="kt">in</span> <span class="kt">field</span> <span class="kt">a</span><span class="o">,</span> <span class="mi">2</span> <span class="n">is</span> <span class="n">not</span> <span class="n">equals</span> <span class="n">to</span> <span class="n">expected</span> <span class="n">value</span> <span class="mi">3</span> 
-<span class="n">dataframe</span><span class="o">(</span><span class="s">"{ a: 2 , b: false}"</span><span class="o">)</span>
-<span class="n">dataframe</span><span class="o">(</span><span class="s">"{ a: 3 }"</span><span class="o">)</span>
+<span class="nf">dataframe</span><span class="o">(</span><span class="s">"{ a: 2 , b: false}"</span><span class="o">)</span>
+<span class="nf">dataframe</span><span class="o">(</span><span class="s">"{ a: 3 }"</span><span class="o">)</span>
 </code></pre></div></div>
 
 <p>There are many other features! To learn more about Spark-Test, see the <a href="./spark-test">Spark-Test documentation</a>.</p>
