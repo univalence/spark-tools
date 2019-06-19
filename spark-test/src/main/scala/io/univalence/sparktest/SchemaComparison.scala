@@ -54,9 +54,9 @@ object SchemaComparison {
       def compareNullable(n1: Boolean, n2: Boolean, prefix: Key): Seq[SchemaModification] =
         (n1, n2) match {
           case (false, false) => Nil
-          case (true, true) => Nil
-          case (false, true) => Seq(SchemaModification(prefix, SetNullable))
-          case (true, false) => Seq(SchemaModification(prefix, SetNonNullable))
+          case (true, true)   => Nil
+          case (false, true)  => Seq(SchemaModification(prefix, SetNullable))
+          case (true, false)  => Seq(SchemaModification(prefix, SetNonNullable))
         }
 
       val allFields = (sc1.fieldNames ++ sc2.fieldNames).distinct
@@ -69,9 +69,9 @@ object SchemaComparison {
         path: Key                  = FieldKey(FieldKey.createName(fieldname).get, prefix)
 
         modifications: Seq[SchemaModification] = (left, right) match {
-          case (Some(l), None)    => Seq(SchemaModification(path, RemoveField(l.dataType)))
-          case (None, Some(r))    => Seq(SchemaModification(path, AddField(r.dataType)))
-          case (None, None)       => Nil
+          case (Some(l), None) => Seq(SchemaModification(path, RemoveField(l.dataType)))
+          case (None, Some(r)) => Seq(SchemaModification(path, AddField(r.dataType)))
+          case (None, None)    => Nil
           case (Some(l), Some(r)) =>
             compareDataType(l.dataType, r.dataType, path) ++ compareNullable(l.nullable, r.nullable, path)
         }

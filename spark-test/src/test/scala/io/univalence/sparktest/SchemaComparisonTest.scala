@@ -14,10 +14,10 @@ import scala.util.{ Failure, Success }
 case class DtAndNull(dt: DataType, nullable: Boolean = true)
 
 object SchemaBuilder {
-  def string: StringType                                       = StringType
-  def double: DoubleType                                       = DoubleType
-  def integer: IntegerType                                     = IntegerType
-  def array(dataType: DataType): ArrayType                     = ArrayType(dataType)
+  def string: StringType                   = StringType
+  def double: DoubleType                   = DoubleType
+  def integer: IntegerType                 = IntegerType
+  def array(dataType: DataType): ArrayType = ArrayType(dataType)
   def struct(args: (String, DtAndNull)*): StructType =
     StructType(args.map({ case (k, DtAndNull(d, b)) => StructField(k, d, b) }))
 }
@@ -137,7 +137,8 @@ class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
   }
 
   test("property base bug #1") {
-    val s1 = struct("i" -> DtAndNull(array(struct("o" -> DtAndNull(struct("p" -> DtAndNull(double)))))), "m" -> DtAndNull(array(integer))) // 15 shrinks
+    val s1 = struct("i" -> DtAndNull(array(struct("o" -> DtAndNull(struct("p" -> DtAndNull(double)))))),
+                    "m" -> DtAndNull(array(integer))) // 15 shrinks
     val s2 = struct("i" -> DtAndNull(array(struct("v" -> DtAndNull(integer))))) // 12 shrinks
 
     assertInvariant(s1, s2)
@@ -284,7 +285,7 @@ object DatatypeGen {
       fieldNames     <- Gen.listOfN(numberOfFields, fieldNames)
       l = fieldNames.distinct.map(x => genDataType(maxDepth - 1).map(x -> _))
       fields <- Gen.sequence(l)
-    } yield struct(fields.asScala.map { case (n, d) => (n, DtAndNull(d))}: _*)
+    } yield struct(fields.asScala.map { case (n, d) => (n, DtAndNull(d)) }: _*)
   }
 
   def genArray(maxDepth: Int): Gen[ArrayType] = genDataType(maxDepth - 1).map(x => ArrayType(x))

@@ -4,10 +4,23 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
-import io.univalence.sparktest.SchemaComparison.{AddField, ChangeFieldType, RemoveField, SchemaModification, SetNonNullable, SetNullable}
-import io.univalence.sparktest.ValueComparison.{ObjectModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
+import io.univalence.sparktest.SchemaComparison.{
+  AddField,
+  ChangeFieldType,
+  RemoveField,
+  SchemaModification,
+  SetNonNullable,
+  SetNullable
+}
+import io.univalence.sparktest.ValueComparison.{
+  compareValue,
+  fromRow,
+  toStringModifications,
+  toStringRowsMods,
+  ObjectModification
+}
 import io.univalence.sparktest.internal.DatasetUtils
-import org.apache.spark.sql.types.{StructField, StructType}
+import org.apache.spark.sql.types.{ StructField, StructType }
 
 import scala.util.Try
 
@@ -490,11 +503,11 @@ object SparkTest {
 
   }
 
-  private def setNullable(df: DataFrame, field: String, nullable: Boolean) : DataFrame = {
+  private def setNullable(df: DataFrame, field: String, nullable: Boolean): DataFrame = {
     val schema = df.schema
     val newSchema = StructType(schema.map {
       case StructField(f, t, _, m) if f.equals(field) => StructField(f, t, nullable = nullable, m)
-      case y: StructField => y
+      case y: StructField                             => y
     })
     df.sqlContext.createDataFrame(df.rdd, newSchema)
   }
