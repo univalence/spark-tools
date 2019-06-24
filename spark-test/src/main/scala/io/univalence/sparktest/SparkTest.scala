@@ -216,8 +216,12 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       */
     def assertEquals(otherDf: DataFrame): Unit = {
       val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDf).get
-      if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
-        val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf)
+      val (newThisDf, newOtherDf) = if (!reducedThisDf.columns.sameElements(reducedOtherDf.columns)) {
+        import SparkTest.orderedColumnsDf
+        (orderedColumnsDf(reducedThisDf), orderedColumnsDf(reducedOtherDf))
+      } else (reducedThisDf, reducedOtherDf)
+      if (!newThisDf.collect().sameElements(newOtherDf.collect())) {
+        val valueMods = newThisDf.getRowsDifferences(newOtherDf)
         if (!valueMods.forall(_.isEmpty)) {
           throw ValueError(valueMods, thisDf, otherDf)
         }
@@ -512,6 +516,11 @@ object SparkTest {
       case y: StructField                             => y
     })
     df.sqlContext.createDataFrame(df.rdd, newSchema)
+  }
+
+  private def orderedColumnsDf(df: DataFrame): DataFrame = {
+    val sortedColumns = df.columns.sorted
+    df.select(sortedColumns.head, sortedColumns.tail: _*)
   }
 
 }
