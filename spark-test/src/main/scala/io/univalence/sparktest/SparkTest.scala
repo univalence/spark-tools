@@ -218,7 +218,9 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDf).get
       if (!reducedThisDf.collect().sameElements(reducedOtherDf.collect())) {
         val valueMods = reducedThisDf.getRowsDifferences(reducedOtherDf)
-        throw ValueError(valueMods, thisDf, otherDf)
+        if (!valueMods.forall(_.isEmpty)) {
+          throw ValueError(valueMods, thisDf, otherDf)
+        }
       }
     }
 
