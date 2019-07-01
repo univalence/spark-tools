@@ -111,29 +111,58 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
   }
 
+  case class ShouldError(thisDf: DataFrame) extends SparkTestError {
+    override lazy val getMessage: String =
+      s"Rows not matching the predicate : ${thisDf.take(10).mkString("\n")}"
+  }
+
   // ========================== DATASET ====================================
 
   implicit class SparkTestDsOps[T: Encoder](thisDs: Dataset[T]) {
 
     DatasetUtils.cacheIfNotCached(thisDs)
 
-    def shouldForAll(pred: T => Boolean): Unit =
-      if (!thisDs.collect().forall(pred)) {
-        val displayErr = thisDs.collect().filterNot(pred).take(10)
-        throw new AssertionError(
-          "No rows from the dataset match the predicate. " +
-            s"Rows not matching the predicate :\n ${displayErr.mkString("\n")}"
-        )
+    /**
+      * Check if all the rows from the DataSet match the predicate. If not, return a SparkTestError.
+      * @param pred predicate to match
+      */
+    def shouldForAll(pred: T => Boolean): Unit = {
+      if (thisDs.filter(!pred(_)).take(1).nonEmpty) {
+        throw ShouldError(thisDs.toDF)
       }
+    }
 
-    def shouldExists(pred: T => Boolean): Unit =
-      if (!thisDs.collect().exists(pred)) {
-        val displayErr = thisDs.collect().take(10)
-        throw new AssertionError(
-          "No rows from the dataset match the predicate. " +
-            s"Rows not matching the predicate :\n ${displayErr.mkString("\n")}"
-        )
+    /**
+      * Check if at least one row from the DataSet match the predicate. If not, return a SparkTestError.
+      * @param pred predicate to match
+      */
+    def shouldExist(pred: T => Boolean): Unit = {
+      if (thisDs.filter(pred).take(1).isEmpty) {
+        throw ShouldError(thisDs.toDF)
       }
+    }
+
+    /**
+      * Check if all the rows from the DataSet match the sql expression. If not, return a SparkTestError.
+      * @param expr expression to match
+      */
+    def shouldForAll(expr: String): Unit = {
+      val col: Column = org.apache.spark.sql.functions.not(org.apache.spark.sql.functions.expr(expr))
+      if (thisDs.filter(col).take(1).nonEmpty) {
+        throw ShouldError(thisDs.toDF)
+      }
+    }
+
+    /**
+      * Check if at least one row from the DataSet match the sql expression. If not, return a SparkTestError.
+      * @param expr expression to match
+      */
+    def shouldExist(expr: String): Unit = {
+      val col: Column = org.apache.spark.sql.functions.expr(expr)
+      if (thisDs.filter(col).take(1).isEmpty) {
+        throw ShouldError(thisDs.toDF)
+      }
+    }
 
     def assertContains(values: T*): Unit = {
       val dsArray = thisDs.collect()

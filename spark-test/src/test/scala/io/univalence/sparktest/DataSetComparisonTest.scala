@@ -53,17 +53,29 @@ class DataSetComparisonTest extends FunSuite with SparkTest {
     }
   }
 
-  test("shouldExists : at least one row should match the predicate") {
+  test("shouldExist : at least one row should match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 
-    ds.shouldExists(_ > 2)
+    ds.shouldExist(_ > 2)
   }
 
-  test("shouldExists : should throw an error if all the rows don't match the predicate") {
+  test("shouldExist : should throw an error if all the rows don't match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 
-    assertThrows[AssertionError] {
-      ds.shouldExists(_ > 3)
+    assertThrows[SparkTestError] {
+      ds.shouldExist(_ > 3)
+    }
+  }
+
+  test("shouldExist with expression") {
+    val ds = Seq(1, 2, 3).toDF("id").as[Int]
+    ds.shouldExist("id is not null")
+  }
+
+  test("shouldExist with expression failure") {
+    val ds = Seq(1, 2, 3).toDF("id").as[Int]
+    assertThrows[SparkTestError] {
+      ds.shouldExist("id > 3")
     }
   }
 
@@ -76,8 +88,20 @@ class DataSetComparisonTest extends FunSuite with SparkTest {
   test("shouldForAll : should throw an error if one of the row does not match the predicate") {
     val ds = Seq(1, 2, 3).toDS()
 
-    assertThrows[AssertionError] {
+    assertThrows[SparkTestError] {
       ds.shouldForAll(_ >= 2)
+    }
+  }
+
+  test("shouldForAll with expression") {
+    val ds = Seq(1, 2, 3).toDF("id").as[Int]
+    ds.shouldForAll("id is not null")
+  }
+
+  test("shouldForAll with expression failure") {
+    val ds = Seq(1, 2, 3).toDF("id").as[Int]
+    assertThrows[SparkTestError] {
+      ds.shouldForAll("id > 1")
     }
   }
 
