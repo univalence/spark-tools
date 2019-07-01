@@ -74,7 +74,7 @@ commands:
       #    command: cat /dev/null | sbt << parameters.project_name >>/compile << parameters.project_name >>/test:compile
       - run:
           name: Test and compute code coverage << parameters.project_name >>
-          command: bash -x .circleci/hasNotChanged build.sbt << parameters.extra_fs_deps >> << parameters.project_name >> || cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport
+          command: bash -x .circleci/hasNotChanged build.sbt << parameters.extra_fs_deps >> << parameters.project_name >> || cat /dev/null | sbt coverage << parameters.project_name >>/test << parameters.project_name >>/coverageReport << parameters.project_name >>/doc
 
   release_all:
     description: release all sub-project
