@@ -127,7 +127,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * @param pred predicate to match
       */
     def shouldForAll(pred: T => Boolean): Unit = {
-      if (thisDs.filter(x => !pred(x)).take(1).nonEmpty) {
+      if (thisDs.filter{x: T => !pred(x)}.take(1).nonEmpty) {
         throw ShouldError(thisDs.toDF)
       }
     }
