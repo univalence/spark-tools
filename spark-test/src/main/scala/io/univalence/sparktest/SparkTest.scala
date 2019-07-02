@@ -123,28 +123,29 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     DatasetUtils.cacheIfNotCached(thisDs)
 
     /**
-      * Check if all the rows from the DataSet match the predicate. If not, return a SparkTestError.
-      * @param pred predicate to match
+      * Check if all the rows from the Dataset match the predicate. If not, return a SparkTestError.
+      *
+      * @param pred   predicate to match
       */
-    def shouldForAll(pred: T => Boolean): Unit = {
-      if (thisDs.filter((x:T) => !pred(x)).take(1).nonEmpty) {
+    def shouldForAll(pred: T => Boolean): Unit =
+      if (thisDs.filter((x: T) => !pred(x)).take(1).nonEmpty) {
         throw ShouldError(thisDs.toDF)
       }
-    }
 
     /**
-      * Check if at least one row from the DataSet match the predicate. If not, return a SparkTestError.
-      * @param pred predicate to match
+      * Check if at least one row from the Dataset match the predicate. If not, return a SparkTestError.
+      *
+      * @param pred   predicate to match
       */
-    def shouldExist(pred: T => Boolean): Unit = {
+    def shouldExist(pred: T => Boolean): Unit =
       if (thisDs.filter(pred).take(1).isEmpty) {
         throw ShouldError(thisDs.toDF)
       }
-    }
 
     /**
-      * Check if all the rows from the DataSet match the sql expression. If not, return a SparkTestError.
-      * @param expr expression to match
+      * Check if all the rows from the Dataset match the sql expression. If not, return a SparkTestError.
+      *
+      * @param expr   expression to match
       */
     def shouldForAll(expr: String): Unit = {
       val col: Column = org.apache.spark.sql.functions.not(org.apache.spark.sql.functions.expr(expr))
@@ -154,8 +155,9 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     /**
-      * Check if at least one row from the DataSet match the sql expression. If not, return a SparkTestError.
-      * @param expr expression to match
+      * Check if at least one row from the Dataset match the sql expression. If not, return a SparkTestError.
+      *
+      * @param expr   expression to match
       */
     def shouldExist(expr: String): Unit = {
       val col: Column = org.apache.spark.sql.functions.expr(expr)
@@ -164,6 +166,11 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       }
     }
 
+    /**
+      * Check if all values are present into the dataset. If not, return a AssertionError.
+      *
+      * @param values   values that should be in the dataset
+      */
     def assertContains(values: T*): Unit = {
       val dsArray = thisDs.collect()
       if (!values.forall(dsArray.contains(_))) {
@@ -176,14 +183,41 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     // TODO : Faire sans les toDF !
+    /**
+      * Comparison between two Datasets, can be customized using the Spark-Test configuration
+      *
+      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol,
+      *                       maxRowError
+      * @param otherDs        Dataset to compare to
+      * @return               an exception if both Datasets are not equals
+      */
     def assertEquals[B](otherDs: Dataset[B])(implicit encB: Encoder[B]): Unit =
       thisDs.toDF.assertEquals(otherDs.toDF)
 
+    /**
+      * Verify if the Dataset and Sequence are equals, can be customized using the Spark-Test configuration
+      *
+      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol,
+      *                       maxRowError
+      * @param seq            Sequence to compare to
+      * @return               an exception if the Dataset and the Sequence are not equals
+      */
     def assertEquals(seq: Seq[T]): Unit = {
       val dfFromSeq = ss.createDataFrame(ss.sparkContext.parallelize(seq.map(Row(_))), thisDs.schema)
       assertEquals(dfFromSeq.as[T])
     }
 
+    /**
+      * Approximate comparison between two Datasets, can be customized using the Spark-Test configuration
+      * If the Datasets match the instances of Double, Float, or Timestamp, 'approx' will be used to compare an
+      * approximate equality of the two DSs.
+      *
+      * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol,
+      *                       maxRowError
+      * @param otherDs        Dataset to compare to
+      * @param approx         double for the approximate comparison. If the absolute value of the difference between
+      *                       two values is less than approx, then the two values are considered equal.
+      */
     def assertApproxEquals(otherDs: Dataset[T], approx: Double): Unit =
       thisDs.toDF.assertApproxEquals(otherDs.toDF, approx)
   }
@@ -199,7 +233,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       *
       * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol
       * @param otherDf        DataFrame to compare to
-      * @return               Both reduced Dataframes
+      * @return               both reduced DataFrames
       */
     def reduceColumn(otherDf: DataFrame): Try[(DataFrame, DataFrame)] = {
       val modifications = SchemaComparison.compareSchema(thisDf.schema, otherDf.schema)
@@ -241,7 +275,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol,
       *                       maxRowError
       * @param otherDf        DataFrame to compare to
-      * @return               An exception if both Dataframes are not equals
+      * @return               an exception if both DataFrames are not equals
       */
     def assertEquals(otherDf: DataFrame): Unit = {
       val (reducedThisDf, reducedOtherDf) = thisDf.reduceColumn(otherDf).get
@@ -282,7 +316,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * @configuration        failOnMissingOriginalCol, failOnChangedDataTypeExpectedCol, failOnMissingExpectedCol,
       *                       maxRowError
       * @param seq            Sequence to compare to
-      * @return               An exception if the Dataframe and the Sequence are not equals
+      * @return               an exception if the DataFrame and the Sequence are not equals
       */
     def assertEquals[T: Encoder](seq: Seq[T]): Unit = {
       val dfFromSeq = ss.createDataFrame(ss.sparkContext.parallelize(seq.map(Row(_))), thisDf.schema)
@@ -293,7 +327,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * Return each modifications for each row between this DataFrame and otherDf
       *
       * @param otherDf          DataFrame to compare to
-      * @return                 Return the Sequence of modifications for each rows
+      * @return                 return the Sequence of modifications for each rows
       */
     def getRowsDifferences(otherDf: DataFrame, approx: Double = 0): Seq[Seq[ObjectModification]] = {
       val rows1 = thisDf.collect()
@@ -303,7 +337,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
     }
 
     /**
-      * Return a stringified version of the first modifications between this Dataframe and otherDf
+      * Return a stringified version of the first modifications between this DataFrame and otherDf
       * The number of showed modifications can be modified using the Spark-Test configuration's value: maxRowError
       *
       * @configuration          maxRowError
@@ -348,31 +382,14 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * id:Int
       * )
       *
-      * @param className name of the case class
+      * @param className  name of the case class
       */
     def showCaseClass(className: String): Unit = {
       val s2cc = new Schema2CaseClass
       import s2cc.implicits._
 
       println(s2cc.schemaToCaseClass(thisDf.schema, className))
-    } //PrintCaseClass Definition from Dataframe inspection
-
-    // ========================== SHOULD REMOVE ?? ====================================
-    def assertColumnEquality(rightLabel: String, leftLabel: String): Unit =
-      if (compareColumn(rightLabel, leftLabel))
-        throw new AssertionError("Columns are different")
-
-    def compareColumn(rightLabel: String, leftLabel: String): Boolean = {
-      val elements =
-        thisDf
-          .select(
-            rightLabel,
-            leftLabel
-          )
-          .collect()
-
-      elements.exists(r => r(0) != r(1))
-    }
+    } //PrintCaseClass Definition from DataFrame inspection
   }
 
   // ========================== RDD ====================================
@@ -380,7 +397,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   implicit class SparkTestRDDOps[T: ClassTag](thisRdd: RDD[T]) {
     def shouldForAll(f: T => Boolean): Unit = {
       val count: Long = thisRdd.map(v => f(v)).filter(_ == true).count()
-      if (thisRdd.count() != count) { // !thisRdd.collect().forall(f)
+      if (thisRdd.count() != count) {
         val displayErr = thisRdd.collect().filterNot(f).take(10)
         throw new AssertionError(
           "No rows from the dataset match the predicate. " +
@@ -391,7 +408,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
 
     def shouldExists(f: T => Boolean): Unit = {
       val empty = thisRdd.map(v => f(v)).filter(_ == true).isEmpty()
-      if (empty) { // !thisRdd.collect().exists(f)
+      if (empty) {
         val displayErr = thisRdd.collect().take(10)
         throw new AssertionError(
           "No rows from the dataset match the predicate. " +
@@ -511,8 +528,8 @@ object SparkTest {
       * | 1 | true  |
       * | 2 | false |
       *
-      * @param json   json's agruments, each argument represent one line of our dataframe
-      * @return       a dataframe
+      * @param json       json's agruments, each argument represent one line of our dataframe
+      * @return           a dataframe
       */
     def dataframe(json: String*): DataFrame = {
       assert(json.nonEmpty)
@@ -522,6 +539,15 @@ object SparkTest {
       ss.read.option("allowUnquotedFieldNames", value = true).json(ss.createDataset[String](json).rdd)
     }
 
+    //Todo: Add an example
+    /**
+      * Create a dataframe using a json file
+      *
+      * Example:
+      *
+      * @param path       The path where the json is stored
+      * @return           The resulting DataFrame
+      */
     def dfFromJsonFile(path: String): DataFrame = ss.read.json(path)
 
     def dataset[T: Encoder: ClassTag](value: T*): Dataset[T] = {
@@ -538,11 +564,19 @@ object SparkTest {
 
   }
 
+  /**
+    * Set the field's nullable property to nullable
+    *
+    * @param df             the DataFrame
+    * @param field          the column name
+    * @param nullable       the new nullable's value
+    * @return               the resulting DataFrame
+    */
   private def setNullable(df: DataFrame, field: String, nullable: Boolean): DataFrame = {
     val schema = df.schema
     val newSchema = StructType(schema.map {
-      case StructField(f, t, _, m) if f.equals(field) => StructField(f, t, nullable = nullable, m)
-      case y: StructField                             => y
+      case StructField(f, t, n, m) if f.equals(field) && n != nullable => StructField(f, t, !n, m)
+      case y: StructField                                              => y
     })
     df.sqlContext.createDataFrame(df.rdd, newSchema)
   }
