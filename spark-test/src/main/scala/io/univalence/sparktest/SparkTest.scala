@@ -389,7 +389,24 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       import s2cc.implicits._
 
       println(s2cc.schemaToCaseClass(thisDf.schema, className))
-    } //PrintCaseClass Definition from DataFrame inspection
+    }
+
+    // ========================== SHOULD REMOVE ?? ====================================
+    def assertColumnEquality(rightLabel: String, leftLabel: String): Unit =
+      if (compareColumn(rightLabel, leftLabel))
+        throw new AssertionError("Columns are different")
+
+    def compareColumn(rightLabel: String, leftLabel: String): Boolean = {
+      val elements =
+        thisDf
+          .select(
+            rightLabel,
+            leftLabel
+          )
+          .collect()
+
+      elements.exists(r => r(0) != r(1))
+    }//PrintCaseClass Definition from DataFrame inspection
   }
 
   // ========================== RDD ====================================
