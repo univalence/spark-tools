@@ -323,6 +323,27 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       assertEquals(dfFromSeq)
     }
 
+    // EN CONSTRUCTION
+    def mapToDf(maps: Seq[Map[String, Any]]): DataFrame = {
+      val _ss = ss
+      val cols = maps.flatMap(_.keys).distinct
+      val values = maps.map(m => {
+        val row = cols.map(k => {
+          val value = m.getOrElse(k, null)
+          value match {
+            case null => null
+            case _ => value.toString
+          }
+        })
+        // Use shapeless here
+        row match {
+          case List(a, b, c, d, _*) => (a, b, c, d)
+        }
+      })
+      val rdd = _ss.sparkContext.parallelize(values)
+      _ss.createDataFrame(rdd).toDF(cols: _*)
+    }
+
     /**
       * Return each modifications for each row between this DataFrame and otherDf
       *
