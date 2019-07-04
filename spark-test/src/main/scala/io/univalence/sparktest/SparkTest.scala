@@ -323,7 +323,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       assertEquals(dfFromSeq)
     }
 
-    // EN CONSTRUCTION
+    // EN CONSTRUCTION 
     def mapToDf(maps: Seq[Map[String, Any]]): DataFrame = {
       val _ss = ss
       val cols = maps.flatMap(_.keys).distinct
