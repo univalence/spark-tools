@@ -1,6 +1,6 @@
 package io.univalence.sparktools.schema
 
-import io.univalence.typedpath.{FieldPath, PathOrRoot, Root}
+import io.univalence.strings.{FieldKey, KeyOrRoot, Root}
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.sql.{DataFrame, Dataset}
 
@@ -21,16 +21,16 @@ object Schema {
 
   type Tx = Dataset[_] => Try[DataFrame]
 
-  def move(from:PathOrRoot, to:PathOrRoot):Tx = {
+  def move(from: KeyOrRoot, to: KeyOrRoot):Tx = {
     (from, to) match {
-      case (FieldPath(a,Root), FieldPath(b,Root)) =>
+      case (FieldKey(a,Root), FieldKey(b,Root)) =>
         df => Try(df.withColumnRenamed(a,b))
     }
   }
 
-  case class Point(dt:DataType, ref:String)
+  case class Point(dt: DataType, ref:String)
 
-  def transformAtPath(target: PathOrRoot, tx: Point => StrExp): Tx = ???
+  def transformAtPath(target: KeyOrRoot, tx: Point => StrExp): Tx = ???
 
 
 
