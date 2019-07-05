@@ -116,7 +116,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       s"Rows not matching the predicate : ${thisDf.take(10).mkString("\n")}"
   }
 
-  // ========================== DATASET ====================================
+  // ========================== DATASET =====================================
 
   implicit class SparkTestDsOps[T: Encoder](thisDs: Dataset[T]) {
 
