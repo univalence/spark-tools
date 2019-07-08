@@ -69,6 +69,7 @@ lazy val sparkTools = (project in file("."))
 
 lazy val schema = (project in file("schema"))
   .dependsOn(typedpath, sparkTest % "test -> compile")
+  .settings(projectDescription, defaultConfiguration)
   .settings(
     name        := "schema",
     description := "Utilities to manipulate schema directly",

@@ -1,8 +1,8 @@
-package io.univalence.sparktools.schema
+package io.univalence.schema
 
 import io.univalence.sparktest.SparkTest
 import org.scalatest.FunSuite
-import io.univalence.typedpath._
+import io.univalence.strings._
 
 class SchemaTest extends FunSuite with SparkTest {
 

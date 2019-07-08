@@ -1,4 +1,4 @@
-package io.univalence.sparktools.schema
+package io.univalence.schema
 
 import io.univalence.strings.{FieldKey, KeyOrRoot, Root}
 import org.apache.spark.sql.types.DataType
