@@ -144,6 +144,7 @@ lazy val parka =
       useSpark(libVersion.sparkScala212)("sql"),
       addTestLibs
     )
+    .dependsOn(sparkTest)
 
 lazy val plumbus =
   project
