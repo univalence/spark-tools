@@ -134,6 +134,17 @@ lazy val fenek = project
     addTestLibs
   )
 
+lazy val parka =
+  project
+    .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
+    .settings(
+      description := "Implementation of DeltaQA for DataFrame",
+      homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/parka")),
+      startYear   := Some(2019),
+      useSpark(libVersion.sparkScala212)("sql"),
+      addTestLibs
+    )
+
 lazy val plumbus =
   project
     .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
@@ -147,8 +158,7 @@ lazy val plumbus =
         "MrPowers"         % "spark-fast-tests" % "2.3.1_0.15.0" % Test,
         "com.github.scopt" %% "scopt"           % "3.7.1"
       ),
-      addTestLibs,
-      resolvers += "Spark Packages Repo" at "http://dl.bintray.com/spark-packages/maven"
+      addTestLibs
     )
 
 lazy val typedpath = project
@@ -222,7 +232,8 @@ lazy val defaultConfiguration =
     scalacOptions      := stdOptions ++ extraOptions(scalaVersion.value),
     scalafmtOnCompile  := false,
     parallelExecution  := false,
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD")
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+    resolvers += "Spark Packages Repo" at "http://dl.bintray.com/spark-packages/maven"
   )
 
 lazy val deliveryConfiguration =
