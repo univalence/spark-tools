@@ -1,26 +1,26 @@
 package io.univalence.parka
 
-import org.apache.spark.sql.SparkSession
-import org.scalatest.FunSuiteLike
+import io.univalence.sparktest.SparkTest
+import org.apache.spark.sql.Dataset
+import org.scalatest.FunSuite
 
-class ParkaTest extends FunSuiteLike {
+class ParkaTest extends FunSuite with SparkTest {
 
-  val ss = SparkSession
-    .builder()
-    .appName("Parka")
-    .master("local[*]")
-    .getOrCreate()
+  private val l1 = 92233720368547758L
+  private val l2 = 922337203685477580L
+  private val l3 = 9223372036854775807L
+  private val l4 = 922337203685475807L
+  private val l5 = 92233720368547759L
+  private val l6 = 822337203685477580L
 
-  import ss.implicits._
+  def assertDistinct[T](t: T*): Unit =
+    assert(t.distinct == t)
+
+  assertDistinct(l1, l2, l3, l4, l5, l6)
 
   test("this is the first test") {
-    val from = Seq(Element("0", 92233720368547758L),
-                   Element("1", 922337203685477580L),
-                   Element("2", 9223372036854775807L),
-                   Element("3", 922337203685475807L)).toDS()
-    val to = Seq(Element("0", 92233720368547759L),
-                 Element("1", 822337203685477580L),
-                 Element("2", 9223372036854775807L)).toDS()
+    val from: Dataset[Element] = dataset(Element("0", l1), Element("1", l2), Element("2", l3), Element("3", l4))
+    val to: Dataset[Element]   = dataset(Element("0", l5), Element("1", l6), Element("2", l3))
 
     val result = Parka(from, to)("key")
 
@@ -30,13 +30,9 @@ class ParkaTest extends FunSuiteLike {
   }
 
   test("this is the second test") {
-    val from = Seq(Element2("0", 92233720368547758L, 92233720368547758L),
-      Element2("1", 922337203685477580L, 922337203685477580L),
-      Element2("2", 9223372036854775807L, 9223372036854775807L),
-      Element2("3", 922337203685475807L, 922337203685475807L)).toDS()
-    val to = Seq(Element2("0", 92233720368547759L, 92233720368547759L),
-      Element2("1", 822337203685477580L, 822337203685477580L),
-      Element2("2", 9223372036854775807L, 9223372036854775807L)).toDS()
+    val from: Dataset[Element2] =
+      dataset(Element2("0", l1, l1), Element2("1", l2, l2), Element2("2", l3, l3), Element2("3", l4, l4))
+    val to: Dataset[Element2] = dataset(Element2("0", l5, l5), Element2("1", l6, l6), Element2("2", l3, l3))
 
     val result = Parka(from, to)("key")
 
