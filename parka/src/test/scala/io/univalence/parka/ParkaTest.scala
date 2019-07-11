@@ -1,5 +1,7 @@
 package io.univalence.parka
 
+import io.univalence.parka.Delta.DeltaLong
+import io.univalence.parka.Describe.DescribeLong
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.sql.Dataset
 import org.scalatest.FunSuite
@@ -38,6 +40,22 @@ class ParkaTest extends FunSuite with SparkTest {
 
     assert(result.inner.countRowEqual === 1L)
     assert(result.inner.countRowNotEqual === 2L)
+    assert(result.outer.countRow === Both(1L, 0L))
+  }
+
+  test("test deltaLong") {
+    val from: Dataset[Element] =
+      dataset(Element("0", l1), Element("1", l2), Element("2", l3), Element("3", l4))
+    val to: Dataset[Element] = dataset(Element("0", l5), Element("1", l6), Element("2", l3))
+
+    val result = Parka(from, to)("key").result
+    assert(result.inner.countRowEqual === 1L)
+    assert(result.inner.countRowNotEqual === 2L)
+    assert(result.inner.countDiffByRow === Map(1 -> 2, 0 -> 1))
+    val diff = Seq(l1 - l5, l2 - l6).map(x => x * x).sum
+    assert(result.inner.byColumn ===
+      Map("value" -> DeltaLong(1, 2, Both(DescribeLong(l1 + l2 + l3), DescribeLong(l5 + l6 + l3)), diff)))
+
     assert(result.outer.countRow === Both(1L, 0L))
   }
 }

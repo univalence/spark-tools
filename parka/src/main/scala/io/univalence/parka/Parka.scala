@@ -1,10 +1,11 @@
 package io.univalence.parka
 
+import com.twitter.algebird.Moments
 import io.univalence.parka
 import io.univalence.parka.Delta.DeltaLong
-import io.univalence.parka.Describe.DescribeLong
+import io.univalence.parka.Describe.{DescribeLong, DescribeString}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, Row }
+import org.apache.spark.sql.{Dataset, Row}
 import io.univalence.sparktest.ValueComparison._
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
@@ -21,7 +22,20 @@ case class Outer(countRow: Both[Long], byColumn: Map[String, Both[Describe]])
 sealed trait Describe extends Serializable
 
 object Describe {
-  case class DescribeLong(sum: Long) extends Describe
+
+  case class DescribeString(sumLength:Long)
+
+
+  /** TODO : remplacer Describe Long par [[com.twitter.algebird.Moments]]
+    * Voir pour mettre en place un Q-Tree pour avoir les quartiles
+    */
+  case class DescribeLong(moments:Moments) extends Describe
+
+  object DescribeLong {
+    def apply(long:Long):DescribeLong = DescribeLong(Moments(long))
+  }
+
+  case class DescribeBoolean(nTrue:Long, nFalse:Long)
 
   implicit val describeMono: Monoid[Describe] = Monoid.gen[DescribeLong].asInstanceOf[Monoid[Describe]]
 }
@@ -103,6 +117,8 @@ sealed trait Delta extends Serializable {
 }
 
 object Delta {
+  case class DeltaString(nEqual:Long, nNotEqual:Long, describe: Both[DescribeString], error:Double)
+
   case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: Long) extends Delta
 
   implicit val deltaMonoid: Monoid[Delta] = Monoid.gen[DeltaLong].asInstanceOf[Monoid[Delta]]
@@ -222,6 +238,6 @@ object Parka {
   def datasetInfo(ds: Dataset[_]): DatasetInfo = DatasetInfo(Nil, 0L)
 
   sealed trait Side
-  case object Left extends Side
+  case object Left  extends Side
   case object Right extends Side
 }
