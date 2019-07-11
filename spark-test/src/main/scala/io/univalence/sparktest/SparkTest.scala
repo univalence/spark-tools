@@ -323,16 +323,16 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       assertEquals(dfFromSeq)
     }
 
-    // EN CONSTRUCTION 
+    // EN CONSTRUCTION
     def mapToDf(maps: Seq[Map[String, Any]]): DataFrame = {
-      val _ss = ss
+      val _ss  = ss
       val cols = maps.flatMap(_.keys).distinct
       val values = maps.map(m => {
         val row = cols.map(k => {
           val value = m.getOrElse(k, null)
           value match {
             case null => null
-            case _ => value.toString
+            case _    => value.toString
           }
         })
         // Use shapeless here
@@ -427,7 +427,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
           .collect()
 
       elements.exists(r => r(0) != r(1))
-    }//PrintCaseClass Definition from DataFrame inspection
+    } //PrintCaseClass Definition from DataFrame inspection
   }
 
   // ========================== RDD ====================================
