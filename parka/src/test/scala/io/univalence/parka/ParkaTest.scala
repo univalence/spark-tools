@@ -22,11 +22,11 @@ class ParkaTest extends FunSuite with SparkTest {
     val from: Dataset[Element] = dataset(Element("0", l1), Element("1", l2), Element("2", l3), Element("3", l4))
     val to: Dataset[Element]   = dataset(Element("0", l5), Element("1", l6), Element("2", l3))
 
-    val result = Parka(from, to)("key")
+    val result = Parka(from, to)("key").result
 
-    assert(result.deltaInfo.countRowEqual === 1L)
-    assert(result.deltaInfo.countRowNotEqual === 2L)
-    assert(result.outerInfo.countRow === Both(1L, 0L))
+    assert(result.inner.countRowEqual === 1L)
+    assert(result.inner.countRowNotEqual === 2L)
+    assert(result.outer.countRow === Both(1L, 0L))
   }
 
   test("this is the second test") {
@@ -34,11 +34,11 @@ class ParkaTest extends FunSuite with SparkTest {
       dataset(Element2("0", l1, l1), Element2("1", l2, l2), Element2("2", l3, l3), Element2("3", l4, l4))
     val to: Dataset[Element2] = dataset(Element2("0", l5, l5), Element2("1", l6, l6), Element2("2", l3, l3))
 
-    val result = Parka(from, to)("key")
+    val result = Parka(from, to)("key").result
 
-    assert(result.deltaInfo.countRowEqual === 1L)
-    assert(result.deltaInfo.countRowNotEqual === 2L)
-    assert(result.outerInfo.countRow === Both(1L, 0L))
+    assert(result.inner.countRowEqual === 1L)
+    assert(result.inner.countRowNotEqual === 2L)
+    assert(result.outer.countRow === Both(1L, 0L))
   }
 }
 

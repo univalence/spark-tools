@@ -142,7 +142,8 @@ lazy val parka =
       homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/parka")),
       startYear   := Some(2019),
       useSpark(libVersion.sparkScala212)("sql"),
-      libraryDependencies += "com.twitter" %% "algebird-core" % "0.13.4",
+      libraryDependencies += "com.twitter"    %% "algebird-core" % "0.13.4",
+      libraryDependencies += "com.propensive" %% "magnolia"      % "0.10.0",
       addTestLibs
     )
     .dependsOn(sparkTest)

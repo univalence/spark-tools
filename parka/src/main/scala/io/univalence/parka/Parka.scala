@@ -1,52 +1,135 @@
 package io.univalence.parka
 
+import io.univalence.parka.Describe.DescribeLong
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Dataset, Row }
+import org.apache.spark.sql.{Dataset, Row}
 import io.univalence.sparktest.ValueComparison._
 
 case class DatasetInfo(source: Seq[String], nStage: Long)
 
-case class Both[T](left: T, right: T) {
+case class Both[+T](left: T, right: T) {
   def |>[U](f: (T, T) => U): U = f(left, right)
 }
 
-case class OuterInfo(
-                      countRow: Both[Long],
-                      byColumn: Seq[OuterInfo.ByColumn]
-                    )
+case class Outer(countRow: Both[Long], byColumn: Map[String,Both[Describe]])
 
-object OuterInfo {
-  sealed trait ByColumn {
-    def columnName: String
-  }
 
-  case class LongAggByColumn(columnName: String, sum: Both[Long]) extends ByColumn
+sealed trait Describe
+
+object Describe {
+  case class DescribeLong(sum:Long) extends Describe
+
+
+  implicit val describeMono:Monoid[Describe] = Monoid.gen[DescribeLong].asInstanceOf[Monoid[Describe]]
 }
 
-case class DeltaInfo(countRowEqual: Long,
-                     countRowNotEqual: Long,
-                     countDiffByRow: Map[Int, Long],
-                     byColumn: Seq[DeltaInfo.ByColumn])
 
-object DeltaInfo {
+case class Inner(countRowEqual: Long,
+                 countRowNotEqual: Long,
+                 countDiffByRow: Map[Int, Long],
+                 byColumn: Map[String,Delta])
 
-  sealed trait ByColumn {
-    def columnName: String
-    def nEqual: Long
-    def nNotEqual: Long
-  }
 
-  case class DeltaByColumnLong(columnName: String, nEqual: Long, nNotEqual: Long, sum: Both[Long], error: Long)
-    extends ByColumn
+//case class ByColumn[T](columnName:String, value:T)
+
+
+trait Monoid[T] {
+  def combine(x:T,y:T):T
+  def empty:T
 }
 
-case class DeltaQAResult(datasetInfo: Both[DatasetInfo], deltaInfo: DeltaInfo, outerInfo: OuterInfo)
+object Monoid {
 
-object Parka { // ou DeltaQA comme vous voulez
+  def empty[T:Monoid]:T = implicitly[Monoid[T]].empty
 
-  val keyValueSeparator = "§"
+  def apply[T](_empty:T, _combine: (T,T) => T): Monoid[T] = new Monoid[T] {
+    override def combine(x: T, y: T): T = _combine(x,y)
+    override def empty: T = _empty
+  }
 
-  def apply(leftDs: Dataset[_], rightDs: Dataset[_])(keyNames: String*): DeltaQAResult = {
+  implicit def mapMonoid[K,V:Monoid]:Monoid[Map[K,V]] = Monoid(Map.empty,(m1,m2) => {
+    (m1.keySet ++ m2.keySet).map(k => k -> (m1.get(k) match {
+      case None => m2.getOrElse(k, implicitly[Monoid[V]].empty)
+      case Some(x) => m2.get(k) match {
+        case Some(y) => implicitly[Monoid[V]].combine(x,y)
+        case None => x
+      }
+    })).toMap
+  })
+
+  implicit object longMonoid extends Monoid[Long] {
+    @inline
+    final override def combine(x: Long, y: Long): Long = x + y
+    @inline
+    final override def empty: Long = 0L
+  }
+
+  implicit class MonoidOps[T:Monoid](t:T) {
+    def +(t2:T):T = implicitly[Monoid[T]].combine(t,t2)
+  }
+
+  type Typeclass[T] = Monoid[T]
+
+  import magnolia._
+
+  def combine[T](caseClass: CaseClass[Typeclass, T]): Typeclass[T] = {
+    new Typeclass[T] {
+      override def combine(x: T, y: T): T = {
+        caseClass.construct(param =>
+          param.typeclass.combine(param.dereference(x), param.dereference(y)))
+      }
+
+      override def empty: T = caseClass.construct(param => param.typeclass.empty)
+    }
+  }
+
+  //def dispatch[T](sealedTrait: SealedTrait[Typeclass, T]): Typeclass[T] = ???
+
+  implicit def gen[T]: Typeclass[T] = macro Magnolia.gen[T]
+}
+
+
+sealed trait Delta {
+  def nEqual: Long
+  def nNotEqual: Long
+  def describe:Both[Describe]
+}
+
+object Delta {
+  case class DeltaLong(nEqual: Long,
+                       nNotEqual: Long,
+                       describe: Both[DescribeLong],
+                       error: Long) extends Delta
+
+
+
+
+  implicit val deltaMonoid:Monoid[Delta] = Monoid.gen[DeltaLong].asInstanceOf[Monoid[Delta]]
+
+}
+
+
+
+
+
+
+
+
+
+case class ParkaResult(inner: Inner, outer: Outer)
+
+case class ParkaAnalysis(datasetInfo: Both[DatasetInfo], result:ParkaResult)
+
+object Parka {
+
+
+
+  val parkaResultM = Monoid.gen[ParkaResult]
+
+
+  private val keyValueSeparator = "§"
+
+  def apply(leftDs: Dataset[_], rightDs: Dataset[_])(keyNames: String*): ParkaAnalysis = {
     assert(keyNames.nonEmpty, "you must have at least one key")
     assert(leftDs.schema == rightDs.schema, "schemas are not equal : " + leftDs.schema + " != " + rightDs.schema)
 
@@ -73,6 +156,9 @@ object Parka { // ou DeltaQA comme vous voulez
             Crowd(key, differences, Both(lRow, rRow))
         }
     }
+
+
+
 
     val (countRow, countEq, countNotEq, allDifferences) =
       diffs.aggregate((Both(0L, 0L), 0L, 0L, Seq.empty[Seq[Difference]]))(
@@ -103,10 +189,10 @@ object Parka { // ou DeltaQA comme vous voulez
     println(differences)
 
     val datasetInfo = bothDatasetInfo(leftDs, rightDs)
-    val deltaInfo   = DeltaInfo(countEq, countNotEq, Map.empty, Seq.empty)
-    val outerInfo   = OuterInfo(countRow, Seq.empty)
+    val deltaInfo   = Inner(countEq, countNotEq, Map.empty, Map.empty)
+    val outerInfo   = Outer(countRow, Map.empty)
 
-    DeltaQAResult(datasetInfo, deltaInfo, outerInfo)
+    ParkaAnalysis(datasetInfo, ParkaResult(deltaInfo, outerInfo))
   }
 
   def datasetInfo(ds: Dataset[_]): DatasetInfo =
@@ -115,8 +201,8 @@ object Parka { // ou DeltaQA comme vous voulez
   def bothDatasetInfo(leftDs: Dataset[_], rightDs: Dataset[_]): Both[DatasetInfo] =
     Both(datasetInfo(leftDs), datasetInfo(rightDs))
 
-  def newOuterInfo(leftDs: Dataset[_], rightDs: Dataset[_])(keyNames: String*): OuterInfo =
-    OuterInfo(Both(leftDs.count, rightDs.count), ???)
+  def newOuterInfo(leftDs: Dataset[_], rightDs: Dataset[_])(keyNames: String*): Outer =
+    Outer(Both(leftDs.count, rightDs.count), ???)
 
   sealed trait Side
   case object Left extends Side
