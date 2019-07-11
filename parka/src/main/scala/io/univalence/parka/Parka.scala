@@ -175,10 +175,10 @@ object Parka {
     Inner(if (isEqual) 1 else 0, if (isEqual) 0 else 1, Map(nDiff -> 1), byNames)
   }
 
-  private val emptyInner: Inner        = Monoid.empty
-  private val emptyOuter: Outer        = Monoid.empty
-  private val emptyDescribe: Describe  = Monoid.empty
-  private val emptyResult: ParkaResult = Monoid.empty
+  private val emptyInner: Inner        = Monoid.empty[Inner]
+  private val emptyOuter: Outer        = Monoid.empty[Outer]
+  private val emptyDescribe: Describe  = Monoid.empty[Describe]
+  private val emptyResult: ParkaResult = Monoid.empty[ParkaResult]
 
   def result(left: Iterable[Row], right: Iterable[Row])(keys: Set[String]): ParkaResult =
     (left, right) match {
