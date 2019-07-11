@@ -1,13 +1,16 @@
 package io.univalence.parka
 
+import cats.kernel.Monoid
 import com.twitter.algebird.Moments
 import io.univalence.parka
 import io.univalence.parka.Delta.DeltaLong
-import io.univalence.parka.Describe.{DescribeLong, DescribeString}
+import io.univalence.parka.Describe.{ DescribeLong, DescribeString }
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{Dataset, Row}
+import org.apache.spark.sql.{ Dataset, Row }
 import io.univalence.sparktest.ValueComparison._
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
+
+import MonoidGen._
 
 case class DatasetInfo(source: Seq[String], nStage: Long)
 
@@ -23,21 +26,20 @@ sealed trait Describe extends Serializable
 
 object Describe {
 
-  case class DescribeString(sumLength:Long)
-
+  case class DescribeString(sumLength: Long)
 
   /** TODO : remplacer Describe Long par [[com.twitter.algebird.Moments]]
     * Voir pour mettre en place un Q-Tree pour avoir les quartiles
     */
-  case class DescribeLong(moments:Moments) extends Describe
+  case class DescribeLong(moments: Moments) extends Describe
 
   object DescribeLong {
-    def apply(long:Long):DescribeLong = DescribeLong(Moments(long))
+    def apply(long: Long): DescribeLong = DescribeLong(Moments(long))
   }
 
-  case class DescribeBoolean(nTrue:Long, nFalse:Long)
+  case class DescribeBoolean(nTrue: Long, nFalse: Long)
 
-  implicit val describeMono: Monoid[Describe] = Monoid.gen[DescribeLong].asInstanceOf[Monoid[Describe]]
+  implicit val describeMono: Monoid[Describe] = MonoidGen.gen[DescribeLong].asInstanceOf[Monoid[Describe]]
 }
 
 case class Inner(countRowEqual: Long,
@@ -47,12 +49,7 @@ case class Inner(countRowEqual: Long,
 
 //case class ByColumn[T](columnName:String, value:T)
 
-trait Monoid[T] extends Serializable {
-  def combine(x: T, y: T): T
-  def empty: T
-}
-
-object Monoid {
+object MonoidGen {
 
   def empty[T: Monoid]: T = implicitly[Monoid[T]].empty
 
@@ -62,7 +59,7 @@ object Monoid {
   }
 
   implicit def mapMonoid[K, V: Monoid]: Monoid[Map[K, V]] =
-    Monoid(
+    MonoidGen(
       Map.empty,
       (m1, m2) => {
         (m1.keySet ++ m2.keySet)
@@ -117,11 +114,11 @@ sealed trait Delta extends Serializable {
 }
 
 object Delta {
-  case class DeltaString(nEqual:Long, nNotEqual:Long, describe: Both[DescribeString], error:Double)
+  case class DeltaString(nEqual: Long, nNotEqual: Long, describe: Both[DescribeString], error: Double)
 
-  case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: Long) extends Delta
+  case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: Moments) extends Delta
 
-  implicit val deltaMonoid: Monoid[Delta] = Monoid.gen[DeltaLong].asInstanceOf[Monoid[Delta]]
+  implicit val deltaMonoid: Monoid[Delta] = MonoidGen.gen[DeltaLong].asInstanceOf[Monoid[Delta]]
 
 }
 
@@ -176,10 +173,10 @@ object Parka {
           case (x: Long, y: Long) =>
             if (x == y) {
               val describe = DescribeLong(x)
-              DeltaLong(1, 0, Both(describe, describe), 0)
+              DeltaLong(1, 0, Both(describe, describe), Moments(0))
             } else {
               val diff = x - y
-              DeltaLong(0, 1, Both(DescribeLong(x), DescribeLong(y)), diff * diff)
+              DeltaLong(0, 1, Both(DescribeLong(x), DescribeLong(y)), Moments(diff))
             }
         }
         name -> delta
@@ -191,10 +188,10 @@ object Parka {
     Inner(if (isEqual) 1 else 0, if (isEqual) 0 else 1, Map(nDiff -> 1), byNames)
   }
 
-  private val emptyInner: Inner        = Monoid.empty[Inner]
-  private val emptyOuter: Outer        = Monoid.empty[Outer]
-  private val emptyDescribe: Describe  = Monoid.empty[Describe]
-  private val emptyResult: ParkaResult = Monoid.empty[ParkaResult]
+  private val emptyInner: Inner        = MonoidGen.empty[Inner]
+  private val emptyOuter: Outer        = MonoidGen.empty[Outer]
+  private val emptyDescribe: Describe  = MonoidGen.empty[Describe]
+  private val emptyResult: ParkaResult = MonoidGen.empty[ParkaResult]
 
   def result(left: Iterable[Row], right: Iterable[Row])(keys: Set[String]): ParkaResult =
     (left, right) match {
@@ -206,7 +203,11 @@ object Parka {
       case (l, r) if l.nonEmpty && r.nonEmpty => ParkaResult(inner(l.head, r.head)(keys), emptyOuter)
     }
 
-  private val monoidParkaResult = Monoid.gen[ParkaResult]
+  private val monoidParkaResult = {
+    import MonoidGen._
+    MonoidGen.gen[ParkaResult]
+  }
+
   def combine(left: ParkaResult, right: ParkaResult): ParkaResult =
     monoidParkaResult.combine(left, right)
 
@@ -238,6 +239,6 @@ object Parka {
   def datasetInfo(ds: Dataset[_]): DatasetInfo = DatasetInfo(Nil, 0L)
 
   sealed trait Side
-  case object Left  extends Side
+  case object Left extends Side
   case object Right extends Side
 }
