@@ -56,7 +56,7 @@ lazy val projectDescription =
   )
 
 lazy val sparkTools = (project in file("."))
-  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio, site, sparkTest)
+  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio, site, sparkTest, parka)
   .settings(projectDescription, defaultConfiguration)
   .settings(
     name         := "spark-tools",
