@@ -1,7 +1,7 @@
 package io.univalence.parka
 
 import cats.kernel.Monoid
-import com.twitter.algebird.Moments
+import com.twitter.algebird.{Moments, QTree}
 import io.univalence.parka.Delta.DeltaLong
 import io.univalence.parka.Describe.{DescribeLong, DescribeString}
 import io.univalence.parka.MonoidGen._
@@ -29,10 +29,10 @@ object Describe {
   /** TODO : remplacer Describe Long par [[com.twitter.algebird.Moments]]
     * Voir pour mettre en place un Q-Tree pour avoir les quartiles
     */
-  case class DescribeLong(moments: Moments) extends Describe
+  case class DescribeLong(qtree: Option[QTree[Unit]]) extends Describe
 
   object DescribeLong {
-    def apply(long: Long): DescribeLong = DescribeLong(Moments(long))
+    def apply(long: Long): DescribeLong = DescribeLong(Some(QTree.value(long)))
   }
 
   case class DescribeBoolean(nTrue: Long, nFalse: Long)

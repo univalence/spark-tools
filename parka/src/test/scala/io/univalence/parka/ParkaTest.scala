@@ -1,7 +1,6 @@
 package io.univalence.parka
 
 import io.univalence.parka.Delta.DeltaLong
-import io.univalence.parka.Describe.DescribeLong
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.sql.Dataset
 import org.scalatest.FunSuite
@@ -57,9 +56,10 @@ class ParkaTest extends FunSuite with SparkTest {
 
     assert(deltaLong.nEqual == 1)
     assert(deltaLong.nNotEqual == 2)
-    assert(deltaLong.describe.left.moments.m1 == ((l1 + l2 + l3).toDouble / 3))
-    assert(deltaLong.describe.right.moments.m1 == ((l5 + l6 + l3).toDouble / 3))
-
+    //assert(deltaLong.describe.left.moments.m1 == ((l1 + l2 + l3).toDouble / 3))
+    //assert(deltaLong.describe.right.moments.m1 == ((l5 + l6 + l3).toDouble / 3))
+    assert(deltaLong.describe.left.qtree.get.quantileBounds(0.5) == ((2.0, 3.0)))
+    assert(deltaLong.describe.right.qtree.get.quantileBounds(0.5) == ((5.0, 6.0)))
     assert(deltaLong.error.m1 * deltaLong.error.m0 == (l1 + l2 + l3 - l5 - l6 - l3))
 
     assert(result.outer.countRow === Both(1L, 0L))
