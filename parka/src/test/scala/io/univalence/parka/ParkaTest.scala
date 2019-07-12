@@ -64,7 +64,6 @@ class ParkaTest extends FunSuite with SparkTest {
 
     println(deltaLong.error.quantileBounds(0.5))
 
-
     assert(result.outer.countRow === Both(1L, 0L))
   }
 }

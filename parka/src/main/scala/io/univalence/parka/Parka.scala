@@ -3,12 +3,12 @@ package io.univalence.parka
 import cats.kernel.Monoid
 import com.twitter.algebird.{ Moments, QTree }
 import io.univalence.parka.Delta.DeltaLong
-import io.univalence.parka.Describe.{DescribeLong, DescribeString}
+import io.univalence.parka.Describe.{ DescribeLong, DescribeString }
 import io.univalence.parka.Histogram.LongHisto
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.{Dataset, Row}
+import org.apache.spark.sql.{ Dataset, Row }
 
 case class Both[+T](left: T, right: T) {
   def fold[U](f: (T, T) => U): U = f(left, right)
@@ -70,8 +70,7 @@ sealed trait Delta extends Serializable {
 object Delta {
   case class DeltaString(nEqual: Long, nNotEqual: Long, describe: Both[DescribeString], error: Double)
 
-  case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: LongHisto)
-    extends Delta
+  case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: LongHisto) extends Delta
 
   implicit val deltaMonoid: Monoid[Delta] = MonoidGen.gen[DeltaLong].asInstanceOf[Monoid[Delta]]
 
