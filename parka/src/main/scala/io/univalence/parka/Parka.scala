@@ -1,14 +1,13 @@
 package io.univalence.parka
 
 import cats.kernel.Monoid
-import com.twitter.algebird.{Moments, QTree}
+import com.twitter.algebird.{ Moments, QTree }
 import io.univalence.parka.Delta.DeltaLong
-import io.univalence.parka.Describe.{DescribeLong, DescribeString}
+import io.univalence.parka.Describe.{ DescribeLong, DescribeString }
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.{Dataset, Row}
-
+import org.apache.spark.sql.{ Dataset, Row }
 
 case class DatasetInfo(source: Seq[String], nStage: Long)
 

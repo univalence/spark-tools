@@ -1,7 +1,7 @@
 package io.univalence.parka
 
 import cats.kernel.Monoid
-import com.twitter.algebird.{QTree, QTreeSemigroup}
+import com.twitter.algebird.{ QTree, QTreeSemigroup }
 
 object MonoidGen {
 
@@ -41,12 +41,13 @@ object MonoidGen {
   }
 
   implicit object qTreeMonoid extends Monoid[Option[QTree[Unit]]] {
+    private val semi = new QTreeSemigroup[Unit](2)
     @inline
     final override def combine(x: Option[QTree[Unit]], y: Option[QTree[Unit]]): Option[QTree[Unit]] = (x, y) match {
-      case (None, None) => None
-      case (None, Some(v)) => Some(v)
-      case (Some(v), None) => Some(v)
-      case (Some(xv), Some(yv)) => Some(new QTreeSemigroup[Unit](2).plus(xv, yv)) // que mettre comme k ?
+      case (None, _) => y
+      case (_, None) => x
+      case (Some(xv), Some(yv)) =>
+        Some(semi.plus(xv, yv))
     }
 
     @inline
