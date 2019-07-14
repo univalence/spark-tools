@@ -3,7 +3,6 @@ package io.univalence.parka
 import cats.kernel.Monoid
 import io.univalence.parka.Delta.{ DeltaLong, DeltaString }
 import io.univalence.parka.Describe.{ DescribeCombine, DescribeLong, DescribeString }
-import io.univalence.parka.Histogram.LongHisto
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.sql.Dataset
 import org.scalatest.FunSuite
@@ -25,7 +24,7 @@ class ParkaTest extends FunSuite with SparkTest {
   def assertIn(t: (Double, Double), value: Long): Unit =
     assert(t._1 <= value && value <= t._2)
 
-  def assertHistoEqual(longHisto: LongHisto, value: Long*): Unit = {
+  def assertHistoEqual(longHisto: Histogram, value: Long*): Unit = {
     val sorted = value.sorted
     if (sorted.isEmpty)
       assert(longHisto.count == 0)

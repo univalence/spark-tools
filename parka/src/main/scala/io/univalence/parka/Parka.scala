@@ -4,7 +4,7 @@ import cats.kernel.Monoid
 import com.twitter.algebird.{ Moments, QTree }
 import io.univalence.parka.Delta.{ DeltaLong, DeltaString }
 import io.univalence.parka.Describe.{ DescribeLong, DescribeString }
-import io.univalence.parka.Histogram.LongHisto
+import io.univalence.parka.Histogram
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
@@ -71,8 +71,8 @@ object Describe {
     }
   }
 
-  case class DescribeString(length: LongHisto) extends Describe
-  case class DescribeLong(value: LongHisto) extends Describe
+  case class DescribeString(length: Histogram) extends Describe
+  case class DescribeLong(value: Histogram) extends Describe
   case class DescribeBoolean(nTrue: Long, nFalse: Long) extends Describe
 
   case class DescribeCombine(long: Option[DescribeLong],
@@ -80,8 +80,8 @@ object Describe {
                              boolean: Option[DescribeBoolean])
       extends Describe
 
-  def apply(long: Long): DescribeLong       = DescribeLong(LongHisto.value(long))
-  def apply(string: String): DescribeString = DescribeString(LongHisto.value(string.length.toLong))
+  def apply(long: Long): DescribeLong       = DescribeLong(Histogram.value(long))
+  def apply(string: String): DescribeString = DescribeString(Histogram.value(string.length.toLong))
 
 }
 
@@ -113,9 +113,9 @@ object Delta {
     //Pour l'instant on va faire ça
     levenshtein(str1, str2).toLong
 
-  case class DeltaString(nEqual: Long, nNotEqual: Long, describe: Both[DescribeString], error: LongHisto) extends Delta
+  case class DeltaString(nEqual: Long, nNotEqual: Long, describe: Both[DescribeString], error: Histogram) extends Delta
 
-  case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: LongHisto) extends Delta
+  case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: Histogram) extends Delta
 
   case class DeltaCombine(long: Option[DeltaLong], string: Option[DeltaString]) extends Delta {
     override def nEqual: Long = long.map(_.nEqual).getOrElse(0L) + string.map(_.nEqual).getOrElse(0L)
@@ -204,18 +204,18 @@ object Parka {
             case (x: Long, y: Long) =>
               if (x == y) {
                 val describe = Describe(x)
-                DeltaLong(1, 0, Both(describe, describe), LongHisto.value(0))
+                DeltaLong(1, 0, Both(describe, describe), Histogram.value(0))
               } else {
                 val diff = x - y // Diff can't be negatif if QTree so "x - y" nop sorry
-                DeltaLong(0, 1, Both(Describe(x), Describe(y)), LongHisto.value(diff))
+                DeltaLong(0, 1, Both(Describe(x), Describe(y)), Histogram.value(diff))
               }
             case (x: String, y: String) =>
               if (x == y) {
                 val describe = Describe(x)
-                DeltaString(1, 0, Both(describe, describe), LongHisto.value(0))
+                DeltaString(1, 0, Both(describe, describe), Histogram.value(0))
               } else {
                 val diff = Delta.stringDiff(x, y)
-                DeltaString(0, 1, Both(Describe(x), Describe(y)), LongHisto.value(diff))
+                DeltaString(0, 1, Both(Describe(x), Describe(y)), Histogram.value(diff))
               }
           }
           name -> delta
