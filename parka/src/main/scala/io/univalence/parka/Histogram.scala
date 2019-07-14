@@ -31,6 +31,10 @@ object Histogram {
     def value(x: Long): LongHisto =
       if (x == 0)
         LongHisto(None, 1, None)
+      else if (x < (Long.MinValue + 2))
+        value(Long.MinValue + 2)
+      else if (x > Long.MaxValue - 2)
+        value(Long.MaxValue - 2)
       else if (x < 0)
         LongHisto(neg = Some(QTree.value(-x)), countZero = 0, pos = None)
       else
