@@ -2,7 +2,7 @@ package io.univalence.parka
 
 import cats.kernel.Monoid
 import com.twitter.algebird.{ Moments, QTree }
-import io.univalence.parka.Delta.DeltaLong
+import io.univalence.parka.Delta.{ DeltaLong, DeltaString }
 import io.univalence.parka.Describe.{ DescribeLong, DescribeString }
 import io.univalence.parka.Histogram.LongHisto
 import io.univalence.parka.MonoidGen._
@@ -45,20 +45,36 @@ sealed trait Describe extends Serializable
 
 object Describe {
 
-  case class DescribeString(sumLength: Long)
+  case class DescribeString(length: LongHisto) extends Describe
+  case class DescribeLong(value: LongHisto) extends Describe
 
-  /** TODO : remplacer Describe Long par [[com.twitter.algebird.Moments]]
-    * Voir pour mettre en place un Q-Tree pour avoir les quartiles
-    */
-  case class DescribeLong(qtree: LongHisto) extends Describe // Pas sûre qu'un QTree[Unit] fonctionne ici => même sûre que ça ne fonctionne pas
+  case class DescribeCombine(long: Option[DescribeLong], string: Option[DescribeString]) extends Describe
 
-  object DescribeLong {
-    def apply(long: Long): DescribeLong = DescribeLong(LongHisto.value(long))
-  }
+  def apply(long: Long): DescribeLong       = DescribeLong(LongHisto.value(long))
+  def apply(string: String): DescribeString = DescribeString(LongHisto.value(string.length))
 
   case class DescribeBoolean(nTrue: Long, nFalse: Long)
 
-  implicit val describeMono: Monoid[Describe] = MonoidGen.gen[DescribeLong].asInstanceOf[Monoid[Describe]]
+  implicit val describeMonoid: Monoid[Describe] = new Monoid[Describe] {
+    private val long: Monoid[DescribeLong] = MonoidGen.gen[DescribeLong]
+
+    override val empty: Describe = DescribeCombine(None, None)
+
+    override def combine(x: Describe, y: Describe): Describe =
+      (x, y) match {
+        case (`empty`, _) => y
+        case (_, `empty`) => x
+        case (xx: DescribeLong, yy: DescribeLong) =>
+          long.combine(xx, yy)
+        case (xx: DescribeString, yy: DescribeString) =>
+          MonoidGen.gen[DescribeString].combine(xx, yy)
+        case (DescribeCombine(None, Some(xx)), yy: DescribeString) =>
+          combine(xx, yy)
+        case (DescribeCombine(Some(xx), None), yy: DescribeLong) =>
+          combine(xx, yy)
+      }
+
+  }
 }
 
 sealed trait Delta extends Serializable {
@@ -68,11 +84,49 @@ sealed trait Delta extends Serializable {
 }
 
 object Delta {
-  case class DeltaString(nEqual: Long, nNotEqual: Long, describe: Both[DescribeString], error: Double)
+
+  def levenshtein(s1: String, s2: String): Int = {
+    import scala.math._
+    def minimum(i1: Int, i2: Int, i3: Int) = min(min(i1, i2), i3)
+    val dist = Array.tabulate(s2.length + 1, s1.length + 1) { (j, i) =>
+      if (j == 0) i else if (i == 0) j else 0
+    }
+    for {
+      j <- 1 to s2.length
+      i <- 1 to s1.length
+    } dist(j)(i) =
+      if (s2(j - 1) == s1(i - 1)) dist(j - 1)(i - 1)
+      else
+        minimum(dist(j - 1)(i) + 1, dist(j)(i - 1) + 1, dist(j - 1)(i - 1) + 1)
+    dist(s2.length)(s1.length)
+  }
+
+  def stringDiff(str1: String, str2: String): Long =
+    //Pour l'instant on va faire ça
+    levenshtein(str1, str2).toLong
+
+  case class DeltaString(nEqual: Long, nNotEqual: Long, describe: Both[DescribeString], error: LongHisto) extends Delta
 
   case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: LongHisto) extends Delta
 
-  implicit val deltaMonoid: Monoid[Delta] = MonoidGen.gen[DeltaLong].asInstanceOf[Monoid[Delta]]
+  case class DeltaCombine(long: Option[DeltaLong], string: Option[DeltaString]) extends Delta {
+    override def nEqual: Long = long.map(_.nEqual).getOrElse(0L) + string.map(_.nEqual).getOrElse(0L)
+
+    override def nNotEqual: Long = long.map(_.nNotEqual).getOrElse(0L) + string.map(_.nNotEqual).getOrElse(0L)
+
+    override def describe: Both[Describe] = ???
+  }
+
+  implicit val deltaMonoid: Monoid[Delta] = new Monoid[Delta] {
+    override def empty: Delta = DeltaCombine(None, None)
+
+    override def combine(x: Delta, y: Delta): Delta =
+      (x, y) match {
+        case (xx: DeltaString, yy: DeltaString)   => MonoidGen.gen[DeltaString].combine(xx, yy)
+        case (xx: DeltaLong, yy: DeltaLong)       => MonoidGen.gen[DeltaLong].combine(xx, yy)
+        case (xx: DeltaCombine, yy: DeltaCombine) => MonoidGen.gen[DeltaCombine].combine(xx, yy)
+      }
+  }
 
 }
 
@@ -87,7 +141,8 @@ object Parka {
       .filterNot(keys)
       .map(name => {
         val describe = row.getAs[Any](name) match {
-          case l: Long => DescribeLong(l)
+          case l: Long   => Describe(l)
+          case s: String => Describe(s)
         }
 
         name -> describe
@@ -137,11 +192,19 @@ object Parka {
           val delta: Delta = (left.getAs[Any](name), right.getAs[Any](name)) match {
             case (x: Long, y: Long) =>
               if (x == y) {
-                val describe = DescribeLong(x)
+                val describe = Describe(x)
                 DeltaLong(1, 0, Both(describe, describe), LongHisto.value(0))
               } else {
                 val diff = x - y // Diff can't be negatif if QTree so "x - y" nop sorry
-                DeltaLong(0, 1, Both(DescribeLong(x), DescribeLong(y)), LongHisto.value(diff))
+                DeltaLong(0, 1, Both(Describe(x), Describe(y)), LongHisto.value(diff))
+              }
+            case (x: String, y: String) =>
+              if (x == y) {
+                val describe = Describe(x)
+                DeltaString(1, 0, Both(describe, describe), LongHisto.value(0))
+              } else {
+                val diff = Delta.stringDiff(x, y)
+                DeltaString(0, 1, Both(Describe(x), Describe(y)), LongHisto.value(diff))
               }
           }
           name -> delta

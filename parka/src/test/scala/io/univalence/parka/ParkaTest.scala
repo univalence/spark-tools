@@ -1,6 +1,7 @@
 package io.univalence.parka
 
-import io.univalence.parka.Delta.DeltaLong
+import io.univalence.parka.Delta.{ DeltaLong, DeltaString }
+import io.univalence.parka.Histogram.LongHisto
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.sql.Dataset
 import org.scalatest.FunSuite
@@ -18,6 +19,23 @@ class ParkaTest extends FunSuite with SparkTest {
     assert(t.distinct == t)
 
   assertDistinct(l1, l2, l3, l4, l5, l6)
+
+  def assertIn(t: (Double, Double), value: Long): Unit =
+    assert(t._1 <= value && value <= t._2)
+
+  def assertHistoEqual(longHisto: LongHisto, value: Long*): Unit = {
+    val sorted = value.sorted
+    if (sorted.isEmpty)
+      assert(longHisto.count == 0)
+    else if (sorted.size == 1) {
+      assertIn(longHisto.quantileBounds(1), value.head)
+    } else {
+      sorted.zipWithIndex.foreach({
+        case (v, index) =>
+          assertIn(longHisto.quantileBounds(index.toDouble / (sorted.size - 1)), v)
+      })
+    }
+  }
 
   test("this is the first test") {
     val from: Dataset[Element] = dataset(Element("0", l1), Element("1", l2), Element("2", l3), Element("3", l4))
@@ -42,6 +60,18 @@ class ParkaTest extends FunSuite with SparkTest {
     assert(result.outer.countRow === Both(1L, 0L))
   }
 
+  test("test deltaString") {
+
+    val left  = dataframe("{id:1, value:'a', n:1}", "{id:2, value:'b', n:2}")
+    val right = dataframe("{id:1, value:'a', n:1}", "{id:2, value:'b2', n:3}")
+
+    val result = Parka(left, right)("id").result
+
+    assert(result.inner.countDiffByRow == Map(2 -> 1, 0 -> 1))
+
+    assertHistoEqual(result.inner.byColumn("value").asInstanceOf[DeltaString].error, 1)
+  }
+
   test("test deltaLong") {
     val left: Dataset[Element] =
       dataset(Element("0", l1), Element("1", l2), Element("2", l3), Element("3", l4))
@@ -56,13 +86,11 @@ class ParkaTest extends FunSuite with SparkTest {
 
     assert(deltaLong.nEqual == 1)
     assert(deltaLong.nNotEqual == 2)
-    //assert(deltaLong.describe.left.moments.m1 == ((l1 + l2 + l3).toDouble / 3))
-    //assert(deltaLong.describe.right.moments.m1 == ((l5 + l6 + l3).toDouble / 3))
-    //assert(deltaLong.describe.left.qtree.quantileBounds(0.5) == ((2.0, 3.0))) TODO
-    //assert(deltaLong.describe.right.qtree.quantileBounds(0.5) == ((5.0, 6.0))) TODO
-    //assert(deltaLong.error.m1 * deltaLong.error.m0 == (l1 + l2 + l3 - l5 - l6 - l3)) No more Moments for the moment
 
-    println(deltaLong.error.quantileBounds(0.5))
+    assertHistoEqual(deltaLong.error, l1 - l5, l2 - l6, 0)
+    //TODO ERROR
+    //  assertHistoEqual(deltaLong.describe.left.value, l1, l2,l3)
+    //  assertHistoEqual(deltaLong.describe.right.value, l5, l6,l3)
 
     assert(result.outer.countRow === Both(1L, 0L))
   }
