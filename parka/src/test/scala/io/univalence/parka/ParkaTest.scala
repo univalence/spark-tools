@@ -1,6 +1,8 @@
 package io.univalence.parka
 
+import cats.kernel.Monoid
 import io.univalence.parka.Delta.{ DeltaLong, DeltaString }
+import io.univalence.parka.Describe.{ DescribeCombine, DescribeLong, DescribeString }
 import io.univalence.parka.Histogram.LongHisto
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.sql.Dataset
@@ -93,6 +95,16 @@ class ParkaTest extends FunSuite with SparkTest {
     //  assertHistoEqual(deltaLong.describe.right.value, l5, l6,l3)
 
     assert(result.outer.countRow === Both(1L, 0L))
+  }
+
+  test("derivation test") {
+    import MonoidGen._
+    val describe: Monoid[Describe] = MonoidGen.gen[Describe]
+
+    assert(describe.empty == Describe.empty)
+
+    assert(describe.combine(Describe(1), Describe(1)).isInstanceOf[DescribeLong])
+    assert(describe.combine(Describe(1), Describe("a")).isInstanceOf[DescribeCombine])
   }
 }
 

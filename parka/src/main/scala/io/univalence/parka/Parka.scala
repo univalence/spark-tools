@@ -43,38 +43,46 @@ case class Outer(countRow: Both[Long], byColumn: Map[String, Both[Describe]])
 
 sealed trait Describe extends Serializable
 
+trait CoProductMonoidHelper[T] {
+  type Combined <: T
+  def lift(t: T): Combined
+}
+
+object CoProductMonoidHelper {
+  type Aux[In, Out <: In] = CoProductMonoidHelper[In] {
+    type Combined = Out
+  }
+}
+
 object Describe {
+
+  val empty = DescribeCombine(None, None, None)
+
+  implicit val coProductMonoidHelper: CoProductMonoidHelper[Describe] {
+    type Combined = DescribeCombine
+  } = new CoProductMonoidHelper[Describe] {
+    override type Combined = DescribeCombine
+
+    override def lift(t: Describe): DescribeCombine = t match {
+      case dc: DescribeCombine => dc
+      case ds: DescribeString  => empty.copy(string = Some(ds))
+      case dl: DescribeLong    => empty.copy(long = Some(dl))
+      case db: DescribeBoolean => empty.copy(boolean = Some(db))
+    }
+  }
 
   case class DescribeString(length: LongHisto) extends Describe
   case class DescribeLong(value: LongHisto) extends Describe
+  case class DescribeBoolean(nTrue: Long, nFalse: Long) extends Describe
 
-  case class DescribeCombine(long: Option[DescribeLong], string: Option[DescribeString]) extends Describe
+  case class DescribeCombine(long: Option[DescribeLong],
+                             string: Option[DescribeString],
+                             boolean: Option[DescribeBoolean])
+      extends Describe
 
   def apply(long: Long): DescribeLong       = DescribeLong(LongHisto.value(long))
-  def apply(string: String): DescribeString = DescribeString(LongHisto.value(string.length))
+  def apply(string: String): DescribeString = DescribeString(LongHisto.value(string.length.toLong))
 
-  case class DescribeBoolean(nTrue: Long, nFalse: Long)
-
-  implicit val describeMonoid: Monoid[Describe] = new Monoid[Describe] {
-    private val long: Monoid[DescribeLong] = MonoidGen.gen[DescribeLong]
-
-    override val empty: Describe = DescribeCombine(None, None)
-
-    override def combine(x: Describe, y: Describe): Describe =
-      (x, y) match {
-        case (`empty`, _) => y
-        case (_, `empty`) => x
-        case (xx: DescribeLong, yy: DescribeLong) =>
-          long.combine(xx, yy)
-        case (xx: DescribeString, yy: DescribeString) =>
-          MonoidGen.gen[DescribeString].combine(xx, yy)
-        case (DescribeCombine(None, Some(xx)), yy: DescribeString) =>
-          combine(xx, yy)
-        case (DescribeCombine(Some(xx), None), yy: DescribeLong) =>
-          combine(xx, yy)
-      }
-
-  }
 }
 
 sealed trait Delta extends Serializable {
@@ -117,17 +125,20 @@ object Delta {
     override def describe: Both[Describe] = ???
   }
 
-  implicit val deltaMonoid: Monoid[Delta] = new Monoid[Delta] {
-    override def empty: Delta = DeltaCombine(None, None)
+  val empty: DeltaCombine = DeltaCombine(None, None)
 
-    override def combine(x: Delta, y: Delta): Delta =
-      (x, y) match {
-        case (xx: DeltaString, yy: DeltaString)   => MonoidGen.gen[DeltaString].combine(xx, yy)
-        case (xx: DeltaLong, yy: DeltaLong)       => MonoidGen.gen[DeltaLong].combine(xx, yy)
-        case (xx: DeltaCombine, yy: DeltaCombine) => MonoidGen.gen[DeltaCombine].combine(xx, yy)
+  implicit val coProductMonoidHelper: CoProductMonoidHelper[Delta] {
+    type Combined = DeltaCombine
+  } = new CoProductMonoidHelper[Delta] {
+    override type Combined = DeltaCombine
+
+    override def lift(t: Delta): DeltaCombine =
+      t match {
+        case dc: DeltaCombine => dc
+        case ds: DeltaString  => empty.copy(string = Some(ds))
+        case dl: DeltaLong    => empty.copy(long = Some(dl))
       }
   }
-
 }
 
 object Parka {
