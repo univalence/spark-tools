@@ -144,6 +144,7 @@ lazy val parka =
       useSpark(libVersion.sparkScala212)("sql"),
       libraryDependencies += "com.twitter"    %% "algebird-core" % "0.13.4",
       libraryDependencies += "com.propensive" %% "magnolia"      % "0.10.0",
+      libraryDependencies += "com.github.nikita-volkov" % "sext" % "0.2.4",
       addTestLibs
     )
     .dependsOn(sparkTest)

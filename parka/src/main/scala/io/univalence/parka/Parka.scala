@@ -15,6 +15,7 @@ case class Both[+T](left: T, right: T) {
 }
 
 case class ParkaAnalysis(datasetInfo: Both[DatasetInfo], result: ParkaResult)
+
 case class DatasetInfo(source: Seq[String], nStage: Long)
 case class ParkaResult(inner: Inner, outer: Outer)
 
@@ -28,7 +29,7 @@ case class ParkaResult(inner: Inner, outer: Outer)
   */
 case class Inner(countRowEqual: Long,
                  countRowNotEqual: Long,
-                 countDiffByRow: Map[Int, Long],
+                 countDiffByRow: Map[Seq[String], Long],
                  byColumn: Map[String, Delta])
 
 /**
@@ -85,6 +86,12 @@ object Describe {
   def apply(string: String): DescribeString    = DescribeString(Histogram.value(string.length.toLong))
   def apply(boolean: Boolean): DescribeBoolean = if (boolean) DescribeBoolean(1, 0) else DescribeBoolean(0, 1)
 
+  def apply(any: Any): Describe = any match {
+    case l: Long    => Describe(l)
+    case d: Double  => Describe(d)
+    case s: String  => Describe(s)
+    case b: Boolean => Describe(b)
+  }
 }
 
 sealed trait Delta extends Serializable {
@@ -94,6 +101,33 @@ sealed trait Delta extends Serializable {
 }
 
 object Delta {
+
+  def apply(l1: Long, l2: Long): DeltaLong =
+    if (l1 == l2) {
+      val describe = Describe(l1)
+      DeltaLong(1, 0, Both(describe, describe), Histogram.value(0))
+    } else {
+      val diff = l1 - l2
+      DeltaLong(0, 1, Both(Describe(l1), Describe(l2)), Histogram.value(diff))
+    }
+
+  def apply(d1: Double, d2: Double): DeltaDouble =
+    if (d1 == d2) {
+      val describe = Describe(d1)
+      DeltaDouble(1, 0, Both(describe, describe), Histogram.value(0))
+    } else {
+      val diff = d1 - d2
+      DeltaDouble(0, 1, Both(Describe(d1), Describe(d2)), Histogram.value(diff))
+    }
+
+  def apply(s1: String, s2: String): DeltaString =
+    if (s1 == s2) {
+      val describe = Describe(s1)
+      DeltaString(1, 0, Both(describe, describe), Histogram.value(0))
+    } else {
+      val diff = Delta.stringDiff(s1, s2)
+      DeltaString(0, 1, Both(Describe(s1), Describe(s2)), Histogram.value(diff))
+    }
 
   def apply(b1: Boolean, b2: Boolean): DeltaBoolean = {
     val d1 = Describe(b1)
@@ -171,6 +205,9 @@ object Delta {
 object MonoidUtils {
   val describeMonoid: Monoid[Describe]           = MonoidGen.gen[Describe]
   val bothDescribeMonoid: Monoid[Both[Describe]] = MonoidGen.gen
+
+  val parkaResultMonoid: Monoid[ParkaResult] = MonoidGen.gen[ParkaResult]
+
 }
 
 object Parka {
@@ -182,15 +219,7 @@ object Parka {
 
     fields
       .filterNot(keys)
-      .map(name => {
-        val describe = row.getAs[Any](name) match {
-          case l: Long    => Describe(l)
-          case d: Double  => Describe(d)
-          case s: String  => Describe(s)
-          case b: Boolean => Describe(b)
-        }
-        name -> describe
-      })
+      .map(name => name -> Describe(row.getAs[Any](name)))
       .toMap
   }
 
@@ -200,7 +229,8 @@ object Parka {
     * @param keys           Column's names of both Datasets that are considered as keys
     * @return               Outer information from one particular row
     */
-  def outer(row: Row, side: Side)(keys: Set[String]): Outer =
+  def outer(row: Row, side: Side)(keys: Set[String]): Outer = {
+    val emptyDescribe: Describe = MonoidUtils.describeMonoid.empty
     Outer(
       countRow = side match {
         case Right => Both(left = 0, right = 1)
@@ -216,6 +246,7 @@ object Parka {
         )
         .map(identity) // oH No https://www.youtube.com/watch?v=P-3GOo_nWoc
     )
+  }
 
   /**
     * @param left           Row from the left Dataset
@@ -232,45 +263,22 @@ object Parka {
         .filterNot(keys)
         .map(name => {
           val delta: Delta = (left.getAs[Any](name), right.getAs[Any](name)) match {
-            case (x: Long, y: Long) =>
-              if (x == y) {
-                val describe = Describe(x)
-                DeltaLong(1, 0, Both(describe, describe), Histogram.value(0))
-              } else {
-                val diff = x - y
-                DeltaLong(0, 1, Both(Describe(x), Describe(y)), Histogram.value(diff))
-              }
-            case (x: Double, y: Double) =>
-              if (x == y) {
-                val describe = Describe(x)
-                DeltaDouble(1, 0, Both(describe, describe), Histogram.value(0))
-              } else {
-                val diff = x - y
-                DeltaDouble(0, 1, Both(Describe(x), Describe(y)), Histogram.value(diff))
-              }
-            case (x: String, y: String) =>
-              if (x == y) {
-                val describe = Describe(x)
-                DeltaString(1, 0, Both(describe, describe), Histogram.value(0))
-              } else {
-                val diff = Delta.stringDiff(x, y)
-                DeltaString(0, 1, Both(Describe(x), Describe(y)), Histogram.value(diff))
-              }
+            case (x: Long, y: Long)       => Delta.apply(x, y)
+            case (x: Double, y: Double)   => Delta.apply(x, y)
+            case (x: String, y: String)   => Delta.apply(x, y)
             case (x: Boolean, y: Boolean) => Delta.apply(x, y)
           }
           name -> delta
         })
         .toMap
 
-    val isEqual = byNames.forall(_._2.nEqual == 1)
-    val nDiff   = if (isEqual) 0 else byNames.count(_._2.nNotEqual == 1)
+    val isEqual            = byNames.forall(_._2.nEqual == 1)
+    val nDiff: Seq[String] = if (isEqual) Nil else byNames.filter(_._2.nNotEqual == 1).keys.toSeq.sorted
     Inner(if (isEqual) 1 else 0, if (isEqual) 0 else 1, Map(nDiff -> 1), byNames)
   }
 
-  private val emptyInner: Inner        = MonoidGen.empty[Inner]
-  private val emptyOuter: Outer        = MonoidGen.empty[Outer]
-  private val emptyDescribe: Describe  = MonoidGen.empty[Describe]
-  private val emptyResult: ParkaResult = MonoidGen.empty[ParkaResult]
+  private val emptyInner: Inner = MonoidGen.empty[Inner]
+  private val emptyOuter: Outer = MonoidGen.empty[Outer]
 
   /**
     * @param left           Row from the left Dataset for a particular key
@@ -288,16 +296,7 @@ object Parka {
       case (l, r) if l.nonEmpty && r.nonEmpty => ParkaResult(inner(l.head, r.head)(keys), emptyOuter)
     }
 
-  private val monoidInner = MonoidGen.gen[Inner]
-
-  private val monoidDescribe = MonoidGen.gen[Describe]
-  private val monoidOuter    = MonoidGen.gen[Outer]
-
-  //F***
-  // Horry sheet
-  private val monoidParkaResult = MonoidGen.gen[ParkaResult]
-
-  def combine(left: ParkaResult, right: ParkaResult): ParkaResult = monoidParkaResult.combine(left, right)
+  def combine(left: ParkaResult, right: ParkaResult): ParkaResult = MonoidUtils.parkaResultMonoid.combine(left, right)
 
   /**
     * Entry point of Parka

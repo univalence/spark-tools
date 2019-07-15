@@ -8,15 +8,14 @@ class DeltaTest extends FunSuite with PropertyChecks {
 
   test("testApply") {
 
-    import MonoidGen._
-
     forAll((xs: Seq[Boolean]) => {
       val (left, right)               = xs.splitAt(xs.size / 2)
       val bb: Seq[(Boolean, Boolean)] = left.zip(right)
 
-      val monoid = MonoidGen.gen[DeltaBoolean]
+      import MonoidGen._
+      val monoid = gen[DeltaBoolean]
 
-      val delta: DeltaBoolean = bb.map((Delta.apply _).tupled).reduceOption(monoid.combine).getOrElse(monoid.empty)
+      val delta: DeltaBoolean = bb.map({case (l,r) => Delta(l,r)}).reduceOption(monoid.combine).getOrElse(monoid.empty)
 
       assert(delta.nEqual == bb.count({ case (l, r)    => l == r }))
       assert(delta.nNotEqual == bb.count({ case (l, r) => l != r }))

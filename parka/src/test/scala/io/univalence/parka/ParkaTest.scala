@@ -6,6 +6,7 @@ import io.univalence.parka.Describe.{DescribeCombine, DescribeLong}
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.sql.Dataset
 import org.scalatest.FunSuite
+import PrettyPrint._
 
 class ParkaTest extends FunSuite with SparkTest {
 
@@ -45,7 +46,7 @@ class ParkaTest extends FunSuite with SparkTest {
 
     val result = Parka(left, right)("id").result
 
-    assert(result.inner.countDiffByRow == Map(2 -> 1, 0 -> 1))
+    assert(result.inner.countDiffByRow == Map(Seq("n","value") -> 1, Nil -> 1))
 
     assertHistoEqual(result.inner.byColumn("value").asInstanceOf[DeltaString].error, 1)
   }
@@ -58,7 +59,7 @@ class ParkaTest extends FunSuite with SparkTest {
     val result = Parka(left, right)("key").result
     assert(result.inner.countRowEqual === 1L)
     assert(result.inner.countRowNotEqual === 2L)
-    assert(result.inner.countDiffByRow === Map(1 -> 2, 0 -> 1))
+    assert(result.inner.countDiffByRow === Map(Seq("value") -> 2, Nil -> 1))
     val diff                 = Seq(l1 - l5, l2 - l6).map(x => x * x).sum
     val deltaLong: DeltaLong = result.inner.byColumn("value").asInstanceOf[DeltaLong]
 
@@ -100,6 +101,24 @@ class ParkaTest extends FunSuite with SparkTest {
 
     assert(describe.combine(Describe(1), Describe(1)).isInstanceOf[DescribeLong])
     assert(describe.combine(Describe(1), Describe("a")).isInstanceOf[DescribeCombine])
+  }
+
+  test("test prettyprint") {
+    val left: Dataset[Element] =
+      dataset(Element("0", l1), Element("1", l2), Element("2", l3), Element("3", l4))
+    val right: Dataset[Element] = dataset(Element("0", l5), Element("1", l6), Element("2", l3))
+
+    val result = Parka(left, right)("key").result
+
+    println(result.prettyPrint)
+  }
+
+  test("print histo") {
+    val left: Dataset[Element] = dataset(Element("0", -86), Element("1", 0), Element("2", 56))
+    val right: Dataset[Element] = dataset(Element("0", 1), Element("1", 5), Element("2", 21))
+    val result = Parka(left, right)("key").result
+    val error = result.inner.byColumn("value").asInstanceOf[DeltaLong].error
+    println(prettyPrintHistogram(error))
   }
 }
 
