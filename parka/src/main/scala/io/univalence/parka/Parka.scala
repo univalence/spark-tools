@@ -1,10 +1,8 @@
 package io.univalence.parka
 
 import cats.kernel.Monoid
-import com.twitter.algebird.{ Moments, QTree }
-import io.univalence.parka.Delta.{ DeltaLong, DeltaString }
-import io.univalence.parka.Describe.{ DescribeLong, DescribeString }
-import io.univalence.parka.Histogram
+import io.univalence.parka.Delta.{ DeltaDouble, DeltaLong, DeltaString }
+import io.univalence.parka.Describe.{ DescribeBoolean, DescribeDouble, DescribeLong, DescribeString }
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
@@ -56,32 +54,36 @@ object CoProductMonoidHelper {
 
 object Describe {
 
-  val empty = DescribeCombine(None, None, None)
+  val empty = DescribeCombine(None, None, None, None)
 
-  implicit val coProductMonoidHelper: CoProductMonoidHelper[Describe] {
-    type Combined = DescribeCombine
-  } = new CoProductMonoidHelper[Describe] {
-    override type Combined = DescribeCombine
+  implicit val coProductMonoidHelper: CoProductMonoidHelper.Aux[Describe, DescribeCombine] =
+    new CoProductMonoidHelper[Describe] {
+      override type Combined = DescribeCombine
 
-    override def lift(t: Describe): DescribeCombine = t match {
-      case dc: DescribeCombine => dc
-      case ds: DescribeString  => empty.copy(string = Some(ds))
-      case dl: DescribeLong    => empty.copy(long = Some(dl))
-      case db: DescribeBoolean => empty.copy(boolean = Some(db))
+      override def lift(t: Describe): DescribeCombine = t match {
+        case dc: DescribeCombine => dc
+        case dl: DescribeLong    => empty.copy(long = Some(dl))
+        case dd: DescribeDouble  => empty.copy(double = Some(dd))
+        case ds: DescribeString  => empty.copy(string = Some(ds))
+        case db: DescribeBoolean => empty.copy(boolean = Some(db))
+      }
     }
-  }
 
-  case class DescribeString(length: Histogram) extends Describe
   case class DescribeLong(value: Histogram) extends Describe
+  case class DescribeDouble(value: Histogram) extends Describe
+  case class DescribeString(length: Histogram) extends Describe
   case class DescribeBoolean(nTrue: Long, nFalse: Long) extends Describe
 
   case class DescribeCombine(long: Option[DescribeLong],
+                             double: Option[DescribeDouble],
                              string: Option[DescribeString],
                              boolean: Option[DescribeBoolean])
       extends Describe
 
-  def apply(long: Long): DescribeLong       = DescribeLong(Histogram.value(long))
-  def apply(string: String): DescribeString = DescribeString(Histogram.value(string.length.toLong))
+  def apply(long: Long): DescribeLong          = DescribeLong(Histogram.value(long))
+  def apply(long: Double): DescribeDouble      = DescribeDouble(Histogram.value(long))
+  def apply(string: String): DescribeString    = DescribeString(Histogram.value(string.length.toLong))
+  def apply(boolean: Boolean): DescribeBoolean = if (boolean) DescribeBoolean(1, 0) else DescribeBoolean(0, 1)
 
 }
 
@@ -92,6 +94,14 @@ sealed trait Delta extends Serializable {
 }
 
 object Delta {
+
+  def apply(b1: Boolean, b2: Boolean): DeltaBoolean = {
+    val d1 = Describe(b1)
+    if (b1 == b2)
+      DeltaBoolean(1, 0, Both(d1, d1))
+    else
+      DeltaBoolean(0, 1, Both(d1, Describe(b2)))
+  }
 
   def levenshtein(s1: String, s2: String): Int = {
     import scala.math._
@@ -113,32 +123,54 @@ object Delta {
     //Pour l'instant on va faire ça
     levenshtein(str1, str2).toLong
 
-  case class DeltaString(nEqual: Long, nNotEqual: Long, describe: Both[DescribeString], error: Histogram) extends Delta
-
   case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: Histogram) extends Delta
 
-  case class DeltaCombine(long: Option[DeltaLong], string: Option[DeltaString]) extends Delta {
-    override def nEqual: Long = long.map(_.nEqual).getOrElse(0L) + string.map(_.nEqual).getOrElse(0L)
+  case class DeltaDouble(nEqual: Long, nNotEqual: Long, describe: Both[DescribeDouble], error: Histogram) extends Delta
 
-    override def nNotEqual: Long = long.map(_.nNotEqual).getOrElse(0L) + string.map(_.nNotEqual).getOrElse(0L)
+  case class DeltaString(nEqual: Long, nNotEqual: Long, describe: Both[DescribeString], error: Histogram) extends Delta
 
-    override def describe: Both[Describe] = ???
+  case class DeltaBoolean(nEqual: Long, nNotEqual: Long, describe: Both[DescribeBoolean]) extends Delta {
+    def tt: Long = (describe.left.nTrue + describe.right.nTrue - nNotEqual) / 2
+    def tf: Long = (nNotEqual + describe.left.nTrue - describe.right.nTrue) / 2
+    def ff: Long = nEqual - tt
+    def ft: Long = nNotEqual - tf
   }
 
-  val empty: DeltaCombine = DeltaCombine(None, None)
+  case class DeltaCombine(long: Option[DeltaLong],
+                          double: Option[DeltaDouble],
+                          string: Option[DeltaString],
+                          boolean: Option[DeltaBoolean])
+      extends Delta {
 
-  implicit val coProductMonoidHelper: CoProductMonoidHelper[Delta] {
-    type Combined = DeltaCombine
-  } = new CoProductMonoidHelper[Delta] {
-    override type Combined = DeltaCombine
-
-    override def lift(t: Delta): DeltaCombine =
-      t match {
-        case dc: DeltaCombine => dc
-        case ds: DeltaString  => empty.copy(string = Some(ds))
-        case dl: DeltaLong    => empty.copy(long = Some(dl))
-      }
+    @transient lazy val seq: Seq[Delta]          = Seq(long, double, string, boolean).flatten
+    @transient override lazy val nEqual: Long    = seq.map(_.nEqual).sum
+    @transient override lazy val nNotEqual: Long = seq.map(_.nNotEqual).sum
+    @transient override lazy val describe: Both[Describe] = {
+      val monoid = MonoidUtils.bothDescribeMonoid
+      seq.map(_.describe).reduceOption(monoid.combine).getOrElse(monoid.empty)
+    }
   }
+
+  val empty: DeltaCombine = DeltaCombine(None, None, None, None)
+
+  implicit val coProductMonoidHelper: CoProductMonoidHelper.Aux[Delta, DeltaCombine] =
+    new CoProductMonoidHelper[Delta] {
+      override type Combined = DeltaCombine
+
+      override def lift(t: Delta): DeltaCombine =
+        t match {
+          case dc: DeltaCombine => dc
+          case dl: DeltaLong    => empty.copy(long = Some(dl))
+          case dl: DeltaDouble  => empty.copy(double = Some(dl))
+          case ds: DeltaString  => empty.copy(string = Some(ds))
+          case db: DeltaBoolean => empty.copy(boolean = Some(db))
+        }
+    }
+}
+
+object MonoidUtils {
+  val describeMonoid: Monoid[Describe]           = MonoidGen.gen[Describe]
+  val bothDescribeMonoid: Monoid[Both[Describe]] = MonoidGen.gen
 }
 
 object Parka {
@@ -152,10 +184,11 @@ object Parka {
       .filterNot(keys)
       .map(name => {
         val describe = row.getAs[Any](name) match {
-          case l: Long   => Describe(l)
-          case s: String => Describe(s)
+          case l: Long    => Describe(l)
+          case d: Double  => Describe(d)
+          case s: String  => Describe(s)
+          case b: Boolean => Describe(b)
         }
-
         name -> describe
       })
       .toMap
@@ -165,7 +198,6 @@ object Parka {
     * @param row            Row from the one of the two Dataset
     * @param side           Right if the row come from the right Dataset otherwise Left
     * @param keys           Column's names of both Datasets that are considered as keys
-    *
     * @return               Outer information from one particular row
     */
   def outer(row: Row, side: Side)(keys: Set[String]): Outer =
@@ -189,7 +221,6 @@ object Parka {
     * @param left           Row from the left Dataset
     * @param right          Row from the right Dataset
     * @param keys           Column's names of both Datasets that are considered as keys
-    *
     * @return               Inner information about comparison between left and right
     */
   def inner(left: Row, right: Row)(keys: Set[String]): Inner = {
@@ -206,8 +237,16 @@ object Parka {
                 val describe = Describe(x)
                 DeltaLong(1, 0, Both(describe, describe), Histogram.value(0))
               } else {
-                val diff = x - y // Diff can't be negatif if QTree so "x - y" nop sorry
+                val diff = x - y
                 DeltaLong(0, 1, Both(Describe(x), Describe(y)), Histogram.value(diff))
+              }
+            case (x: Double, y: Double) =>
+              if (x == y) {
+                val describe = Describe(x)
+                DeltaDouble(1, 0, Both(describe, describe), Histogram.value(0))
+              } else {
+                val diff = x - y
+                DeltaDouble(0, 1, Both(Describe(x), Describe(y)), Histogram.value(diff))
               }
             case (x: String, y: String) =>
               if (x == y) {
@@ -217,6 +256,7 @@ object Parka {
                 val diff = Delta.stringDiff(x, y)
                 DeltaString(0, 1, Both(Describe(x), Describe(y)), Histogram.value(diff))
               }
+            case (x: Boolean, y: Boolean) => Delta.apply(x, y)
           }
           name -> delta
         })
@@ -236,7 +276,6 @@ object Parka {
     * @param left           Row from the left Dataset for a particular key
     * @param right          Row from the right Dataset for a particular key
     * @param keys           Column's names of both Datasets that are considered as keys
-    *
     * @return               ParkaResult containing outer or inner information for a key
     */
   def result(left: Iterable[Row], right: Iterable[Row])(keys: Set[String]): ParkaResult =
@@ -249,6 +288,13 @@ object Parka {
       case (l, r) if l.nonEmpty && r.nonEmpty => ParkaResult(inner(l.head, r.head)(keys), emptyOuter)
     }
 
+  private val monoidInner = MonoidGen.gen[Inner]
+
+  private val monoidDescribe = MonoidGen.gen[Describe]
+  private val monoidOuter    = MonoidGen.gen[Outer]
+
+  //F***
+  // Horry sheet
   private val monoidParkaResult = MonoidGen.gen[ParkaResult]
 
   def combine(left: ParkaResult, right: ParkaResult): ParkaResult = monoidParkaResult.combine(left, right)
@@ -259,7 +305,6 @@ object Parka {
     * @param leftDs         Left Dataset
     * @param rightDs        Right Dataset
     * @param keyNames       Column's names of both Datasets that are considered as keys
-    *
     * @return               Delta QA analysis between leftDs and rightDS
     */
   def apply(leftDs: Dataset[_], rightDs: Dataset[_])(keyNames: String*): ParkaAnalysis = {

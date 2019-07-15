@@ -1,8 +1,8 @@
 package io.univalence.parka
 
 import cats.kernel.Monoid
-import io.univalence.parka.Delta.{ DeltaLong, DeltaString }
-import io.univalence.parka.Describe.{ DescribeCombine, DescribeLong, DescribeString }
+import io.univalence.parka.Delta.{DeltaBoolean, DeltaLong, DeltaString}
+import io.univalence.parka.Describe.{DescribeCombine, DescribeLong}
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.sql.Dataset
 import org.scalatest.FunSuite
@@ -38,29 +38,6 @@ class ParkaTest extends FunSuite with SparkTest {
     }
   }
 
-  test("this is the first test") {
-    val from: Dataset[Element] = dataset(Element("0", l1), Element("1", l2), Element("2", l3), Element("3", l4))
-    val to: Dataset[Element]   = dataset(Element("0", l5), Element("1", l6), Element("2", l3))
-
-    val result = Parka(from, to)("key").result
-
-    assert(result.inner.countRowEqual === 1L)
-    assert(result.inner.countRowNotEqual === 2L)
-    assert(result.outer.countRow === Both(1L, 0L))
-  }
-
-  test("this is the second test") {
-    val from: Dataset[Element2] =
-      dataset(Element2("0", l1, l1), Element2("1", l2, l2), Element2("2", l3, l3), Element2("3", l4, l4))
-    val to: Dataset[Element2] = dataset(Element2("0", l5, l5), Element2("1", l6, l6), Element2("2", l3, l3))
-
-    val result = Parka(from, to)("key").result
-
-    assert(result.inner.countRowEqual === 1L)
-    assert(result.inner.countRowNotEqual === 2L)
-    assert(result.outer.countRow === Both(1L, 0L))
-  }
-
   test("test deltaString") {
 
     val left  = dataframe("{id:1, value:'a', n:1}", "{id:2, value:'b', n:2}")
@@ -94,6 +71,25 @@ class ParkaTest extends FunSuite with SparkTest {
     //  assertHistoEqual(deltaLong.describe.right.value, l5, l6,l3)
 
     assert(result.outer.countRow === Both(1L, 0L))
+  }
+
+  test("test deltaBoolean") {
+    val left  = dataframe("{id:1, value:true}", "{id:2, value:true}", "{id:3, value:false}",
+      "{id:4, value:false}", "{id:5, value:false}", "{id:6, value:false}")
+    val right = dataframe("{id:1, value:false}", "{id:2, value:true}", "{id:3, value:false}",
+      "{id:4, value:true}", "{id:5, value:false}")
+
+    val result = Parka(left, right)("id").result
+
+    val deltaBoolean: DeltaBoolean = result.inner.byColumn("value").asInstanceOf[DeltaBoolean]
+
+    assert(deltaBoolean.tf == 1, "at tf")
+    assert(deltaBoolean.tt == 1, "at tt")
+    assert(deltaBoolean.ff == 2, "at ff")
+    assert(deltaBoolean.ft == 1, "at ft")
+
+    assert(deltaBoolean.nEqual == 3)
+    assert(deltaBoolean.nNotEqual == 2)
   }
 
   test("derivation test") {
