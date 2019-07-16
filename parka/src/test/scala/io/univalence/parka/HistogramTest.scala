@@ -1,11 +1,9 @@
 package io.univalence.parka
 
-import cats.kernel.Semigroup
-import com.twitter.algebird.{ QTree, QTreeSemigroup }
-import io.univalence.parka.Histogram
-import io.univalence.parka.MonoidGen.gen
-import org.scalatest.prop.{ PropertyChecks, TableDrivenPropertyChecks }
-import org.scalatest.{ FunSuite, PropSpec }
+
+import io.univalence.parka.MonoidGen._
+import org.scalatest.prop.PropertyChecks
+import org.scalatest.FunSuite
 
 class HistogramTest extends FunSuite with PropertyChecks {
 
