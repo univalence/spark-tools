@@ -6,7 +6,6 @@ import io.univalence.parka.Describe.{DescribeCombine, DescribeLong}
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.sql.Dataset
 import org.scalatest.FunSuite
-import PrettyPrint._
 
 class ParkaTest extends FunSuite with SparkTest {
 
@@ -103,22 +102,34 @@ class ParkaTest extends FunSuite with SparkTest {
     assert(describe.combine(Describe(1), Describe("a")).isInstanceOf[DescribeCombine])
   }
 
-  test("test prettyprint") {
-    val left: Dataset[Element] =
-      dataset(Element("0", l1), Element("1", l2), Element("2", l3), Element("3", l4))
-    val right: Dataset[Element] = dataset(Element("0", l5), Element("1", l6), Element("2", l3))
-
+  test("Prettify test") {
+    val left: Dataset[Element] = dataset(
+      Element("0", 100),
+      Element("1", 100),
+      Element("2", 100),
+      Element("3", 100),
+      Element("4", 100),
+      Element("5", 100),
+      Element("6", 100),
+      Element("7", 100),
+      Element("8", 100),
+      Element("9", 100)
+    )
+    val right: Dataset[Element] = dataset(
+      Element("0", 0),
+      Element("1", 10),
+      Element("2", 20),
+      Element("3", 30),
+      Element("4", 40),
+      Element("5", 50),
+      Element("6", 60),
+      Element("7", 70),
+      Element("8", 80),
+      Element("9", 90),
+      Element("10", 100)
+    )
     val result = Parka(left, right)("key").result
-
-    println(result.prettyPrint)
-  }
-
-  test("print histo") {
-    val left: Dataset[Element] = dataset(Element("0", -86), Element("1", 0), Element("2", 56))
-    val right: Dataset[Element] = dataset(Element("0", 1), Element("1", 5), Element("2", 21))
-    val result = Parka(left, right)("key").result
-    val error = result.inner.byColumn("value").asInstanceOf[DeltaLong].error
-    println(prettyPrintHistogram(error))
+    println(ParkaPrinter.printParkaResult(result))
   }
 }
 

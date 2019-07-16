@@ -55,7 +55,7 @@ object MonoidGen {
   }
 
   //The monoid on Option[QTree[Unit]]
-  implicit val qTreeSemigroup: Semigroup[QTree[Unit]] = new QTreeSemigroup[Unit](2)
+  implicit val qTreeSemigroup: Semigroup[QTree[Unit]] = new QTreeSemigroup[Unit](7)
 
   type Typeclass[T] = Monoid[T]
 
