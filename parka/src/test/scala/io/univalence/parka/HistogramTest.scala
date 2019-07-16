@@ -3,6 +3,7 @@ package io.univalence.parka
 import cats.kernel.Semigroup
 import com.twitter.algebird.{ QTree, QTreeSemigroup }
 import io.univalence.parka.Histogram
+import io.univalence.parka.MonoidGen.gen
 import org.scalatest.prop.{ PropertyChecks, TableDrivenPropertyChecks }
 import org.scalatest.{ FunSuite, PropSpec }
 
@@ -32,6 +33,18 @@ class HistogramTest extends FunSuite with PropertyChecks {
 
   test("hello") {
     forAll(invariant _)
+  }
+
+  test("bins") {
+
+    val histo = (22 to 42).map(x => Histogram.value(x.toDouble)).reduce(gen[Histogram].combine)
+
+    val bins = histo.bin(6)
+    assert(bins.size == 6)
+    assert(bins.head.pos == histo.min)
+    assert(bins.last.pos == histo.max)
+    assert(bins.map(_.count).sum == 20)
+
   }
 
 }
