@@ -1,31 +1,31 @@
 package io.univalence.plumbus.compress
 
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
+import org.apache.spark.sql.expressions.{ MutableAggregationBuffer, UserDefinedAggregateFunction }
 import org.apache.spark.sql.internal.SQLConf.SHUFFLE_PARTITIONS
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.{ DataFrame, Row, SparkSession }
 import scala.util.matching.Regex
 import scopt.OptionParser
 
-case class CompressDumpArgs(in: Seq[String] = Seq("tigrou"),
-                            out: String = "bourriquet",
+case class CompressDumpArgs(in: Seq[String]      = Seq("tigrou"),
+                            out: String          = "bourriquet",
                             groupBy: Seq[String] = Seq("winnie"),
-                            forceLocal: Boolean = false)
+                            forceLocal: Boolean  = false)
 
 object CompressDump {
 
-  lazy val groupExprColName: String = "groupByExpr"
+  lazy val groupExprColName: String  = "groupByExpr"
   lazy val dtInFlightColName: String = "compressDumpDt"
-  lazy val dtFinalColName: String = "compressDumpDts"
-  lazy val rowsName: String = "xs"
+  lazy val dtFinalColName: String    = "compressDumpDts"
+  lazy val rowsName: String          = "xs"
 
   class MergeSampleLines(schema: StructType) extends UserDefinedAggregateFunction {
     override val inputSchema: StructType = StructType(schema.fields.filter(_.name != groupExprColName))
 
     private val newRowType: StructType = {
       val fields = inputSchema.fields.filter(_.name != dtInFlightColName).toSeq :+ StructField(dtFinalColName,
-        ArrayType(StringType))
+                                                                                               ArrayType(StringType))
       StructType(fields)
     }
 
@@ -51,13 +51,13 @@ object CompressDump {
           buffer.update(
             0,
             rows.updated(i,
-              new GenericRowWithSchema((r.toSeq.dropRight(1) :+
-                (r.get(dtPosInInput).asInstanceOf[Seq[String]] ++ dtS)).toArray,
-                r.schema))
+                         new GenericRowWithSchema((r.toSeq.dropRight(1) :+
+                                                    (r.get(dtPosInInput).asInstanceOf[Seq[String]] ++ dtS)).toArray,
+                                                  r.schema))
           )
 
         case None =>
-          val newRow = new GenericRowWithSchema((inputVals :+ dtS.asInstanceOf[Any]).toArray, newRowType)
+          val newRow      = new GenericRowWithSchema((inputVals :+ dtS.asInstanceOf[Any]).toArray, newRowType)
           val updatedRows = rows :+ newRow
 
           buffer.update(0, updatedRows)
@@ -83,7 +83,7 @@ object CompressDump {
     import org.apache.spark.sql.functions._
 
     val firstDf: DataFrame = dfs.head._2
-    val ss: SparkSession = firstDf.sparkSession
+    val ss: SparkSession   = firstDf.sparkSession
     val schema: StructType = firstDf.schema
 
     val df: DataFrame =
@@ -108,7 +108,7 @@ object CompressDump {
     import org.apache.spark.sql.functions._
 
     val firstDf: DataFrame = dfs.head._2
-    val ss: SparkSession = firstDf.sparkSession
+    val ss: SparkSession   = firstDf.sparkSession
     val schema: StructType = firstDf.schema
 
     val df: DataFrame =
@@ -136,12 +136,12 @@ object CompressDump {
       dfs.map({ case (dt, dataFrame) => dataFrame.withColumn(dtInFlightColName, lit(dt)) }).reduce(_ union _)
 
     val preGrouped: DataFrame = df.withColumn(groupByExpr, expr(groupByExpr))
-    val groupByExprPos: Int = preGrouped.schema.fieldIndex(groupByExpr)
+    val groupByExprPos: Int   = preGrouped.schema.fieldIndex(groupByExpr)
 
     preGrouped.rdd
       .groupBy(_.get(groupByExprPos))
       .mapValues(it => {
-        val xs: Seq[Row] = it.toSeq
+        val xs: Seq[Row]       = it.toSeq
         val schema: StructType = xs.head.schema
 
       })
@@ -155,7 +155,9 @@ object CompressDump {
 
     val cols: Array[String] = dfs.head._2.columns
 
-    val base: DataFrame = dfs.map(df => df._2.withColumn(nameOfDumpName, lit(df._1))).reduce(_ unionByName _)
+    val base: DataFrame = dfs
+      .map(df => df._2.withColumn(nameOfDumpName, lit(df._1)))
+      .reduce(_ unionByName _)
       .groupBy(cols.map(expr): _*)
       .agg(collect_list(nameOfDumpName).as(nameOfDumpName))
 
@@ -166,17 +168,23 @@ object CompressDump {
 
   }
 
-  def compressWithGroup(sortBy: Seq[String], groupBy: Seq[String], nameOfDumpName: String = "dump_date")(dfs: (String, DataFrame)*): DataFrame = {
+  def compressWithGroup(sortBy: Seq[String], groupBy: Seq[String], nameOfDumpName: String = "dump_date")(
+    dfs: (String, DataFrame)*
+  ): DataFrame = {
 
     import org.apache.spark.sql.functions._
 
     val cols: Array[String] = dfs.head._2.columns
 
-    val base: DataFrame = dfs.map(df => df._2.withColumn(nameOfDumpName, lit(df._1))).reduce(_ unionByName _)
+    val base: DataFrame = dfs
+      .map(df => df._2.withColumn(nameOfDumpName, lit(df._1)))
+      .reduce(_ unionByName _)
       .groupBy(cols.map(expr): _*)
       .agg(collect_list(nameOfDumpName).as(nameOfDumpName))
 
-    val base2: DataFrame = base.groupBy(groupBy.map(expr): _*).agg(collect_list(struct(base.columns.filter(x => !groupBy.contains(x)).map(expr): _*)).as("rest"))
+    val base2: DataFrame = base
+      .groupBy(groupBy.map(expr): _*)
+      .agg(collect_list(struct(base.columns.filter(x => !groupBy.contains(x)).map(expr): _*)).as("rest"))
 
     if (sortBy.nonEmpty)
       base2.sort(sortBy.map(expr): _*)

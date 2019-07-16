@@ -1,8 +1,8 @@
 package io.univalence.parka
 
 import cats.kernel.Monoid
-import io.univalence.parka.Delta.{DeltaBoolean, DeltaLong, DeltaString}
-import io.univalence.parka.Describe.{DescribeCombine, DescribeLong}
+import io.univalence.parka.Delta.{ DeltaBoolean, DeltaLong, DeltaString }
+import io.univalence.parka.Describe.{ DescribeCombine, DescribeLong }
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.sql.Dataset
 import org.scalatest.FunSuite
@@ -45,7 +45,7 @@ class ParkaTest extends FunSuite with SparkTest {
 
     val result = Parka(left, right)("id").result
 
-    assert(result.inner.countDiffByRow == Map(Seq("n","value") -> 1, Nil -> 1))
+    assert(result.inner.countDiffByRow == Map(Seq("n", "value") -> 1, Nil -> 1))
 
     assertHistoEqual(result.inner.byColumn("value").asInstanceOf[DeltaString].error, 1)
   }
@@ -74,10 +74,17 @@ class ParkaTest extends FunSuite with SparkTest {
   }
 
   test("test deltaBoolean") {
-    val left  = dataframe("{id:1, value:true}", "{id:2, value:true}", "{id:3, value:false}",
-      "{id:4, value:false}", "{id:5, value:false}", "{id:6, value:false}")
-    val right = dataframe("{id:1, value:false}", "{id:2, value:true}", "{id:3, value:false}",
-      "{id:4, value:true}", "{id:5, value:false}")
+    val left = dataframe("{id:1, value:true}",
+                         "{id:2, value:true}",
+                         "{id:3, value:false}",
+                         "{id:4, value:false}",
+                         "{id:5, value:false}",
+                         "{id:6, value:false}")
+    val right = dataframe("{id:1, value:false}",
+                          "{id:2, value:true}",
+                          "{id:3, value:false}",
+                          "{id:4, value:true}",
+                          "{id:5, value:false}")
 
     val result = Parka(left, right)("id").result
 

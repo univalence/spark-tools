@@ -28,42 +28,49 @@ case class Histogram(neg: Option[QTree[Unit]], countZero: Long, pos: Option[QTre
   def median(): Double = mean(quantileBounds(0.5))
   def thirdQuartile(): Double = mean(quantileBounds(0.75))*/
 
-  private def foldToSeq[R](negT:QTree[Unit] => R, countZeroT:Long => Option[R], posT:QTree[Unit] => R)(combine: (R,R) => R, empty:R):R = {
+  private def foldToSeq[R](negT: QTree[Unit] => R,
+                           countZeroT: Long => Option[R],
+                           posT: QTree[Unit] => R)(combine: (R, R) => R, empty: R): R =
     Seq(neg.map(negT), countZeroT(countZero), pos.map(posT)).flatten.reduceOption(combine).getOrElse(empty)
-  }
 
-  lazy val min:Double = foldToSeq(x => - x.quantileBounds(1)._2, x => if(x > 0) Some(0.0) else None, x => x.quantileBounds(0)._1)(Math.min, Double.NegativeInfinity)
-  lazy val max:Double = foldToSeq(x => - x.quantileBounds(0)._1, x => if(x > 0) Some(0.0) else None, x => x.quantileBounds(1)._2)(Math.max, Double.PositiveInfinity)
+  lazy val min: Double = foldToSeq(x => -x.quantileBounds(1)._2,
+                                   x => if (x > 0) Some(0.0) else None,
+                                   x => x.quantileBounds(0)._1)(Math.min, Double.NegativeInfinity)
+  lazy val max: Double = foldToSeq(x => -x.quantileBounds(0)._1,
+                                   x => if (x > 0) Some(0.0) else None,
+                                   x => x.quantileBounds(1)._2)(Math.max, Double.PositiveInfinity)
 
-  private def approxCountBetween(lower:Double, upper:Double):Double = {
-    foldToSeq[Double](neg => {
-      if(lower < 0.0) {
-        val l: Double = Math.max(-upper, 0)
-        val u: Double = -lower
-        val (b1, b2) = neg.rangeCountBounds(l, u)
-        (b1 + b2) / 2
-      } else 0.0
-    }, x => if(lower <= 0 && 0 <= upper) Some(x) else None, pos => {
-      if(upper > 0.0) {
-        val l: Double = Math.max(lower, 0)
-        val (b1,b2) = pos.rangeCountBounds(l, upper)
-        (b1 + b2) / 2
-      } else 0.0
-    })(_ + _, 0)
-  }
+  private def approxCountBetween(lower: Double, upper: Double): Double =
+    foldToSeq[Double](
+      neg => {
+        if (lower < 0.0) {
+          val l: Double = Math.max(-upper, 0)
+          val u: Double = -lower
+          val (b1, b2)  = neg.rangeCountBounds(l, u)
+          (b1 + b2) / 2
+        } else 0.0
+      },
+      x => if (lower <= 0 && 0 <= upper) Some(x) else None,
+      pos => {
+        if (upper > 0.0) {
+          val l: Double = Math.max(lower, 0)
+          val (b1, b2)  = pos.rangeCountBounds(l, upper)
+          (b1 + b2) / 2
+        } else 0.0
+      }
+    )(_ + _, 0)
 
-  case class Bin(pos:Double, count:Long)
+  case class Bin(pos: Double, count: Long)
 
-  def bin(n:Int):Seq[Bin] = {
+  def bin(n: Int): Seq[Bin] = {
     require(n >= 2, "at least 2 bins")
     val step = (max - min) / (n - 1)
     (0 until n).map(i => {
-      val lower = min + step * i - (step /2)
+      val lower = min + step * i - (step / 2)
       val upper = lower + step
-      Bin((lower + upper)/2, approxCountBetween(lower, upper).toLong)
+      Bin((lower + upper) / 2, approxCountBetween(lower, upper).toLong)
     })
   }
-
 
 }
 
