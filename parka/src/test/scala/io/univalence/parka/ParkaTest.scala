@@ -44,6 +44,7 @@ class ParkaTest extends FunSuite with SparkTest {
     val right = dataframe("{id:1, value:'a', n:1}", "{id:2, value:'b2', n:3}")
 
     val result = Parka(left, right)("id").result
+    println(ParkaPrinter.printParkaResult(result))
 
     assert(result.inner.countDiffByRow == Map(Seq("n", "value") -> 1, Nil -> 1))
 
