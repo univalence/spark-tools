@@ -144,7 +144,12 @@ lazy val parka =
       useSpark(libVersion.sparkScala212)("sql"),
       libraryDependencies += "com.twitter"              %% "algebird-core" % "0.13.4",
       libraryDependencies += "com.propensive"           %% "magnolia"      % "0.10.0",
-      libraryDependencies += "com.github.nikita-volkov" % "sext"           % "0.2.4",
+      libraryDependencies += "io.circe" %% "circe-derivation" % "0.11.0-M1",
+      libraryDependencies ++= Seq(
+        "io.circe" %% "circe-core",
+        "io.circe" %% "circe-generic",
+        "io.circe" %% "circe-parser"
+      ).map(_ % libVersion.circeVersion),
       addTestLibs
     )
     .dependsOn(sparkTest)
@@ -225,6 +230,7 @@ val libVersion =
     val shapeless     = "2.3.3"
     val sparkScala211 = "2.0.0"
     val sparkScala212 = "2.4.0"
+    val circeVersion  = "0.11.1"
   }
 
 lazy val defaultConfiguration =
