@@ -10,9 +10,11 @@ import io.circe.generic.auto._
 import io.univalence.parka.Delta.{DeltaBoolean, DeltaCombine, DeltaDouble, DeltaLong, DeltaString}
 
 trait ParkaDecoder {
+  type QTU = (Long, Int, Long, Option[QTree[Unit]], Option[QTree[Unit]])
+
   // Encoder
   implicit def encoderQTree: Encoder[QTree[Unit]] =
-    deriveEncoder[(Long, Int, Long, Option[QTree[Unit]], Option[QTree[Unit]])].contramap(x => (x._1,x._2,x._3,x._5,x._6))
+    deriveEncoder[QTU].contramap(x => (x._1,x._2,x._3,x._5,x._6))
   implicit val encoderDelta: Encoder[Delta] = deriveEncoder
   implicit val encoderMapDelta: Encoder[Map[String, Delta]] = Encoder.encodeMap[String, Delta]
   implicit val encodeKeySeqString: KeyEncoder[Seq[String]] = new KeyEncoder[Seq[String]] {
@@ -29,12 +31,12 @@ trait ParkaDecoder {
 
   // Decoder
   implicit def decoderQTree: Decoder[QTree[Unit]] =
-    deriveDecoder[(Long, Int, Long, Option[QTree[Unit]], Option[QTree[Unit]])].map(x => new QTree[Unit](x._1, x._2, x._3, {}, x._4, x._5))
+    deriveDecoder[QTU].map(x => new QTree[Unit](x._1, x._2, x._3, {}, x._4, x._5))
   implicit val decoderDescribe: Decoder[Describe] = deriveDecoder
   implicit val decoderDelta: Decoder[Delta] = deriveDecoder
   implicit val decoderMapDelta: Decoder[Map[String, Delta]] = Decoder.decodeMap[String, Delta]
   implicit val decodeKeySeqString: KeyDecoder[Seq[String]] = new KeyDecoder[Seq[String]] {
-    override def apply(s: String): Option[Seq[String]] = Some(s.split("/"))
+    override def apply(s: String): Option[Seq[String]] = Some(if (s == "") Nil else s.split("/"))
   }
   implicit val decoderMap: Decoder[Map[Seq[String], Long]] = Decoder.decodeMap[Seq[String], Long]
   implicit val decoderParkaAnalysis: Decoder[ParkaAnalysis] = deriveDecoder
