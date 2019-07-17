@@ -1,6 +1,5 @@
 package io.univalence.parka
 
-
 import io.univalence.parka.MonoidGen._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.FunSuite

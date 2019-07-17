@@ -2,12 +2,12 @@ package io.univalence.parka
 
 import cats.kernel.Monoid
 import io.circe.generic.JsonCodec
-import io.univalence.parka.Delta.{DeltaDouble, DeltaLong, DeltaString}
-import io.univalence.parka.Describe.{DescribeBoolean, DescribeDouble, DescribeLong, DescribeString}
+import io.univalence.parka.Delta.{ DeltaDouble, DeltaLong, DeltaString }
+import io.univalence.parka.Describe.{ DescribeBoolean, DescribeDouble, DescribeLong, DescribeString }
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.{Dataset, Row}
+import org.apache.spark.sql.{ Dataset, Row }
 
 case class Both[+T](left: T, right: T) {
   def fold[U](f: (T, T) => U): U = f(left, right)

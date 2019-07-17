@@ -29,7 +29,7 @@ case class Histogram(neg: Option[QTree[Unit]], countZero: Long, pos: Option[QTre
   def thirdQuartile(): Double = mean(quantileBounds(0.75))*/
 
   private def foldToSeq[R](negT: QTree[Unit] => R,
-                           countZeroT: Long => Option[R],
+                           countZeroT: Long  => Option[R],
                            posT: QTree[Unit] => R)(combine: (R, R) => R, empty: R): R =
     Seq(neg.map(negT), countZeroT(countZero), pos.map(posT)).flatten.reduceOption(combine).getOrElse(empty)
 

@@ -156,14 +156,14 @@ object ParkaPrinter {
       case v                      => fillSpaceBefore(" " + v, focus)
     }
 
-    val bins              = histogram.bin(6)
-    val lastBin           = bins.last
+    val bins    = histogram.bin(6)
+    val lastBin = bins.last
 
     val barMax            = 20
     val maxCount          = bins.map(_.count).max
     val maxLengthBinLower = bins.map(bin => printDecimal(bin.pos).length).max //printDecimal(lastBin.pos).length
 
-    val histobar          = "█"
+    val histobar = "█"
 
     val stringifyBins = bins
       .map(bin => {
