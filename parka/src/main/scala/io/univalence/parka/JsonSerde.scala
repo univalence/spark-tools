@@ -5,9 +5,9 @@ import io.circe.Decoder.Result
 import io.circe._
 import io.circe.syntax._
 import io.circe.generic.semiauto._
-import io.circe.{ Decoder, Encoder }
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.auto._
-import io.univalence.parka.Delta.{ DeltaBoolean, DeltaCombine, DeltaDouble, DeltaLong, DeltaString }
+import io.univalence.parka.Delta.{DeltaBoolean, DeltaCombine, DeltaDate, DeltaDouble, DeltaLong, DeltaString, DeltaTimestamp}
 
 case class KeyVal[K, V](key: K, value: V)
 
@@ -27,11 +27,12 @@ trait ParkaDecoder {
     .contramap(x => x.map({ case (k, v) => KeyVal(k, v) }).toSeq)
 
   implicit val encoderParkaAnalysis: Encoder[ParkaAnalysis] = deriveEncoder
-  // Why ?
   implicit val encoderDeltaLong: Encoder[DeltaLong]       = deriveEncoder
   implicit val encoderDeltaBoolean: Encoder[DeltaBoolean] = deriveEncoder
   implicit val encoderDeltaString: Encoder[DeltaString]   = deriveEncoder
   implicit val encoderDeltaDouble: Encoder[DeltaDouble]   = deriveEncoder
+  implicit val encoderDeltaDate: Encoder[DeltaDate] = deriveEncoder
+  implicit val encoderDeltaTimestamp: Encoder[DeltaTimestamp] = deriveEncoder
   implicit val encoderDeltaCombine: Encoder[DeltaCombine] = deriveEncoder
 
   // Decoder
@@ -47,11 +48,12 @@ trait ParkaDecoder {
     Decoder.decodeSeq[KeyVal[Seq[String], Long]].map(x => x.map(x => x.key -> x.value).toMap)
 
   implicit val decoderParkaAnalysis: Decoder[ParkaAnalysis] = deriveDecoder
-  // Why ?
   implicit val decoderDeltaLong: Decoder[DeltaLong]       = deriveDecoder
   implicit val decoderDeltaBoolean: Decoder[DeltaBoolean] = deriveDecoder
   implicit val decoderDeltaString: Decoder[DeltaString]   = deriveDecoder
   implicit val decoderDeltaDouble: Decoder[DeltaDouble]   = deriveDecoder
+  implicit val decoderDeltaDate: Decoder[DeltaDate] = deriveDecoder
+  implicit val decoderDeltaTimestamp: Decoder[DeltaTimestamp] = deriveDecoder
   implicit val decoderDeltaCombine: Decoder[DeltaCombine] = deriveDecoder
 }
 

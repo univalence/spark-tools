@@ -1,15 +1,21 @@
 package io.univalence.parka
 
+import java.sql.{Date, Timestamp}
+
 import cats.kernel.Monoid
 import com.twitter.algebird.QTree
-import io.circe.{ Decoder, Encoder, ObjectEncoder }
-import io.univalence.parka.Delta.{ DeltaBoolean, DeltaLong, DeltaString }
-import io.univalence.parka.Describe.{ DescribeCombine, DescribeLong }
+import io.circe.{Decoder, Encoder, ObjectEncoder}
+import io.univalence.parka.Delta.{DeltaBoolean, DeltaDate, DeltaLong, DeltaString, DeltaTimestamp}
+import io.univalence.parka.Describe.{DescribeCombine, DescribeLong}
 import io.univalence.sparktest.SparkTest
-import org.apache.spark.sql.Dataset
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.types.{DateType, IntegerType, StructField, StructType}
 import org.scalatest.FunSuite
 
 class ParkaTest extends FunSuite with SparkTest {
+  val sharedSparkSession: SparkSession = ss
+  val sc: SparkContext                 = ss.sparkContext
 
   private val l1 = 1L
   private val l2 = 2L
@@ -90,6 +96,7 @@ class ParkaTest extends FunSuite with SparkTest {
                           "{id:5, value:false}")
 
     val result = Parka(left, right)("id").result
+    println(ParkaPrinter.printParkaResult(result))
 
     val deltaBoolean: DeltaBoolean = result.inner.byColumn("value").asInstanceOf[DeltaBoolean]
 
@@ -100,6 +107,49 @@ class ParkaTest extends FunSuite with SparkTest {
 
     assert(deltaBoolean.nEqual == 3)
     assert(deltaBoolean.nNotEqual == 2)
+  }
+
+  test("deltaDate") {
+    val left = Seq(
+      (1, Date.valueOf("2019-07-19")),
+      (2, Date.valueOf("2019-07-20")),
+      (3, Date.valueOf("2019-07-21"))
+    ).toDF("id", "date")
+
+    val right = Seq(
+      (1, Date.valueOf("2019-07-15")),
+      (2, Date.valueOf("2019-07-15")),
+      (3, Date.valueOf("2019-07-15")),
+      (4, Date.valueOf("2019-07-15"))
+    ).toDF("id", "date")
+
+    val pr = Parka(left, right)("id").result
+    assert(pr.inner.countRowEqual == 0)
+    assert(pr.inner.countRowNotEqual == 3)
+    val deltaDate = pr.inner.byColumn("date").asInstanceOf[DeltaDate]
+    assert(deltaDate.nEqual == 0)
+    assert(deltaDate.nNotEqual == 3)
+  }
+
+  test("deltaTimestamp") {
+    val left = Seq(
+      (1, Timestamp.valueOf("2019-07-19 12:56:43")),
+      (2, Timestamp.valueOf("2019-07-20 12:58:43")),
+      (3, Timestamp.valueOf("2019-07-21 12:56:48"))
+    ).toDF("id", "date")
+
+    val right = Seq(
+      (1, Timestamp.valueOf("2019-07-19 12:56:43")),
+      (2, Timestamp.valueOf("2019-07-20 12:58:47")),
+      (3, Timestamp.valueOf("2019-07-21 12:55:48"))
+    ).toDF("id", "date")
+
+    val pr = Parka(left, right)("id").result
+    assert(pr.inner.countRowEqual == 1)
+    assert(pr.inner.countRowNotEqual == 2)
+    val deltaDate = pr.inner.byColumn("date").asInstanceOf[DeltaTimestamp]
+    assert(deltaDate.nEqual == 1)
+    assert(deltaDate.nNotEqual == 2)
   }
 
   test("derivation test") {

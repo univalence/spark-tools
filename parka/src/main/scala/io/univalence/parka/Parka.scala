@@ -1,13 +1,13 @@
 package io.univalence.parka
 
+import java.sql.{Date, Timestamp}
+
 import cats.kernel.Monoid
-import io.circe.generic.JsonCodec
-import io.univalence.parka.Delta.{ DeltaDouble, DeltaLong, DeltaString }
-import io.univalence.parka.Describe.{ DescribeBoolean, DescribeDouble, DescribeLong, DescribeString }
+import io.univalence.parka.Describe.{DescribeBoolean, DescribeDate, DescribeDouble, DescribeLong, DescribeString, DescribeTimestamp}
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.{ Dataset, Row }
+import org.apache.spark.sql.{Dataset, Row}
 
 case class Both[+T](left: T, right: T) {
   def fold[U](f: (T, T) => U): U = f(left, right)
@@ -56,7 +56,7 @@ object CoProductMonoidHelper {
 
 object Describe {
 
-  val empty = DescribeCombine(None, None, None, None)
+  val empty = DescribeCombine(None, None, None, None, None, None)
 
   implicit val coProductMonoidHelper: CoProductMonoidHelper.Aux[Describe, DescribeCombine] =
     new CoProductMonoidHelper[Describe] {
@@ -68,6 +68,8 @@ object Describe {
         case dd: DescribeDouble  => empty.copy(double = Some(dd))
         case ds: DescribeString  => empty.copy(string = Some(ds))
         case db: DescribeBoolean => empty.copy(boolean = Some(db))
+        case dd: DescribeDate => empty.copy(date = Some(dd))
+        case dt: DescribeTimestamp => empty.copy(timestamp = Some(dt))
       }
     }
 
@@ -75,23 +77,31 @@ object Describe {
   case class DescribeDouble(value: Histogram) extends Describe
   case class DescribeString(length: Histogram) extends Describe
   case class DescribeBoolean(nTrue: Long, nFalse: Long) extends Describe
+  case class DescribeDate(period: Histogram) extends Describe
+  case class DescribeTimestamp(period: Histogram) extends Describe
 
   case class DescribeCombine(long: Option[DescribeLong],
                              double: Option[DescribeDouble],
                              string: Option[DescribeString],
-                             boolean: Option[DescribeBoolean])
+                             boolean: Option[DescribeBoolean],
+                             date: Option[DescribeDate],
+                             timestamp: Option[DescribeTimestamp])
       extends Describe
 
   def apply(long: Long): DescribeLong          = DescribeLong(Histogram.value(long))
   def apply(long: Double): DescribeDouble      = DescribeDouble(Histogram.value(long))
   def apply(string: String): DescribeString    = DescribeString(Histogram.value(string.length.toLong))
   def apply(boolean: Boolean): DescribeBoolean = if (boolean) DescribeBoolean(1, 0) else DescribeBoolean(0, 1)
+  def apply(date: Date): DescribeDate = DescribeDate(Histogram.value(date.getTime))
+  def apply(timestamp: Timestamp): DescribeTimestamp = DescribeTimestamp(Histogram.value(timestamp.getTime))
 
   def apply(any: Any): Describe = any match {
     case l: Long    => Describe(l)
     case d: Double  => Describe(d)
     case s: String  => Describe(s)
     case b: Boolean => Describe(b)
+    case d: Date    => Describe(d)
+    case t: Timestamp => Describe(t)
   }
 }
 
@@ -158,6 +168,24 @@ object Delta {
     //Pour l'instant on va faire ça
     levenshtein(str1, str2).toLong
 
+  def apply(x: Date, y: Date): DeltaDate = {
+    val d1 = Describe(x)
+    val period = math.abs(x.getTime - y.getTime)
+    if (period == 0)
+      DeltaDate(1, 0, Both(d1, d1), Histogram.value(period))
+    else
+      DeltaDate(0, 1, Both(d1, Describe(y)), Histogram.value(period))
+  }
+
+  def apply(x: Timestamp, y: Timestamp): DeltaTimestamp = {
+    val d1 = Describe(x)
+    val period = math.abs(x.getTime - y.getTime)
+    if (period == 0)
+      DeltaTimestamp(1, 0, Both(d1, d1), Histogram.value(period))
+    else
+      DeltaTimestamp(0, 1, Both(d1, Describe(y)), Histogram.value(period))
+  }
+
   case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: Histogram) extends Delta
 
   case class DeltaDouble(nEqual: Long, nNotEqual: Long, describe: Both[DescribeDouble], error: Histogram) extends Delta
@@ -171,10 +199,15 @@ object Delta {
     def ft: Long = nNotEqual - tf
   }
 
+  case class DeltaDate(nEqual: Long, nNotEqual: Long, describe: Both[DescribeDate], error: Histogram) extends Delta
+  case class DeltaTimestamp(nEqual: Long, nNotEqual: Long, describe: Both[DescribeTimestamp], error: Histogram) extends Delta
+
   case class DeltaCombine(long: Option[DeltaLong],
                           double: Option[DeltaDouble],
                           string: Option[DeltaString],
-                          boolean: Option[DeltaBoolean])
+                          boolean: Option[DeltaBoolean],
+                          date: Option[DeltaDate],
+                          timestamp: Option[DeltaTimestamp])
       extends Delta {
 
     @transient lazy val seq: Seq[Delta]          = Seq(long, double, string, boolean).flatten
@@ -186,7 +219,7 @@ object Delta {
     }
   }
 
-  val empty: DeltaCombine = DeltaCombine(None, None, None, None)
+  val empty: DeltaCombine = DeltaCombine(None, None, None, None, None, None)
 
   implicit val coProductMonoidHelper: CoProductMonoidHelper.Aux[Delta, DeltaCombine] =
     new CoProductMonoidHelper[Delta] {
@@ -199,6 +232,8 @@ object Delta {
           case dl: DeltaDouble  => empty.copy(double = Some(dl))
           case ds: DeltaString  => empty.copy(string = Some(ds))
           case db: DeltaBoolean => empty.copy(boolean = Some(db))
+          case dd: DeltaDate => empty.copy(date = Some(dd))
+          case dt: DeltaTimestamp => empty.copy(timestamp = Some(dt))
         }
     }
 }
@@ -268,6 +303,8 @@ object Parka {
             case (x: Double, y: Double)   => Delta.apply(x, y)
             case (x: String, y: String)   => Delta.apply(x, y)
             case (x: Boolean, y: Boolean) => Delta.apply(x, y)
+            case (x: Date, y: Date) => Delta.apply(x, y)
+            case (x: Timestamp, y: Timestamp) => Delta.apply(x, y)
           }
           name -> delta
         })

@@ -1,7 +1,7 @@
 package io.univalence.parka
 
-import io.univalence.parka.Delta.{ DeltaBoolean, DeltaDouble, DeltaLong, DeltaString }
-import io.univalence.parka.Describe.{ DescribeBoolean, DescribeDouble, DescribeLong, DescribeString }
+import io.univalence.parka.Delta.{DeltaBoolean, DeltaDate, DeltaDouble, DeltaLong, DeltaString, DeltaTimestamp}
+import io.univalence.parka.Describe.{DescribeBoolean, DescribeDate, DescribeDouble, DescribeLong, DescribeString, DescribeTimestamp}
 
 object ParkaPrinter {
   val sep   = "    "
@@ -77,13 +77,15 @@ object ParkaPrinter {
 
   def printDeltaSpecific(delta: Delta, level: Int = 0): String = delta match {
     case deltaLong: DeltaLong   => printHistogram(deltaLong.error, level + 1, "Error's histogram")
-    case deltaLong: DeltaDouble => printHistogram(deltaLong.error, level + 1, "Error's histogram")
-    case deltaLong: DeltaString => printHistogram(deltaLong.error, level + 1, "Error's histogram")
-    case delta: DeltaBoolean =>
-      s"""|${printInformation(delta.ff.toString, "Number of false -> false", level + 1)}
-          |${printInformation(delta.ft.toString, "Number of false -> true", level + 1)}
-          |${printInformation(delta.tf.toString, "Number of true -> false", level + 1)}
-          |${printInformation(delta.tt.toString, "Number of true -> true", level + 1)}""".stripMargin
+    case deltaDouble: DeltaDouble => printHistogram(deltaDouble.error, level + 1, "Error's histogram")
+    case deltaString: DeltaString => printHistogram(deltaString.error, level + 1, "Error's histogram")
+    case deltaBoolean: DeltaBoolean =>
+      s"""|${printInformation(deltaBoolean.ff.toString, "Number of false -> false", level + 1)}
+          |${printInformation(deltaBoolean.ft.toString, "Number of false -> true", level + 1)}
+          |${printInformation(deltaBoolean.tf.toString, "Number of true -> false", level + 1)}
+          |${printInformation(deltaBoolean.tt.toString, "Number of true -> true", level + 1)}""".stripMargin
+    case deltaDate: DeltaDate => printHistogram(deltaDate.error, level + 1, "Error's histogram")
+    case deltaTimestamp: DeltaTimestamp => printHistogram(deltaTimestamp.error, level + 1, "Error's histogram")
     case _ => printInformation("/!\\\\ Can not display this delta", "Error", level + 1)
   }
 
@@ -183,7 +185,7 @@ object ParkaPrinter {
       })
       .mkString("\n")
 
-    printInformation(stringifyBins, name, level, true)
+    printInformation(stringifyBins, name, level, jump = true)
   }
 
   def printBoth[A](both: Both[A], level: Int, printA: (A, Int) => String) =
@@ -199,6 +201,8 @@ object ParkaPrinter {
         s"""|${printInformation(nTrue.toString, "Number of false", level)}
             |${printInformation(nFalse.toString, "Number of true", level)}""".stripMargin
       }
+      case DescribeDate(period) => printHistogram(period, level)
+      case DescribeTimestamp(period) => printHistogram(period, level)
       case d: Describe => s"${printAccumulator(level)}Empty describe"
       case _           => printInformation("/!\\ Can not display this describe", "Error", level)
     }
