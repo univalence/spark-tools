@@ -144,6 +144,7 @@ lazy val parka =
       useSpark(libVersion.sparkScala212)("sql"),
       libraryDependencies += "com.twitter"    %% "algebird-core"    % "0.13.4",
       libraryDependencies += "com.propensive" %% "magnolia"         % "0.10.0",
+      libraryDependencies += "org.jline"      % "jline-terminal"    % "3.12.1",
       libraryDependencies ++= Seq(
         "io.circe" %% "circe-core",
         "io.circe" %% "circe-generic",
