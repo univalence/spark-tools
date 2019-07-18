@@ -83,7 +83,7 @@ object MonoidGen {
             if (handleX.typeName == handleY.typeName) {
               handleX.typeclass.combine(handleX.cast(x), handleX.cast(y))
             } else {
-              combined.combine(helper.lift(x), helper.lift(y))
+              helper.unlift(combined.combine(helper.lift(x), helper.lift(y)))
             }
           })
         })

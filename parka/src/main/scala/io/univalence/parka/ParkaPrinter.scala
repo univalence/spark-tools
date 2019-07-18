@@ -194,15 +194,15 @@ object ParkaPrinter {
 
   def printBothDescribe(describes: Both[Describe], level: Int): String = {
     def printOneDescribe(describe: Describe, level: Int): String = describe match {
-      case DescribeLong(value)   => printHistogram(value, level)
-      case DescribeDouble(value) => printHistogram(value, level)
-      case DescribeString(value) => printHistogram(value, level)
-      case DescribeBoolean(nTrue, nFalse) => {
+      case DescribeLong(value, _)   => printHistogram(value, level)
+      case DescribeDouble(value, _) => printHistogram(value, level)
+      case DescribeString(value, _) => printHistogram(value, level)
+      case DescribeBoolean(nTrue, nFalse, _) => {
         s"""|${printInformation(nTrue.toString, "Number of false", level)}
             |${printInformation(nFalse.toString, "Number of true", level)}""".stripMargin
       }
-      case DescribeDate(period) => printHistogram(period, level)
-      case DescribeTimestamp(period) => printHistogram(period, level)
+      case DescribeDate(period, _) => printHistogram(period, level)
+      case DescribeTimestamp(period, _) => printHistogram(period, level)
       case d: Describe => s"${printAccumulator(level)}Empty describe"
       case _           => printInformation("/!\\ Can not display this describe", "Error", level)
     }

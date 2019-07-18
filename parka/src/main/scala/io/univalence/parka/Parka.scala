@@ -41,11 +41,14 @@ case class Inner(countRowEqual: Long,
   */
 case class Outer(countRow: Both[Long], byColumn: Map[String, Both[Describe]])
 
-sealed trait Describe extends Serializable
+sealed trait Describe extends Serializable {
+  def nnull: Long
+}
 
 trait CoProductMonoidHelper[T] {
   type Combined <: T
   def lift(t: T): Combined
+  def unlift(t: Combined): T
 }
 
 object CoProductMonoidHelper {
@@ -56,7 +59,7 @@ object CoProductMonoidHelper {
 
 object Describe {
 
-  val empty = DescribeCombine(None, None, None, None, None, None)
+  val empty = DescribeCombine(None, None, None, None, None, None, 0)
 
   implicit val coProductMonoidHelper: CoProductMonoidHelper.Aux[Describe, DescribeCombine] =
     new CoProductMonoidHelper[Describe] {
@@ -71,31 +74,46 @@ object Describe {
         case dd: DescribeDate => empty.copy(date = Some(dd))
         case dt: DescribeTimestamp => empty.copy(timestamp = Some(dt))
       }
+
+      def unlift(combined: Combined):Describe = {
+        combined match {
+          case DescribeCombine(Some(x),None,None,None,None,None, nnull) => x.copy(nnull = x.nnull + nnull)
+          case DescribeCombine(None,Some(x),None,None,None,None, nnull) => x.copy(nnull = x.nnull + nnull)
+          case DescribeCombine(None,None,Some(x),None,None,None, nnull) => x.copy(nnull = x.nnull + nnull)
+          case DescribeCombine(None,None,None,Some(x),None,None, nnull) => x.copy(nnull = x.nnull + nnull)
+          case DescribeCombine(None,None,None,None,Some(x),None, nnull) => x.copy(nnull = x.nnull + nnull)
+          case DescribeCombine(None,None,None,None,None,Some(x), nnull) => x.copy(nnull = x.nnull + nnull)
+          case _ => combined
+        }
+      }
     }
 
-  case class DescribeLong(value: Histogram) extends Describe
-  case class DescribeDouble(value: Histogram) extends Describe
-  case class DescribeString(length: Histogram) extends Describe
-  case class DescribeBoolean(nTrue: Long, nFalse: Long) extends Describe
-  case class DescribeDate(period: Histogram) extends Describe
-  case class DescribeTimestamp(period: Histogram) extends Describe
+  case class DescribeLong(value: Histogram, nnull: Long) extends Describe
+  case class DescribeDouble(value: Histogram, nnull: Long) extends Describe
+  case class DescribeString(length: Histogram, nnull: Long) extends Describe
+  case class DescribeBoolean(nTrue: Long, nFalse: Long, nnull: Long) extends Describe
+  case class DescribeDate(period: Histogram, nnull: Long) extends Describe
+  case class DescribeTimestamp(period: Histogram, nnull: Long) extends Describe
 
   case class DescribeCombine(long: Option[DescribeLong],
                              double: Option[DescribeDouble],
                              string: Option[DescribeString],
                              boolean: Option[DescribeBoolean],
                              date: Option[DescribeDate],
-                             timestamp: Option[DescribeTimestamp])
+                             timestamp: Option[DescribeTimestamp],
+                             nnull: Long)
       extends Describe
 
-  def apply(long: Long): DescribeLong          = DescribeLong(Histogram.value(long))
-  def apply(long: Double): DescribeDouble      = DescribeDouble(Histogram.value(long))
-  def apply(string: String): DescribeString    = DescribeString(Histogram.value(string.length.toLong))
-  def apply(boolean: Boolean): DescribeBoolean = if (boolean) DescribeBoolean(1, 0) else DescribeBoolean(0, 1)
-  def apply(date: Date): DescribeDate = DescribeDate(Histogram.value(date.getTime))
-  def apply(timestamp: Timestamp): DescribeTimestamp = DescribeTimestamp(Histogram.value(timestamp.getTime))
+  def apply(n: Null): DescribeCombine = DescribeCombine(None,None,None,None,None,None,1)
+  def apply(long: Long): DescribeLong          = DescribeLong(Histogram.value(long), 0)
+  def apply(long: Double): DescribeDouble      = DescribeDouble(Histogram.value(long), 0)
+  def apply(string: String): DescribeString    = DescribeString(Histogram.value(string.length.toLong), 0)
+  def apply(boolean: Boolean): DescribeBoolean = if (boolean) DescribeBoolean(1, 0, 0) else DescribeBoolean(0, 1, 0)
+  def apply(date: Date): DescribeDate = DescribeDate(Histogram.value(date.getTime), 0)
+  def apply(timestamp: Timestamp): DescribeTimestamp = DescribeTimestamp(Histogram.value(timestamp.getTime), 0)
 
   def apply(any: Any): Describe = any match {
+    case null => Describe(null)
     case l: Long    => Describe(l)
     case d: Double  => Describe(d)
     case s: String  => Describe(s)
@@ -109,6 +127,7 @@ sealed trait Delta extends Serializable {
   def nEqual: Long
   def nNotEqual: Long
   def describe: Both[Describe]
+  def toNull:Both[Long]
 }
 
 object Delta {
@@ -116,36 +135,36 @@ object Delta {
   def apply(l1: Long, l2: Long): DeltaLong =
     if (l1 == l2) {
       val describe = Describe(l1)
-      DeltaLong(1, 0, Both(describe, describe), Histogram.value(0))
+      DeltaLong(1, 0, Both(describe, describe), Histogram.value(0), Both(0,0))
     } else {
       val diff = l1 - l2
-      DeltaLong(0, 1, Both(Describe(l1), Describe(l2)), Histogram.value(diff))
+      DeltaLong(0, 1, Both(Describe(l1), Describe(l2)), Histogram.value(diff), Both(0,0))
     }
 
   def apply(d1: Double, d2: Double): DeltaDouble =
     if (d1 == d2) {
       val describe = Describe(d1)
-      DeltaDouble(1, 0, Both(describe, describe), Histogram.value(0))
+      DeltaDouble(1, 0, Both(describe, describe), Histogram.value(0), Both(0,0))
     } else {
       val diff = d1 - d2
-      DeltaDouble(0, 1, Both(Describe(d1), Describe(d2)), Histogram.value(diff))
+      DeltaDouble(0, 1, Both(Describe(d1), Describe(d2)), Histogram.value(diff), Both(0,0))
     }
 
   def apply(s1: String, s2: String): DeltaString =
     if (s1 == s2) {
       val describe = Describe(s1)
-      DeltaString(1, 0, Both(describe, describe), Histogram.value(0))
+      DeltaString(1, 0, Both(describe, describe), Histogram.value(0), Both(0,0))
     } else {
       val diff = Delta.stringDiff(s1, s2)
-      DeltaString(0, 1, Both(Describe(s1), Describe(s2)), Histogram.value(diff))
+      DeltaString(0, 1, Both(Describe(s1), Describe(s2)), Histogram.value(diff), Both(0,0))
     }
 
   def apply(b1: Boolean, b2: Boolean): DeltaBoolean = {
     val d1 = Describe(b1)
     if (b1 == b2)
-      DeltaBoolean(1, 0, Both(d1, d1))
+      DeltaBoolean(1, 0, Both(d1, d1), Both(0,0))
     else
-      DeltaBoolean(0, 1, Both(d1, Describe(b2)))
+      DeltaBoolean(0, 1, Both(d1, Describe(b2)), Both(0,0))
   }
 
   def levenshtein(s1: String, s2: String): Int = {
@@ -172,42 +191,42 @@ object Delta {
     val d1 = Describe(x)
     val period = math.abs(x.getTime - y.getTime)
     if (period == 0)
-      DeltaDate(1, 0, Both(d1, d1), Histogram.value(period))
+      DeltaDate(1, 0, Both(d1, d1), Histogram.value(period), Both(0,0))
     else
-      DeltaDate(0, 1, Both(d1, Describe(y)), Histogram.value(period))
+      DeltaDate(0, 1, Both(d1, Describe(y)), Histogram.value(period), Both(0,0))
   }
 
   def apply(x: Timestamp, y: Timestamp): DeltaTimestamp = {
     val d1 = Describe(x)
     val period = math.abs(x.getTime - y.getTime)
     if (period == 0)
-      DeltaTimestamp(1, 0, Both(d1, d1), Histogram.value(period))
+      DeltaTimestamp(1, 0, Both(d1, d1), Histogram.value(period), Both(0,0))
     else
-      DeltaTimestamp(0, 1, Both(d1, Describe(y)), Histogram.value(period))
+      DeltaTimestamp(0, 1, Both(d1, Describe(y)), Histogram.value(period), Both(0,0))
   }
 
-  case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: Histogram) extends Delta
+  case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeLong], error: Histogram, toNull:Both[Long]) extends Delta
 
-  case class DeltaDouble(nEqual: Long, nNotEqual: Long, describe: Both[DescribeDouble], error: Histogram) extends Delta
+  case class DeltaDouble(nEqual: Long, nNotEqual: Long, describe: Both[DescribeDouble], error: Histogram, toNull:Both[Long]) extends Delta
 
-  case class DeltaString(nEqual: Long, nNotEqual: Long, describe: Both[DescribeString], error: Histogram) extends Delta
+  case class DeltaString(nEqual: Long, nNotEqual: Long, describe: Both[DescribeString], error: Histogram, toNull:Both[Long]) extends Delta
 
-  case class DeltaBoolean(nEqual: Long, nNotEqual: Long, describe: Both[DescribeBoolean]) extends Delta {
+  case class DeltaBoolean(nEqual: Long, nNotEqual: Long, describe: Both[DescribeBoolean], toNull:Both[Long]) extends Delta {
     def tt: Long = (describe.left.nTrue + describe.right.nTrue - nNotEqual) / 2
     def tf: Long = (nNotEqual + describe.left.nTrue - describe.right.nTrue) / 2
     def ff: Long = nEqual - tt
     def ft: Long = nNotEqual - tf
   }
 
-  case class DeltaDate(nEqual: Long, nNotEqual: Long, describe: Both[DescribeDate], error: Histogram) extends Delta
-  case class DeltaTimestamp(nEqual: Long, nNotEqual: Long, describe: Both[DescribeTimestamp], error: Histogram) extends Delta
+  case class DeltaDate(nEqual: Long, nNotEqual: Long, describe: Both[DescribeDate], error: Histogram, toNull:Both[Long]) extends Delta
+  case class DeltaTimestamp(nEqual: Long, nNotEqual: Long, describe: Both[DescribeTimestamp], error: Histogram, toNull:Both[Long]) extends Delta
 
   case class DeltaCombine(long: Option[DeltaLong],
                           double: Option[DeltaDouble],
                           string: Option[DeltaString],
                           boolean: Option[DeltaBoolean],
                           date: Option[DeltaDate],
-                          timestamp: Option[DeltaTimestamp])
+                          timestamp: Option[DeltaTimestamp], toNull:Both[Long])
       extends Delta {
 
     @transient lazy val seq: Seq[Delta]          = Seq(long, double, string, boolean).flatten
@@ -219,7 +238,7 @@ object Delta {
     }
   }
 
-  val empty: DeltaCombine = DeltaCombine(None, None, None, None, None, None)
+  val empty: DeltaCombine = DeltaCombine(None, None, None, None, None, None, Both(0, 0))
 
   implicit val coProductMonoidHelper: CoProductMonoidHelper.Aux[Delta, DeltaCombine] =
     new CoProductMonoidHelper[Delta] {
@@ -235,6 +254,19 @@ object Delta {
           case dd: DeltaDate => empty.copy(date = Some(dd))
           case dt: DeltaTimestamp => empty.copy(timestamp = Some(dt))
         }
+
+      override def unlift(t: DeltaCombine): Delta = {
+        val monoidBothL = MonoidGen.gen[Both[Long]]
+        t match {
+          case DeltaCombine(Some(x),None,None,None,None,None,toNull) => x.copy(toNull = monoidBothL.combine(x.toNull,toNull))
+          case DeltaCombine(None,Some(x),None,None,None,None,toNull) => x.copy(toNull = monoidBothL.combine(x.toNull,toNull))
+          case DeltaCombine(None,None,Some(x),None,None,None,toNull) => x.copy(toNull = monoidBothL.combine(x.toNull,toNull))
+          case DeltaCombine(None,None,None,Some(x),None,None,toNull) => x.copy(toNull = monoidBothL.combine(x.toNull,toNull))
+          case DeltaCombine(None,None,None,None,Some(x),None,toNull) => x.copy(toNull = monoidBothL.combine(x.toNull,toNull))
+          case DeltaCombine(None,None,None,None,None,Some(x),toNull) => x.copy(toNull = monoidBothL.combine(x.toNull,toNull))
+          case _ => t
+        }
+      }
     }
 }
 
