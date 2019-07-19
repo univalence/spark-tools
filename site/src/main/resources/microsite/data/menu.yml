@@ -55,3 +55,24 @@ options:
     url: spark-test/features
     menu_type: spark-test
     menu_section: spark-test-features
+
+  ###########################
+  # Parka Menu Options #
+  ###########################
+
+  - title: Parka
+    url: parka
+    menu_type: parka
+    menu_section: parka-parka
+
+  - title: Components
+    url: parka/parka_analysis
+    menu_type: parka
+    menu_section: parka-components
+    nested_options:
+      - title: Parka Analysis
+        url: parka/parka_analysis
+      - title: Parka Printer
+        url: parka/parka_printer
+      - title: Parka Serde
+        url: parka/parka_serde
