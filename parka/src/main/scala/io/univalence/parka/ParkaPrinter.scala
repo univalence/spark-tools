@@ -1,7 +1,6 @@
 package io.univalence.parka
 
-import io.univalence.parka.Delta.{DeltaBoolean, DeltaDate, DeltaDouble, DeltaLong, DeltaString, DeltaTimestamp}
-import io.univalence.parka.Describe.{DescribeBoolean, DescribeDate, DescribeDouble, DescribeLong, DescribeString, DescribeTimestamp}
+import io.univalence.parka.Delta.{ DeltaBoolean, DeltaDate, DeltaDouble, DeltaLong, DeltaString, DeltaTimestamp }
 
 object ParkaPrinter {
   val sep   = "    "
@@ -59,7 +58,7 @@ object ParkaPrinter {
     printInformation(stringifyDiff, "Delta by key", level, true)
   }
 
-  def printOuterByColumn(byColumn: Map[String, Both[Describe]], level: Int = 0): String = {
+  def printOuterByColumn(byColumn: Map[String, Both[DescribeV2]], level: Int = 0): String = {
     val stringifyDiff = byColumn.map {
       case (key, value) =>
         s"""|${printAccumulator(level + 1)}$key:
@@ -76,7 +75,7 @@ object ParkaPrinter {
         |${printDeltaSpecific(delta, level + 1)}""".stripMargin
 
   def printDeltaSpecific(delta: Delta, level: Int = 0): String = delta match {
-    case deltaLong: DeltaLong   => printHistogram(deltaLong.error, level + 1, "Error's histogram")
+    case deltaLong: DeltaLong     => printHistogram(deltaLong.error, level + 1, "Error's histogram")
     case deltaDouble: DeltaDouble => printHistogram(deltaDouble.error, level + 1, "Error's histogram")
     case deltaString: DeltaString => printHistogram(deltaString.error, level + 1, "Error's histogram")
     case deltaBoolean: DeltaBoolean =>
@@ -84,72 +83,10 @@ object ParkaPrinter {
           |${printInformation(deltaBoolean.ft.toString, "Number of false -> true", level + 1)}
           |${printInformation(deltaBoolean.tf.toString, "Number of true -> false", level + 1)}
           |${printInformation(deltaBoolean.tt.toString, "Number of true -> true", level + 1)}""".stripMargin
-    case deltaDate: DeltaDate => printHistogram(deltaDate.error, level + 1, "Error's histogram")
+    case deltaDate: DeltaDate           => printHistogram(deltaDate.error, level + 1, "Error's histogram")
     case deltaTimestamp: DeltaTimestamp => printHistogram(deltaTimestamp.error, level + 1, "Error's histogram")
-    case _ => printInformation("/!\\\\ Can not display this delta", "Error", level + 1)
+    case _                              => printInformation("/!\\\\ Can not display this delta", "Error", level + 1)
   }
-
-  /*def printHistogramHorizontal(histogram: Histogram, level: Int = 0, name: String = "Histogram"): String = {
-      def printDecimal(value: Double): String = f"$value%.2f"
-
-      def fillSpaceBefore(value: String, focus: Int = 0): String = value match {
-        case v if v.length >= focus => v
-        case v => fillSpaceBefore(" " + v, focus)
-      }
-
-      def fillSpaceAfter(value: String, focus: Int = 0): String = value match {
-        case v if v.length >= focus => v
-        case v => fillSpaceAfter(v + " ", focus)
-      }
-
-      def fillSpaceBetween(value: String, focus: Int = 0, left: Boolean = true): String = (value, left) match {
-        case (v, _) if v.length >= focus => v
-        case (v, true) => fillSpaceBetween(" " + v, focus, false)
-        case (v, false) => fillSpaceBetween(v + " ", focus, true)
-      }
-
-      val height = 20
-      val width = 6
-
-      val bins = histogram.bin(width)
-      val maxCount = bins.map(_.count).max
-
-      val ordinates = (1 to height).reverse.map(_.toDouble * maxCount / height)
-
-      val maxLengthOrdinate = ordinates.map(_.toString.length).max
-      val maxLengthBin = bins.map(b => printDecimal(b.pos).toString.length).max
-
-      val stringifyBar = ordinates.map(
-        ordinate =>
-          s"""${printAccumulator(level + 1)}${fillSpaceBefore(ordinate.toString, maxLengthOrdinate)} | ${bins.map(_.count).map(count => if (count >= ordinate && count != 0) fillSpaceBetween("o", maxLengthBin) else " " * maxLengthBin).mkString(" ")}"""
-      ).mkString("\n")
-
-      val stringyBase =
-        s"""|${printAccumulator(level + 1)}${fillSpaceBefore("0", maxLengthOrdinate)} +${"-" * ((maxLengthBin + 1) * width)}
-            |${printAccumulator(level + 1)}${" " * (maxLengthOrdinate + 3)}${bins.map(_.pos).map(min => fillSpaceBetween(printDecimal(min), maxLengthBin)).mkString(" ")}""".stripMargin
-
-      val stringifyBins = bins
-        .map(bin => {
-          val binCount         = bin.count
-          val binMin           = printDecimal(bin.pos)
-          val binMinWithSpaces = " " * (maxLengthBin - binMin.length) + binMin
-          if (binCount > 0) {
-            val bar = "█" * (binCount * height / maxCount).toInt
-            s"${printAccumulator(level + 1)}$binMinWithSpaces | $bar $binCount"
-          } else {
-            s"${printAccumulator(level + 1)}$binMinWithSpaces | $binCount"
-          }
-        })
-        .mkString("\n")
-
-      /*
-      s"""|${printAccumulator(level)}$name:
-          |$stringifyBar
-          |$stringyBase""".stripMargin
-
-   */
-      printInformation(stringifyBar + "\n" + stringyBase, name, level, true)
-    }*/
 
   def printHistogram(histogram: Histogram, level: Int, name: String = "Histogram"): String = {
     def printDecimal(value: Double): String = f"$value%.2f"
@@ -159,7 +96,6 @@ object ParkaPrinter {
     }
 
     val bins    = histogram.bin(6)
-    val lastBin = bins.last
 
     val barMax            = 22
     val maxCount          = bins.map(_.count).max
@@ -212,9 +148,9 @@ object ParkaPrinter {
     }
   }
 
-  def printBothDescribe(describes: Both[Describe], level: Int): String = {
-    def printOneDescribe(describe: Describe, level: Int): String = describe match {
-      case DescribeLong(value, _)   => printHistogram(value, level)
+  def printBothDescribe(describes: Both[DescribeV2], level: Int): String = {
+    def printOneDescribe(describe: DescribeV2, level: Int): String = describe match {
+      /*case DescribeLong(value, _)   => printHistogram(value, level)
       case DescribeDouble(value, _) => printHistogram(value, level)
       case DescribeString(value, _) => printHistogram(value, level)
       case DescribeBoolean(nTrue, nFalse, _) => {
@@ -222,9 +158,18 @@ object ParkaPrinter {
             |${printInformation(nFalse.toString, "Number of true", level)}""".stripMargin
       }
       case DescribeDate(period, _) => printHistogram(period, level)
-      case DescribeTimestamp(period, _) => printHistogram(period, level)
-      case d: Describe => s"${printAccumulator(level)}Empty describe"
-      case _           => printInformation("/!\\ Can not display this describe", "Error", level)
+      case DescribeTimestamp(period, _) => printHistogram(period, level)*/
+      case DescribeV2(_, m1, m2)  => {
+        val histograms = m1.keySet.map(k => printHistogram(m1(k), level)).mkString("\n")
+        val counts = m2.keySet.map(k => k match {
+            case "nTrue"  => printInformation(m2(k).toString, "Number of true", level)
+            case "nFalse" => printInformation(m2(k).toString, "Number of false", level)
+            case "nNull"  => printInformation(m2(k).toString, "Number of null", level)
+          }).mkString("\n")
+        s"$counts\n$histograms"
+      }
+      case d: DescribeV2 => s"${printAccumulator(level)}Empty describe"
+      case _             => printInformation("/!\\ Can not display this describe", "Error", level)
     }
 
     s"""|${printAccumulator(level)}Describes:
