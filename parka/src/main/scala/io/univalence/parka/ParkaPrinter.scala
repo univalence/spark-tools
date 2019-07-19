@@ -1,6 +1,6 @@
 package io.univalence.parka
 
-import io.univalence.parka.Delta.{ DeltaBoolean, DeltaDate, DeltaDouble, DeltaLong, DeltaString, DeltaTimestamp }
+//import io.univalence.parka.Delta.{ DeltaBoolean, DeltaDate, DeltaDouble, DeltaLong, DeltaString, DeltaTimestamp }
 
 object ParkaPrinter {
   val sep   = "    "
@@ -48,7 +48,7 @@ object ParkaPrinter {
 
   }
 
-  def printInnerByColumn(byColumn: Map[String, Delta], level: Int = 0): String = {
+  def printInnerByColumn(byColumn: Map[String, DeltaV2], level: Int = 0): String = {
     val stringifyDiff = byColumn.map {
       case (key, value) =>
         s"""|${printAccumulator(level + 1)}$key:
@@ -58,7 +58,7 @@ object ParkaPrinter {
     printInformation(stringifyDiff, "Delta by key", level, true)
   }
 
-  def printOuterByColumn(byColumn: Map[String, Both[DescribeV2]], level: Int = 0): String = {
+  def printOuterByColumn(byColumn: Map[String, Both[Describe]], level: Int = 0): String = {
     val stringifyDiff = byColumn.map {
       case (key, value) =>
         s"""|${printAccumulator(level + 1)}$key:
@@ -68,14 +68,14 @@ object ParkaPrinter {
     printInformation(stringifyDiff, "Describe by key", level, true)
   }
 
-  def printDelta(delta: Delta, level: Int = 0): String =
+  def printDelta(delta: DeltaV2, level: Int = 0): String =
     s"""|${printInformation(delta.nEqual.toString, "Number of similarities", level + 1)}
         |${printInformation(delta.nNotEqual.toString, "Number of differences", level + 1)}
         |${printBothDescribe(delta.describe, level + 1)}
         |${printDeltaSpecific(delta, level + 1)}""".stripMargin
 
-  def printDeltaSpecific(delta: Delta, level: Int = 0): String = delta match {
-    case deltaLong: DeltaLong     => printHistogram(deltaLong.error, level + 1, "Error's histogram")
+  def printDeltaSpecific(delta: DeltaV2, level: Int = 0): String = delta match {
+    /*case deltaLong: DeltaLong     => printHistogram(deltaLong.error, level + 1, "Error's histogram")
     case deltaDouble: DeltaDouble => printHistogram(deltaDouble.error, level + 1, "Error's histogram")
     case deltaString: DeltaString => printHistogram(deltaString.error, level + 1, "Error's histogram")
     case deltaBoolean: DeltaBoolean =>
@@ -85,7 +85,18 @@ object ParkaPrinter {
           |${printInformation(deltaBoolean.tt.toString, "Number of true -> true", level + 1)}""".stripMargin
     case deltaDate: DeltaDate           => printHistogram(deltaDate.error, level + 1, "Error's histogram")
     case deltaTimestamp: DeltaTimestamp => printHistogram(deltaTimestamp.error, level + 1, "Error's histogram")
-    case _                              => printInformation("/!\\\\ Can not display this delta", "Error", level + 1)
+    case _                              => printInformation("/!\\\\ Can not display this delta", "Error", level + 1)*/
+    case DeltaV2(nEqual, nNotEqual, describe, error) => {
+      val m1 = error.histograms
+      val m2 = error.counts
+      val histograms = error.histograms.keySet.map(k => printHistogram(m1(k), level)).mkString("\n")
+      val counts = error.counts.keySet.map(k => k match {
+        case "tf" => printInformation(m2(k).toString, "Number of true -> false", level)
+        case "ft" => printInformation(m2(k).toString, "Number of false -> true", level)
+        case "nNull"  => printInformation(m2(k).toString, "Total number of null", level)
+      }).mkString("\n")
+      s"$counts\n$histograms"
+    }
   }
 
   def printHistogram(histogram: Histogram, level: Int, name: String = "Histogram"): String = {
@@ -150,8 +161,8 @@ object ParkaPrinter {
     }
   }
 
-  def printBothDescribe(describes: Both[DescribeV2], level: Int): String = {
-    def printOneDescribe(describe: DescribeV2, level: Int): String = describe match {
+  def printBothDescribe(describes: Both[Describe], level: Int): String = {
+    def printOneDescribe(describe: Describe, level: Int): String = describe match {
       /*case DescribeLong(value, _)   => printHistogram(value, level)
       case DescribeDouble(value, _) => printHistogram(value, level)
       case DescribeString(value, _) => printHistogram(value, level)
@@ -161,7 +172,7 @@ object ParkaPrinter {
       }
       case DescribeDate(period, _) => printHistogram(period, level)
       case DescribeTimestamp(period, _) => printHistogram(period, level)*/
-      case DescribeV2(_, m1, m2)  => {
+      case Describe(_, m1, m2)  => {
         val histograms = m1.keySet.map(k => printHistogram(m1(k), level)).mkString("\n")
         val counts = m2.keySet.map(k => k match {
             case "nTrue"  => printInformation(m2(k).toString, "Number of true", level)
@@ -170,7 +181,7 @@ object ParkaPrinter {
           }).mkString("\n")
         s"$counts\n$histograms"
       }
-      case d: DescribeV2 => s"${printAccumulator(level)}Empty describe"
+      case d: Describe => s"${printAccumulator(level)}Empty describe"
       case _             => printInformation("/!\\ Can not display this describe", "Error", level)
     }
 

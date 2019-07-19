@@ -3,14 +3,14 @@ package io.univalence.parka
 import java.sql.{ Date, Timestamp }
 
 import cats.kernel.Monoid
-import io.univalence.parka.Describe.{
+/*import io.univalence.parka.Describe.{
   DescribeBoolean,
   DescribeDate,
   DescribeDouble,
   DescribeLong,
   DescribeString,
   DescribeTimestamp
-}
+}*/
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
@@ -38,7 +38,7 @@ case class ParkaResult(inner: Inner, outer: Outer)
 case class Inner(countRowEqual: Long,
                  countRowNotEqual: Long,
                  countDiffByRow: Map[Seq[String], Long],
-                 byColumn: Map[String, Delta])
+                 byColumn: Map[String, DeltaV2])
 
 /**
   * Outer contains information about rows that are only present in one of the two datasets
@@ -46,11 +46,11 @@ case class Inner(countRowEqual: Long,
   * @param countRow               The number of additional rows for each Datasets
   * @param byColumn               Map with column name as a key and for each of them two Describe, one for each row's Dataset - only for outer row
   */
-case class Outer(countRow: Both[Long], byColumn: Map[String, Both[DescribeV2]])
+case class Outer(countRow: Both[Long], byColumn: Map[String, Both[Describe]])
 
-sealed trait Describe extends Serializable {
+/*sealed trait Describe extends Serializable {
   def nnull: Long
-}
+}*/
 
 trait CoProductMonoidHelper[T] {
   type Combined <: T
@@ -64,7 +64,7 @@ object CoProductMonoidHelper {
   }
 }
 
-object Describe {
+/*object Describe {
 
   val empty = DescribeCombine(None, None, None, None, None, None, 0)
 
@@ -127,13 +127,13 @@ object Describe {
     case d: Date      => Describe(d)
     case t: Timestamp => Describe(t)
   }
-}
+}*/
 
-case class DescribeV2(count: Long, histograms: Map[String, Histogram], counts: Map[String, Long])
+case class Describe(count: Long, histograms: Map[String, Histogram], counts: Map[String, Long])
 
-object DescribeV2 {
+object Describe {
 
-  val oneValue: DescribeV2 = DescribeV2(1, Map.empty, Map.empty)
+  val oneValue: Describe = Describe(1, Map.empty, Map.empty)
 
   final private def histo(name: String, l: Long) =
     oneValue.copy(histograms = Map(name -> Histogram.value(l)))
@@ -141,7 +141,7 @@ object DescribeV2 {
     oneValue.copy(histograms = Map(name -> Histogram.value(d)))
   final private def count(name: String, value: Long) = oneValue.copy(counts = Map(name -> value))
 
-  def apply(a: Any): DescribeV2 =
+  def apply(a: Any): Describe =
     a match {
       case null          => count("nNull", 1)
       case true          => count("nTrue", 1)
@@ -151,13 +151,59 @@ object DescribeV2 {
       case l: Long       => histo("value", l)
       case ts: Timestamp => histo("timestamp", ts.getTime)
       case d: Date       => histo("date", d.getTime)
+      case (b1: Boolean, b2: Boolean) =>
+        val key = (if(b1) "t" else "f") + (if(b2) "t" else "f")
+        count(key, 1)
     }
 }
 
-sealed trait Delta extends Serializable {
+case class DeltaV2(nEqual: Long, nNotEqual: Long, describe: Both[Describe], error: Describe)
+
+object DeltaV2 {
+  val emptyDescribe: Describe = MonoidUtils.describeMonoid.empty
+  def levenshtein(s1: String, s2: String): Int = {
+    import scala.math._
+    def minimum(i1: Int, i2: Int, i3: Int) = min(min(i1, i2), i3)
+    val dist = Array.tabulate(s2.length + 1, s1.length + 1) { (j, i) =>
+      if (j == 0) i else if (i == 0) j else 0
+    }
+    for {
+      j <- 1 to s2.length
+      i <- 1 to s1.length
+    } dist(j)(i) =
+      if (s2(j - 1) == s1(i - 1)) dist(j - 1)(i - 1)
+      else
+        minimum(dist(j - 1)(i) + 1, dist(j)(i - 1) + 1, dist(j - 1)(i - 1) + 1)
+    dist(s2.length)(s1.length)
+  }
+
+  def stringDiff(str1: String, str2: String): Long =
+  //Pour l'instant on va faire ça
+    levenshtein(str1, str2).toLong
+
+  def error(x: Any, y: Any): Describe = {
+    (x, y) match {
+      case (null, _) => Describe(null)
+      case (_, null) => Describe(null)
+      case (l1: Long, l2: Long) => Describe(l1 - l2)
+      case (d1: Double, d2: Double) => Describe(d1 - d2)
+      case (s1: String, s2: String) => Describe(stringDiff(s1, s2))
+      case (b1: Boolean, b2: Boolean) => Describe((b1, b2))
+      case (d1: Date, d2: Date) => Describe(d1.getTime - d2.getTime)
+      case (t1: Timestamp, t2: Timestamp) => Describe(t1.getTime - t2.getTime)
+    }
+  }
+
+  def apply(x: Any, y: Any): DeltaV2 = {
+    if (x == y) DeltaV2(1, 0, Both(Describe(x), Describe(y)), emptyDescribe)
+    else DeltaV2(0, 1, Both(Describe(x), Describe(y)), error(x, y))
+  }
+}
+
+/*sealed trait Delta extends Serializable {
   def nEqual: Long
   def nNotEqual: Long
-  def describe: Both[DescribeV2]
+  def describe: Both[Describe]
   def toNull: Both[Long]
 }
 
@@ -165,54 +211,54 @@ object Delta {
 
   def apply(l1: Long, l2: Long): DeltaLong =
     if (l1 == l2) {
-      val describe = DescribeV2(l1)
+      val describe = Describe(l1)
       DeltaLong(1, 0, Both(describe, describe), Histogram.value(0), Both(0, 0))
     } else {
       val diff = l1 - l2
-      DeltaLong(0, 1, Both(DescribeV2(l1), DescribeV2(l2)), Histogram.value(diff), Both(0, 0))
+      DeltaLong(0, 1, Both(Describe(l1), Describe(l2)), Histogram.value(diff), Both(0, 0))
     }
   def apply(s1: Null, s2: Long): DeltaLong =
-    DeltaLong(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Histogram.value(0), Both(1, 0))
+    DeltaLong(0, 1, Both(Describe(null), Describe(s2)), Histogram.value(0), Both(1, 0))
   def apply(s1: Long, s2: Null): DeltaLong =
-    DeltaLong(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Histogram.value(0), Both(0, 1))
+    DeltaLong(0, 1, Both(Describe(null), Describe(s2)), Histogram.value(0), Both(0, 1))
 
   def apply(d1: Double, d2: Double): DeltaDouble =
     if (d1 == d2) {
-      val describe = DescribeV2(d1)
+      val describe = Describe(d1)
       DeltaDouble(1, 0, Both(describe, describe), Histogram.value(0), Both(0, 0))
     } else {
       val diff = d1 - d2
-      DeltaDouble(0, 1, Both(DescribeV2(d1), DescribeV2(d2)), Histogram.value(diff), Both(0, 0))
+      DeltaDouble(0, 1, Both(Describe(d1), Describe(d2)), Histogram.value(diff), Both(0, 0))
     }
   def apply(s1: Null, s2: Double): DeltaDouble =
-    DeltaDouble(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Histogram.value(0), Both(1, 0))
+    DeltaDouble(0, 1, Both(Describe(null), Describe(s2)), Histogram.value(0), Both(1, 0))
   def apply(s1: Double, s2: Null): DeltaDouble =
-    DeltaDouble(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Histogram.value(0), Both(0, 1))
+    DeltaDouble(0, 1, Both(Describe(null), Describe(s2)), Histogram.value(0), Both(0, 1))
 
   def apply(s1: String, s2: String): DeltaString =
     if (s1 == s2) {
-      val describe = DescribeV2(s1)
+      val describe = Describe(s1)
       DeltaString(1, 0, Both(describe, describe), Histogram.value(0), Both(0, 0))
     } else {
       val diff = Delta.stringDiff(s1, s2)
-      DeltaString(0, 1, Both(DescribeV2(s1), DescribeV2(s2)), Histogram.value(diff), Both(0, 0))
+      DeltaString(0, 1, Both(Describe(s1), Describe(s2)), Histogram.value(diff), Both(0, 0))
     }
   def apply(s1: Null, s2: String): DeltaString =
-    DeltaString(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Histogram.value(0), Both(1, 0))
+    DeltaString(0, 1, Both(Describe(null), Describe(s2)), Histogram.value(0), Both(1, 0))
   def apply(s1: String, s2: Null): DeltaString =
-    DeltaString(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Histogram.value(0), Both(0, 1))
+    DeltaString(0, 1, Both(Describe(null), Describe(s2)), Histogram.value(0), Both(0, 1))
 
   def apply(b1: Boolean, b2: Boolean): DeltaBoolean = {
-    val d1 = DescribeV2(b1)
+    val d1 = Describe(b1)
     if (b1 == b2)
       DeltaBoolean(1, 0, Both(d1, d1), Both(0, 0))
     else
-      DeltaBoolean(0, 1, Both(d1, DescribeV2(b2)), Both(0, 0))
+      DeltaBoolean(0, 1, Both(d1, Describe(b2)), Both(0, 0))
   }
   def apply(s1: Null, s2: Boolean): DeltaBoolean =
-    DeltaBoolean(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Both(1, 0))
+    DeltaBoolean(0, 1, Both(Describe(null), Describe(s2)), Both(1, 0))
   def apply(s1: Boolean, s2: Null): DeltaBoolean =
-    DeltaBoolean(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Both(0, 1))
+    DeltaBoolean(0, 1, Both(Describe(null), Describe(s2)), Both(0, 1))
 
   def levenshtein(s1: String, s2: String): Int = {
     import scala.math._
@@ -235,49 +281,49 @@ object Delta {
     levenshtein(str1, str2).toLong
 
   def apply(x: Date, y: Date): DeltaDate = {
-    val d1     = DescribeV2(x)
+    val d1     = Describe(x)
     val period = math.abs(x.getTime - y.getTime)
     if (period == 0)
       DeltaDate(1, 0, Both(d1, d1), Histogram.value(period), Both(0, 0))
     else
-      DeltaDate(0, 1, Both(d1, DescribeV2(y)), Histogram.value(period), Both(0, 0))
+      DeltaDate(0, 1, Both(d1, Describe(y)), Histogram.value(period), Both(0, 0))
   }
   def apply(s1: Null, s2: Date): DeltaDate =
-    DeltaDate(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Histogram.value(0), Both(1, 0))
+    DeltaDate(0, 1, Both(Describe(null), Describe(s2)), Histogram.value(0), Both(1, 0))
   def apply(s1: Date, s2: Null): DeltaDate =
-    DeltaDate(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Histogram.value(0), Both(0, 1))
+    DeltaDate(0, 1, Both(Describe(null), Describe(s2)), Histogram.value(0), Both(0, 1))
 
   def apply(x: Timestamp, y: Timestamp): DeltaTimestamp = {
-    val d1     = DescribeV2(x)
+    val d1     = Describe(x)
     val period = math.abs(x.getTime - y.getTime)
     if (period == 0)
       DeltaTimestamp(1, 0, Both(d1, d1), Histogram.value(period), Both(0, 0))
     else
-      DeltaTimestamp(0, 1, Both(d1, DescribeV2(y)), Histogram.value(period), Both(0, 0))
+      DeltaTimestamp(0, 1, Both(d1, Describe(y)), Histogram.value(period), Both(0, 0))
   }
   def apply(s1: Null, s2: Timestamp): DeltaTimestamp =
-    DeltaTimestamp(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Histogram.value(0), Both(1, 0))
+    DeltaTimestamp(0, 1, Both(Describe(null), Describe(s2)), Histogram.value(0), Both(1, 0))
   def apply(s1: Timestamp, s2: Null): DeltaTimestamp =
-    DeltaTimestamp(0, 1, Both(DescribeV2(null), DescribeV2(s2)), Histogram.value(0), Both(0, 1))
+    DeltaTimestamp(0, 1, Both(Describe(null), Describe(s2)), Histogram.value(0), Both(0, 1))
 
-  case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[DescribeV2], error: Histogram, toNull: Both[Long])
+  case class DeltaLong(nEqual: Long, nNotEqual: Long, describe: Both[Describe], error: Histogram, toNull: Both[Long])
       extends Delta
 
   case class DeltaDouble(nEqual: Long,
                          nNotEqual: Long,
-                         describe: Both[DescribeV2],
+                         describe: Both[Describe],
                          error: Histogram,
                          toNull: Both[Long])
       extends Delta
 
   case class DeltaString(nEqual: Long,
                          nNotEqual: Long,
-                         describe: Both[DescribeV2],
+                         describe: Both[Describe],
                          error: Histogram,
                          toNull: Both[Long])
       extends Delta
 
-  case class DeltaBoolean(nEqual: Long, nNotEqual: Long, describe: Both[DescribeV2], toNull: Both[Long]) extends Delta {
+  case class DeltaBoolean(nEqual: Long, nNotEqual: Long, describe: Both[Describe], toNull: Both[Long]) extends Delta {
     val nTrueLeft: Long  = describe.left.counts.getOrElse("nTrue", 0)
     val nTrueRight: Long = describe.right.counts.getOrElse("nTrue", 0)
     def tt: Long         = (nTrueLeft + nTrueRight - nNotEqual) / 2
@@ -286,11 +332,11 @@ object Delta {
     def ft: Long         = nNotEqual - tf
   }
 
-  case class DeltaDate(nEqual: Long, nNotEqual: Long, describe: Both[DescribeV2], error: Histogram, toNull: Both[Long])
+  case class DeltaDate(nEqual: Long, nNotEqual: Long, describe: Both[Describe], error: Histogram, toNull: Both[Long])
       extends Delta
   case class DeltaTimestamp(nEqual: Long,
                             nNotEqual: Long,
-                            describe: Both[DescribeV2],
+                            describe: Both[Describe],
                             error: Histogram,
                             toNull: Both[Long])
       extends Delta
@@ -307,7 +353,7 @@ object Delta {
     @transient lazy val seq: Seq[Delta]          = Seq(long, double, string, boolean).flatten
     @transient override lazy val nEqual: Long    = seq.map(_.nEqual).sum
     @transient override lazy val nNotEqual: Long = seq.map(_.nNotEqual).sum
-    @transient override lazy val describe: Both[DescribeV2] = {
+    @transient override lazy val describe: Both[Describe] = {
       val monoid = MonoidUtils.bothDescribeMonoid
       seq.map(_.describe).reduceOption(monoid.combine).getOrElse(monoid.empty)
     }
@@ -349,11 +395,11 @@ object Delta {
         }
       }
     }
-}
+}*/
 
 object MonoidUtils {
-  val describeMonoid: Monoid[DescribeV2]           = MonoidGen.gen[DescribeV2]
-  val bothDescribeMonoid: Monoid[Both[DescribeV2]] = MonoidGen.gen
+  val describeMonoid: Monoid[Describe]           = MonoidGen.gen[Describe]
+  val bothDescribeMonoid: Monoid[Both[Describe]] = MonoidGen.gen
 
   val parkaResultMonoid: Monoid[ParkaResult] = MonoidGen.gen[ParkaResult]
 
@@ -363,12 +409,12 @@ object Parka {
 
   private val keyValueSeparator = "§"
 
-  def describe(row: Row)(keys: Set[String]): Map[String, DescribeV2] = {
+  def describe(row: Row)(keys: Set[String]): Map[String, Describe] = {
     val fields = row.asInstanceOf[GenericRowWithSchema].schema.fieldNames
 
     fields
       .filterNot(keys)
-      .map(name => name -> DescribeV2(row.getAs[Any](name)))
+      .map(name => name -> Describe(row.getAs[Any](name)))
       .toMap
   }
 
@@ -379,7 +425,7 @@ object Parka {
     * @return               Outer information from one particular row
     */
   def outer(row: Row, side: Side)(keys: Set[String]): Outer = {
-    val emptyDescribe: DescribeV2 = MonoidUtils.describeMonoid.empty
+    val emptyDescribe: Describe = MonoidUtils.describeMonoid.empty
     Outer(
       countRow = side match {
         case Right => Both(left = 0, right = 1)
@@ -407,11 +453,11 @@ object Parka {
 
     val schema = left.asInstanceOf[GenericRowWithSchema].schema
 
-    val byNames: Map[String, Delta] =
+    val byNames: Map[String, DeltaV2] =
       schema.fieldNames
         .filterNot(keys)
         .map(name => {
-          val delta: Delta = (left.getAs[Any](name), right.getAs[Any](name)) match {
+          /*val delta: Delta = (left.getAs[Any](name), right.getAs[Any](name)) match {
             case (x: Long, y: Long)           => Delta.apply(x, y)
             case (null, y: Long)              => Delta.apply(null, y)
             case (x: Long, null)              => Delta.apply(x, null)
@@ -430,7 +476,8 @@ object Parka {
             case (x: Timestamp, y: Timestamp) => Delta.apply(x, y)
             case (null, y: Timestamp)         => Delta.apply(null, y)
             case (x: Timestamp, null)         => Delta.apply(x, null)
-          }
+          }*/
+          val delta: DeltaV2 = DeltaV2(left.getAs[Any](name), right.getAs[Any](name))
           name -> delta
         })
         .toMap
