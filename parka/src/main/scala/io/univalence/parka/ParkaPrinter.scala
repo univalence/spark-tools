@@ -161,11 +161,11 @@ object ParkaPrinter {
     val bins    = histogram.bin(6)
     val lastBin = bins.last
 
-    val barMax            = 20
+    val barMax            = 22
     val maxCount          = bins.map(_.count).max
     val maxLengthBinLower = bins.map(bin => printDecimal(bin.pos).length).max //printDecimal(lastBin.pos).length
 
-    val histobar = "█"
+    val histobar = "o"
 
     val stringifyBins = bins
       .map(bin => {
@@ -188,9 +188,29 @@ object ParkaPrinter {
     printInformation(stringifyBins, name, level, jump = true)
   }
 
-  def printBoth[A](both: Both[A], level: Int, printA: (A, Int) => String) =
-    s"""|${printInformation(printA(both.left, level + 1), "Left", level, true)}
-        |${printInformation(printA(both.right, level + 1), "Right", level, true)}""".stripMargin
+  def printBoth[A](both: Both[A], level: Int, printA: (A, Int) => String) = {
+    def fillSpaceAfter(value: String, focus: Int = 0): String = value match {
+      case v if v.length >= focus => v
+      case v => fillSpaceAfter(v + " ", focus)
+    }
+
+    val left = printInformation(printA(both.left, 1), "Left", 0, true)
+    val right = printInformation(printA(both.right, 1), "Right", 0, true)
+
+    val fragmentedLeft = left.split("\n")
+    val fragmentedRight = right.split("\n")
+
+    val maxLength = List(fragmentedLeft.map(_.length).max, fragmentedRight.map(_.length).max).max
+    val colSize = ConsoleSize.get.columns
+
+    if (colSize < maxLength * 2 + sep.length){
+      s"""|${fragmentedLeft.map(printAccumulator(level) + _).mkString("\n")}
+          |${fragmentedRight.map(printAccumulator(level) + _).mkString("\n")}t""".stripMargin
+    }else{
+      val both = fragmentedLeft.zip(fragmentedRight).map{case (l, r) => printAccumulator(level) + fillSpaceAfter(l, maxLength) + printAccumulator(1) + fillSpaceAfter(r, maxLength)}.mkString("\n")
+      s"""|$both""".stripMargin
+    }
+  }
 
   def printBothDescribe(describes: Both[Describe], level: Int): String = {
     def printOneDescribe(describe: Describe, level: Int): String = describe match {
