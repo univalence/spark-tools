@@ -1,16 +1,13 @@
 package io.univalence.parka
 
-import java.sql.{Date, Timestamp}
+import java.sql.{ Date, Timestamp }
 
 import cats.kernel.Monoid
-import com.twitter.algebird.QTree
-import io.circe.{Decoder, Encoder, ObjectEncoder}
-import io.univalence.parka.Delta.{DeltaBoolean, DeltaDate, DeltaLong, DeltaString, DeltaTimestamp}
-import io.univalence.parka.Describe.{DescribeCombine, DescribeLong}
+import io.univalence.parka.Delta.{ DeltaBoolean, DeltaDate, DeltaLong, DeltaString, DeltaTimestamp }
+import io.univalence.parka.Describe.{ DescribeCombine, DescribeLong }
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.{Dataset, Row, SparkSession}
-import org.apache.spark.sql.types.{DateType, IntegerType, StructField, StructType}
+import org.apache.spark.sql.{ Dataset, SparkSession }
 import org.scalatest.FunSuite
 
 class ParkaTest extends FunSuite with SparkTest {
@@ -201,8 +198,25 @@ class ParkaTest extends FunSuite with SparkTest {
       paJson.noSpaces == """{"datasetInfo":{"left":{"source":[],"nStage":0},"right":{"source":[],"nStage":0}},"result":{"inner":{"countRowEqual":1,"countRowNotEqual":1,"countDiffByRow":[{"key":["n"],"value":1},{"key":[],"value":1}],"byColumn":{"n":{"DeltaLong":{"nEqual":1,"nNotEqual":1,"describe":{"left":{"value":{"neg":null,"countZero":0,"pos":{"_1":0,"_2":2,"_3":2,"_4":{"_1":0,"_2":1,"_3":1,"_4":null,"_5":{"_1":1,"_2":0,"_3":1,"_4":null,"_5":null}},"_5":{"_1":1,"_2":1,"_3":1,"_4":{"_1":2,"_2":0,"_3":1,"_4":null,"_5":null},"_5":null}}}},"right":{"value":{"neg":null,"countZero":0,"pos":{"_1":0,"_2":2,"_3":2,"_4":{"_1":0,"_2":1,"_3":1,"_4":null,"_5":{"_1":1,"_2":0,"_3":1,"_4":null,"_5":null}},"_5":{"_1":1,"_2":1,"_3":1,"_4":null,"_5":{"_1":3,"_2":0,"_3":1,"_4":null,"_5":null}}}}}},"error":{"neg":{"_1":1,"_2":0,"_3":1,"_4":null,"_5":null},"countZero":1,"pos":null}}}}},"outer":{"countRow":{"left":0,"right":0},"byColumn":{}}}}"""
     )*/
     val paFromJson = ParkaAnalysisSerde.fromJson(paJson).right.get
-
     assert(pa == paFromJson)
+  }
+
+  test("test null") {
+    val left = Seq(
+      (1, "aaaa"),
+      (2, "bbbb"),
+      (3, null)
+    ).toDF("id", "str")
+
+    val right = Seq(
+      (1, null),
+      (2, "bbbb"),
+      (3, "cccc"),
+      (4, "dddd")
+    ).toDF("id", "str")
+
+    val result = Parka(left, right)("id").result
+    println(ParkaPrinter.printParkaResult(result))
   }
 }
 
