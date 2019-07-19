@@ -200,14 +200,16 @@ object ParkaPrinter {
     val fragmentedLeft = left.split("\n")
     val fragmentedRight = right.split("\n")
 
-    val maxLength = List(fragmentedLeft.map(_.length).max, fragmentedRight.map(_.length).max).max
+    val maxLengthLeft = fragmentedLeft.map(_.length).max
+    val maxLengthRight = fragmentedRight.map(_.length).max
+
     val colSize = ConsoleSize.get.columns
 
-    if (colSize < maxLength * 2 + sep.length){
+    if (colSize < maxLengthLeft + maxLengthRight + sep.length){
       s"""|${fragmentedLeft.map(printAccumulator(level) + _).mkString("\n")}
           |${fragmentedRight.map(printAccumulator(level) + _).mkString("\n")}t""".stripMargin
     }else{
-      val both = fragmentedLeft.zip(fragmentedRight).map{case (l, r) => printAccumulator(level) + fillSpaceAfter(l, maxLength) + printAccumulator(1) + fillSpaceAfter(r, maxLength)}.mkString("\n")
+      val both = fragmentedLeft.zipAll(fragmentedRight, "", "").map{case (l, r) => printAccumulator(level) + fillSpaceAfter(l, maxLengthLeft) + printAccumulator(1) + fillSpaceAfter(r, maxLengthRight)}.mkString("\n")
       s"""|$both""".stripMargin
     }
   }
