@@ -71,23 +71,5 @@ object MonoidGen {
       override lazy val empty: T = caseClass.construct(param => param.typeclass.empty)
     }
 
-  def dispatch[T, Combined <: T](
-    sealedTrait: SealedTrait[Typeclass, T]
-  )(implicit helper: CoProductMonoidHelper.Aux[T, Combined], combined: Monoid[Combined]): Typeclass[T] =
-    new Typeclass[T] {
-      override def empty: T = combined.empty
-
-      override def combine(x: T, y: T): T =
-        sealedTrait.dispatch(x)(handleX => {
-          sealedTrait.dispatch(y)(handleY => {
-            if (handleX.typeName == handleY.typeName) {
-              handleX.typeclass.combine(handleX.cast(x), handleX.cast(y))
-            } else {
-              helper.unlift(combined.combine(helper.lift(x), helper.lift(y)))
-            }
-          })
-        })
-    }
-
   implicit def gen[T]: Typeclass[T] = macro Magnolia.gen[T]
 }

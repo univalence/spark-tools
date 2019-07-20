@@ -16,7 +16,7 @@ import io.circe.generic.auto._
   DeltaString,
   DeltaTimestamp
 }
-*/
+ */
 case class KeyVal[K, V](key: K, value: V)
 
 trait ParkaDecoder {
@@ -25,8 +25,8 @@ trait ParkaDecoder {
   // Encoder
   implicit def encoderQTree: Encoder[QTree[Unit]] =
     deriveEncoder[QTU].contramap(x => (x._1, x._2, x._3, x._5, x._6))
-  implicit val encoderDelta: Encoder[DeltaV2]                 = deriveEncoder
-  implicit val encoderMapDelta: Encoder[Map[String, DeltaV2]] = Encoder.encodeMap[String, DeltaV2]
+  implicit val encoderDelta: Encoder[Delta]                 = deriveEncoder
+  implicit val encoderMapDelta: Encoder[Map[String, Delta]] = Encoder.encodeMap[String, Delta]
   implicit val encodeKeySeqString: KeyEncoder[Seq[String]] = new KeyEncoder[Seq[String]] {
     override def apply(s: Seq[String]): String = s.mkString("/")
   }
@@ -34,7 +34,7 @@ trait ParkaDecoder {
     .encodeSeq[KeyVal[Seq[String], Long]]
     .contramap(x => x.map({ case (k, v) => KeyVal(k, v) }).toSeq)
 
-  implicit val encoderParkaAnalysis: Encoder[ParkaAnalysis]   = deriveEncoder
+  implicit val encoderParkaAnalysis: Encoder[ParkaAnalysis] = deriveEncoder
   /*implicit val encoderDeltaLong: Encoder[DeltaLong]           = deriveEncoder
   implicit val encoderDeltaBoolean: Encoder[DeltaBoolean]     = deriveEncoder
   implicit val encoderDeltaString: Encoder[DeltaString]       = deriveEncoder
@@ -46,9 +46,9 @@ trait ParkaDecoder {
   // Decoder
   implicit def decoderQTree: Decoder[QTree[Unit]] =
     deriveDecoder[QTU].map(x => new QTree[Unit](x._1, x._2, x._3, {}, x._4, x._5))
-  implicit val decoderDescribe: Decoder[Describe]         = deriveDecoder
-  implicit val decoderDelta: Decoder[DeltaV2]                 = deriveDecoder
-  implicit val decoderMapDelta: Decoder[Map[String, DeltaV2]] = Decoder.decodeMap[String, DeltaV2]
+  implicit val decoderDescribe: Decoder[Describe]           = deriveDecoder
+  implicit val decoderDelta: Decoder[Delta]                 = deriveDecoder
+  implicit val decoderMapDelta: Decoder[Map[String, Delta]] = Decoder.decodeMap[String, Delta]
   implicit val decodeKeySeqString: KeyDecoder[Seq[String]] = new KeyDecoder[Seq[String]] {
     override def apply(s: String): Option[Seq[String]] = Some(if (s == "") Nil else s.split("/"))
   }

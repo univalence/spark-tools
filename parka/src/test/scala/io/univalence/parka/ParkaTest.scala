@@ -3,16 +3,15 @@ package io.univalence.parka
 import java.sql.{ Date, Timestamp }
 
 import cats.kernel.Monoid
-//import io.univalence.parka.Delta.{ DeltaBoolean, DeltaDate, DeltaLong, DeltaString, DeltaTimestamp }
-//import io.univalence.parka.Describe.{ DescribeCombine, DescribeLong }
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.{ Dataset, SparkSession }
-import org.scalatest.FunSuite
+import org.scalactic.Prettifier
+import org.scalatest.{ FunSuite, FunSuiteLike }
 
 class ParkaTest extends FunSuite with SparkTest {
-  val sharedSparkSession: SparkSession = ss
-  val sc: SparkContext                 = ss.sparkContext
+
+  implicit val default: Prettifier = Prettifier.default
 
   private val l1 = 1L
   private val l2 = 2L
@@ -53,7 +52,8 @@ class ParkaTest extends FunSuite with SparkTest {
 
     assert(result.inner.countDiffByRow == Map(Seq("n", "value") -> 1, Nil -> 1))
 
-    assertHistoEqual(result.inner.byColumn("value").error.histograms("value"), 1)
+    val histograms = result.inner.byColumn("value").error.histograms
+    assertHistoEqual(histograms("levenshtein"), 1)
   }
 
   test("test deltaLong") {
@@ -65,16 +65,14 @@ class ParkaTest extends FunSuite with SparkTest {
     assert(result.inner.countRowEqual === 1L)
     assert(result.inner.countRowNotEqual === 2L)
     assert(result.inner.countDiffByRow === Map(Seq("value") -> 2, Nil -> 1))
-    val diff                 = Seq(l1 - l5, l2 - l6).map(x => x * x).sum
+    val diff      = Seq(l1 - l5, l2 - l6).map(x => x * x).sum
     val deltaLong = result.inner.byColumn("value")
 
     assert(deltaLong.nEqual == 1)
     assert(deltaLong.nNotEqual == 2)
 
-
     // Bizarre ça marche pas =>
     //assertHistoEqual(deltaLong.error.histograms("value"), l1 - l5, l2 - l6, 0)
-
 
     //TODO ERROR
     //  assertHistoEqual(deltaLong.describe.left.value, l1, l2,l3)
@@ -100,7 +98,7 @@ class ParkaTest extends FunSuite with SparkTest {
     println(ParkaPrinter.printParkaResult(result))
 
     val deltaBoolean = result.inner.byColumn("value")
-    val counts = deltaBoolean.error.counts
+    val counts       = deltaBoolean.error.counts
     assert(counts("tf") == 1, "at tf")
     // Where do we count tt and ff ?
     //assert(deltaBoolean.tt == 1, "at tt")
@@ -223,6 +221,7 @@ class ParkaTest extends FunSuite with SparkTest {
     val result = Parka(left, right)("id").result
     println(ParkaPrinter.printParkaResult(result))
   }
+
 }
 
 case class Element(key: String, value: Long)

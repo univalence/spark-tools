@@ -142,9 +142,9 @@ lazy val parka =
       homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/parka")),
       startYear   := Some(2019),
       useSpark(libVersion.sparkScala212)("sql"),
-      libraryDependencies += "com.twitter"    %% "algebird-core"    % "0.13.4",
-      libraryDependencies += "com.propensive" %% "magnolia"         % "0.10.0",
-      libraryDependencies += "org.jline"      % "jline-terminal"    % "3.12.1",
+      libraryDependencies += "com.twitter"    %% "algebird-core" % "0.13.4",
+      libraryDependencies += "com.propensive" %% "magnolia"      % "0.10.0",
+      libraryDependencies += "org.jline"      % "jline-terminal" % "3.12.1",
       libraryDependencies ++= Seq(
         "io.circe" %% "circe-core",
         "io.circe" %% "circe-generic",
@@ -225,7 +225,7 @@ val libVersion =
     val scala2_12     = "2.12.8"
     val scala2_11     = "2.11.12"
     val scalacheck    = "1.13.5"
-    val scalatest     = "3.0.5"
+    val scalatest     = "3.0.8"
     val scalaz        = "7.2.27"
     val shapeless     = "2.3.3"
     val sparkScala211 = "2.0.0"
@@ -293,6 +293,7 @@ lazy val minisiteConfiguration =
 
 def addTestLibs: SettingsDefinition =
   libraryDependencies ++= Seq(
+    "org.scalactic"  %% "scalactic"  % libVersion.scalatest  % Test,
     "org.scalatest"  %% "scalatest"  % libVersion.scalatest  % Test,
     "org.scalacheck" %% "scalacheck" % libVersion.scalacheck % Test
   )
