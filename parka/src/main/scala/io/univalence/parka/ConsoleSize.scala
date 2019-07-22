@@ -25,6 +25,9 @@ object ConsoleSize {
   /** Detect IntelliJ Idea.
     *
     * Code according to JLine.
+    *
+    * @return None if the current JVM version can't get the parent process. Some(true) if IntelliJ IDEA has been
+    *         detected as parent process.
     */
   private def isInsideIntelliJ: Option[Boolean] =
     try {
