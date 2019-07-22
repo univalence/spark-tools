@@ -5,7 +5,7 @@ import com.twitter.algebird.{ QTree, QTreeSemigroup }
 
 object MonoidGen {
 
-  def empty[T: Monoid]: T = implicitly[Monoid[T]].empty
+  def empty[T: Monoid]: T = Monoid[T].empty
 
   def apply[T](_empty: T, _combine: (T, T) => T): Monoid[T] = new Monoid[T] {
     override def combine(x: T, y: T): T = _combine(x, y)
@@ -20,10 +20,10 @@ object MonoidGen {
           .map(
             k =>
               k -> (m1.get(k) match {
-                case None => m2.getOrElse(k, implicitly[Monoid[V]].empty)
+                case None => m2.getOrElse(k, Monoid[V].empty)
                 case Some(x) =>
                   m2.get(k) match {
-                    case Some(y) => implicitly[Monoid[V]].combine(x, y)
+                    case Some(y) => Monoid[V].combine(x, y)
                     case None    => x
                   }
               })
@@ -44,7 +44,7 @@ object MonoidGen {
     override def empty: Option[T] = None
 
     override def combine(x: Option[T], y: Option[T]): Option[T] = {
-      val semi = implicitly[Semigroup[T]]
+      val semi = Semigroup[T]
       (x, y) match {
         case (None, _) => y
         case (_, None) => x
