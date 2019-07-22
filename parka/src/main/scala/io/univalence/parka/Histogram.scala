@@ -47,20 +47,20 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
     foldToSeq[Double](
       neg => {
         if (lower < 0.0) {
-          val l: Double = Math.max(-upper, 0)
+          val l: Double = Math.max(-upper, 0.0)
           val u: Double = -lower
           val (b1, b2)  = neg.rangeCountBounds(l, u)
 
-          (b1 + b2) / 2
+          (b1 + b2) / 2.0
         } else 0.0
       },
-      x => if (lower <= 0 && 0 <= upper) Some(x) else None,
+      x => if (lower <= 0 && 0 <= upper) Some(x.toDouble) else None,
       pos => {
         if (upper > 0.0) {
-          val l: Double = Math.max(lower, 0)
+          val l: Double = Math.max(lower, 0.0)
           val (b1, b2)  = pos.rangeCountBounds(l, upper)
 
-          (b1 + b2) / 2
+          (b1 + b2) / 2.0
         } else 0.0
       }
     )(_ + _, 0)
