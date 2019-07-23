@@ -8,13 +8,12 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
   lazy val count: Long          = positivesCount + countZero + negativesCount
 
   lazy val min: Double = foldToSeq(x => -x.quantileBounds(1)._2,
-    x => if (x > 0) Some(0.0) else None,
-    x => x.quantileBounds(0)._1)(Math.min, Double.NegativeInfinity)
+                                   x => if (x > 0) Some(0.0) else None,
+                                   x => x.quantileBounds(0)._1)(Math.min, Double.NegativeInfinity)
 
   lazy val max: Double = foldToSeq(x => -x.quantileBounds(0)._1,
-    x => if (x > 0) Some(0.0) else None,
-    x => x.quantileBounds(1)._2)(Math.max, Double.PositiveInfinity)
-
+                                   x => if (x > 0) Some(0.0) else None,
+                                   x => x.quantileBounds(1)._2)(Math.max, Double.PositiveInfinity)
 
   def quantileBounds(percentile: Double): (Double, Double) = {
     require(percentile >= 0.0 && percentile <= 1.0, "The given percentile must be of the form 0 <= p <= 1.0")

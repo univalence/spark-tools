@@ -15,7 +15,7 @@ class HistogramTest extends FunSuite with ScalaCheckPropertyChecks {
 
   def invariant(xs: Seq[Long]): Unit =
     if (xs.distinct.size >= 2 && xs.forall(x => (x < Long.MaxValue - 2) && (x > Long.MinValue + 2))) {
-      val ys = xs.sorted
+      val ys    = xs.sorted
       val histo = histogramMonoid.combineAll(xs.view.map(Histogram.value))
 
       assert(histo.count == ys.length)
