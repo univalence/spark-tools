@@ -35,8 +35,7 @@ val pa: ParkaAnalysis = Parka(df1, d2f)("key")
 ``` 
 
 First give the two Datasets to compare to and then column(s) that are keys.
-
-For the moment you just can print that analysis as a tree in the console or export it in JSON. 
+ the console or export it in JSON. 
 
 Here is an example :
 

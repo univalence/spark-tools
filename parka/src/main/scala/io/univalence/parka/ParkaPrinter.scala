@@ -179,7 +179,11 @@ object ParkaPrinter {
       case k @ "nFalse" => printInformation(counts(k).toString, "Number of false", level)
       case k @ "nNull"  => printInformation(counts(k).toString, "Number of null", level)
     }.mkString("\n")
-    s"$strCounts\n$strHistogram"
+
+    if (strHistogram.isEmpty) s"$strCounts"
+    else if (strCounts.isEmpty) s"$strHistogram"
+    else s"$strCounts\n$strHistogram"
+
   }
 
   def printBothDescribe(describes: Both[Describe], level: Int): String =
