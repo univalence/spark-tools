@@ -1,13 +1,11 @@
 package io.univalence.parka
 
-import java.sql.{ Date, Timestamp }
-
 import cats.kernel.Monoid
 import io.univalence.sparktest.SparkTest
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.{ Dataset, SparkSession }
+import java.sql.{ Date, Timestamp }
+import org.apache.spark.sql.Dataset
 import org.scalactic.Prettifier
-import org.scalatest.{ FunSuite, FunSuiteLike }
+import org.scalatest.FunSuite
 
 class ParkaTest extends FunSuite with SparkTest {
 
@@ -30,15 +28,18 @@ class ParkaTest extends FunSuite with SparkTest {
 
   def assertHistoEqual(longHisto: Histogram, value: Long*): Unit = {
     val sorted = value.sorted
+
     if (sorted.isEmpty)
       assert(longHisto.count == 0)
-    else if (sorted.size == 1) {
+    else if (sorted.size == 1)
       assertIn(longHisto.quantileBounds(1), value.head)
-    } else {
-      sorted.zipWithIndex.foreach({
+    else {
+      sorted.zipWithIndex.foreach {
         case (v, index) =>
+          println(s"$index, ${index.toDouble / (sorted.size - 1)}, ${longHisto
+            .quantileBounds(index.toDouble / (sorted.size - 1))}, $v")
           assertIn(longHisto.quantileBounds(index.toDouble / (sorted.size - 1)), v)
-      })
+      }
     }
   }
 
@@ -59,10 +60,20 @@ class ParkaTest extends FunSuite with SparkTest {
 
   test("test deltaLong") {
     val left: Dataset[Element] =
-      dataset(Element("0", l1), Element("1", l2), Element("2", l3), Element("3", l4))
-    val right: Dataset[Element] = dataset(Element("0", l5), Element("1", l6), Element("2", l3))
+      dataset(
+        Element("0", l1),
+        Element("1", l2),
+        Element("2", l3),
+        Element("3", l4)
+      )
+    val right: Dataset[Element] =
+      dataset(
+        Element("0", l5),
+        Element("1", l6),
+        Element("2", l3)
+      )
 
-    val result = Parka(left, right)("key").result
+    val result: ParkaResult = Parka(left, right)("key").result
     assert(result.inner.countRowEqual === 1L)
     assert(result.inner.countRowNotEqual === 2L)
     assert(result.inner.countDiffByRow === Map(Seq("value") -> 2))
@@ -74,12 +85,18 @@ class ParkaTest extends FunSuite with SparkTest {
     assert(deltaLong.nEqual == 1)
     assert(deltaLong.nNotEqual == 2)
 
-    // Bizarre ça marche pas =>
-    //assertHistoEqual(deltaLong.error.histograms("value"), l1 - l5, l2 - l6, 0)
+//    val histogram = deltaLong.describe.left.histograms("value")
+//    println(histogram)
+//    for (i <- 0 to 100 by 5) {
+//      val q = i.toDouble / 100.0
+//      println(s"$q: ${histogram.quantileBounds(q)}")
+//    }
+
+//    assertHistoEqual(deltaLong.error.histograms("value"), l1 - l5, l2 - l6)
 
     //TODO ERROR
-    //  assertHistoEqual(deltaLong.describe.left.value, l1, l2,l3)
-    //  assertHistoEqual(deltaLong.describe.right.value, l5, l6,l3)
+//    assertHistoEqual(deltaLong.describe.left.histograms("value"), l1, l2, l3)
+//    assertHistoEqual(deltaLong.describe.right.histograms("value"), l5, l6, l3)
 
     assert(result.outer.countRow === Both(1L, 0L))
   }
@@ -156,7 +173,6 @@ class ParkaTest extends FunSuite with SparkTest {
   }
 
   test("derivation test") {
-    import MonoidGen._
     val describe: Monoid[Describe] = MonoidGen.gen[Describe]
 
     /*assert(describe.empty == Describe.empty)
