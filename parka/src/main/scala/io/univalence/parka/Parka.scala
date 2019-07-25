@@ -57,12 +57,12 @@ object Describe {
       case null          => count("nNull", 1)
       case true          => count("nTrue", 1)
       case false         => count("nFalse", 1)
-      case s: String     => histo("length", s.length)
+      case s: String     => histo("length", s.length.toLong)
       case d: Double     => histo("value", d)
       case l: Long       => histo("value", l)
       case ts: Timestamp => histo("timestamp", ts.getTime)
       case d: Date       => histo("date", d.getTime)
-      case b: Array[Byte] => histo("length", b.length)
+      case b: Array[Byte] => histo("length", b.length.toLong)
     }
 }
 
