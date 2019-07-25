@@ -1,12 +1,11 @@
 package io.univalence.parka
 
-import java.sql.{ Date, Timestamp }
-
 import cats.kernel.Monoid
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.{ Dataset, Row }
+import java.sql.{ Date, Timestamp }
 
 case class Both[+T](left: T, right: T) {
   def fold[U](f: (T, T) => U): U = f(left, right)
@@ -165,7 +164,7 @@ object Parka {
 
     val isEqual            = byNames.forall(_._2.nEqual == 1)
     val nDiff: Seq[String] = if (isEqual) Nil else byNames.filter(_._2.nNotEqual == 1).keys.toSeq.sorted
-    Inner(if (isEqual) 1 else 0, if (isEqual) 0 else 1, Map(nDiff -> 1), byNames)
+    Inner(if (isEqual) 1 else 0, if (isEqual) 0 else 1, if(nDiff.isEmpty) Map.empty else Map(nDiff -> 1), byNames)
   }
 
   private val emptyInner: Inner = MonoidGen.empty[Inner]

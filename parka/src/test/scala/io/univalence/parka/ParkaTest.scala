@@ -50,7 +50,8 @@ class ParkaTest extends FunSuite with SparkTest {
     val result = Parka(left, right)("id").result
     println(ParkaPrinter.printParkaResult(result))
 
-    assert(result.inner.countDiffByRow == Map(Seq("n", "value") -> 1, Nil -> 1))
+    assert(result.inner.countDiffByRow == Map(Seq("n", "value") -> 1))
+    assert(result.inner.countDiffByRow.values.sum === result.inner.countRowNotEqual)
 
     val histograms = result.inner.byColumn("value").error.histograms
     assertHistoEqual(histograms("levenshtein"), 1)
@@ -64,7 +65,9 @@ class ParkaTest extends FunSuite with SparkTest {
     val result = Parka(left, right)("key").result
     assert(result.inner.countRowEqual === 1L)
     assert(result.inner.countRowNotEqual === 2L)
-    assert(result.inner.countDiffByRow === Map(Seq("value") -> 2, Nil -> 1))
+    assert(result.inner.countDiffByRow === Map(Seq("value") -> 2))
+    assert(result.inner.countDiffByRow.values.sum === result.inner.countRowNotEqual)
+
     val diff      = Seq(l1 - l5, l2 - l6).map(x => x * x).sum
     val deltaLong = result.inner.byColumn("value")
 
