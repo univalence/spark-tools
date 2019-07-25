@@ -146,10 +146,10 @@ lazy val parka =
       libraryDependencies += "com.propensive" %% "magnolia"      % "0.10.0",
       libraryDependencies += "org.jline"      % "jline-terminal" % "3.12.1",
       libraryDependencies ++= Seq(
-        "io.circe" %% "circe-core",
-        "io.circe" %% "circe-generic",
-        "io.circe" %% "circe-parser"
-      ).map(_ % libVersion.circeVersion),
+        "circe-core",
+        "circe-generic",
+        "circe-parser"
+      ).map(name => "io.circe" %% name % libVersion.circeVersion),
       addTestLibs
     )
     .dependsOn(sparkTest)
