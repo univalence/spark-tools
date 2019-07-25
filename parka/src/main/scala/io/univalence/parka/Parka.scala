@@ -163,7 +163,7 @@ object Parka {
         .toMap
 
     val isEqual            = byNames.forall(_._2.nEqual == 1)
-    val nDiff: Seq[String] = if (isEqual) Nil else byNames.filter(_._2.nNotEqual == 1).keys.toSeq.sorted
+    val nDiff: Seq[String] = if (isEqual) Nil else byNames.filter(_._2.nNotEqual > 0).keys.toSeq.sorted
     Inner(if (isEqual) 1 else 0, if (isEqual) 0 else 1, if(nDiff.isEmpty) Map.empty else Map(nDiff -> 1), byNames)
   }
 
