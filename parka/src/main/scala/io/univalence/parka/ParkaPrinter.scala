@@ -2,8 +2,6 @@ package io.univalence.parka
 
 import cats.Monoid
 
-//import io.univalence.parka.Delta.{ DeltaBoolean, DeltaDate, DeltaDouble, DeltaLong, DeltaString, DeltaTimestamp }
-
 object ParkaPrinter {
   val sep   = "    "
   val start = ""

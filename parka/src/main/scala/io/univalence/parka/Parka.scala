@@ -63,6 +63,7 @@ object Describe {
       case l: Long       => histo("value", l)
       case ts: Timestamp => histo("timestamp", ts.getTime)
       case d: Date       => histo("date", d.getTime)
+      case b: Array[Byte] => histo("length", b.length)
     }
 }
 
@@ -70,20 +71,20 @@ case class Delta(nEqual: Long, nNotEqual: Long, describe: Both[Describe], error:
 
 object Delta {
 
-  def levenshtein(s1: String, s2: String): Int = {
+  def levenshtein_generified[T](a1: Array[T], a2: Array[T]): Int = {
     import scala.math._
     def minimum(i1: Int, i2: Int, i3: Int) = min(min(i1, i2), i3)
-    val dist = Array.tabulate(s2.length + 1, s1.length + 1) { (j, i) =>
+    val dist = Array.tabulate(a2.length + 1, a1.length + 1) { (j, i) =>
       if (j == 0) i else if (i == 0) j else 0
     }
     for {
-      j <- 1 to s2.length
-      i <- 1 to s1.length
+      j <- 1 to a2.length
+      i <- 1 to a1.length
     } dist(j)(i) =
-      if (s2(j - 1) == s1(i - 1)) dist(j - 1)(i - 1)
+      if (a2(j - 1) == a1(i - 1)) dist(j - 1)(i - 1)
       else
         minimum(dist(j - 1)(i) + 1, dist(j)(i - 1) + 1, dist(j - 1)(i - 1) + 1)
-    dist(s2.length)(s1.length)
+    dist(a2.length)(a1.length)
   }
 
   def error(x: Any, y: Any): Describe =
@@ -92,12 +93,13 @@ object Delta {
       case (_, null)                => Describe.count("leftToNull", 1)
       case (l1: Long, l2: Long)     => Describe(l1 - l2)
       case (d1: Double, d2: Double) => Describe(d1 - d2)
-      case (s1: String, s2: String) => Describe.histo("levenshtein", levenshtein(s1, s2).toLong)
+      case (s1: String, s2: String) => Describe.histo("levenshtein", levenshtein_generified(s1.toCharArray, s2.toCharArray).toLong)
       case (b1: Boolean, b2: Boolean) =>
         val key: String = (if (b1) "t" else "f") + (if (b2) "t" else "f")
         Describe.count(key, 1)
       case (d1: Date, d2: Date)           => Describe(d1.getTime - d2.getTime)
       case (t1: Timestamp, t2: Timestamp) => Describe(t1.getTime - t2.getTime)
+      case (b1: Array[Byte], b2: Array[Byte]) => Describe.histo("levenstein", levenshtein_generified(b1, b2).toLong)
     }
 
   def apply(x: Any, y: Any): Delta =
