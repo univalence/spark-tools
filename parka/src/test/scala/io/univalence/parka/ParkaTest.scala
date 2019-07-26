@@ -9,6 +9,8 @@ import org.scalatest.FunSuite
 
 class ParkaTest extends FunSuite with SparkTest {
 
+  import MonoidGen._
+
   implicit val default: Prettifier = Prettifier.default
 
   private val l1 = 1L
