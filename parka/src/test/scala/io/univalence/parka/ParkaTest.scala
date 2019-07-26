@@ -51,7 +51,7 @@ class ParkaTest extends FunSuite with SparkTest {
     val right = dataframe("{id:1, value:'a', n:1}", "{id:2, value:'b2', n:3}")
 
     val result = Parka(left, right)("id").result
-    println(ParkaPrinter.printParkaResult(result))
+    println(Printer.printParkaResult(result))
 
     assert(result.inner.countDiffByRow == Map(Seq("n", "value") -> 1))
     assert(result.inner.countDiffByRow.values.sum === result.inner.countRowNotEqual)
@@ -117,7 +117,7 @@ class ParkaTest extends FunSuite with SparkTest {
                           "{id:5, value:false}")
 
     val result = Parka(left, right)("id").result
-    println(ParkaPrinter.printParkaResult(result))
+    println(Printer.printParkaResult(result))
 
     val deltaBoolean = result.inner.byColumn("value")
     val counts       = deltaBoolean.error.counts
@@ -210,18 +210,18 @@ class ParkaTest extends FunSuite with SparkTest {
       Element("10", 100)
     )
     val result = Parka(left, right)("key").result
-    println(ParkaPrinter.printParkaResult(result))
+    println(Printer.printParkaResult(result))
   }
 
   test("Json Serde") {
     val left   = dataframe("{id:1, n:1}", "{id:2, n:2}")
     val right  = dataframe("{id:1, n:1}", "{id:2, n:3}")
     val pa     = Parka(left, right)("id")
-    val paJson = ParkaAnalysisSerde.toJson(pa)
+    val paJson = Serde.toJson(pa)
     /*assert(
       paJson.noSpaces == """{"datasetInfo":{"left":{"source":[],"nStage":0},"right":{"source":[],"nStage":0}},"result":{"inner":{"countRowEqual":1,"countRowNotEqual":1,"countDiffByRow":[{"key":["n"],"value":1},{"key":[],"value":1}],"byColumn":{"n":{"DeltaLong":{"nEqual":1,"nNotEqual":1,"describe":{"left":{"value":{"neg":null,"countZero":0,"pos":{"_1":0,"_2":2,"_3":2,"_4":{"_1":0,"_2":1,"_3":1,"_4":null,"_5":{"_1":1,"_2":0,"_3":1,"_4":null,"_5":null}},"_5":{"_1":1,"_2":1,"_3":1,"_4":{"_1":2,"_2":0,"_3":1,"_4":null,"_5":null},"_5":null}}}},"right":{"value":{"neg":null,"countZero":0,"pos":{"_1":0,"_2":2,"_3":2,"_4":{"_1":0,"_2":1,"_3":1,"_4":null,"_5":{"_1":1,"_2":0,"_3":1,"_4":null,"_5":null}},"_5":{"_1":1,"_2":1,"_3":1,"_4":null,"_5":{"_1":3,"_2":0,"_3":1,"_4":null,"_5":null}}}}}},"error":{"neg":{"_1":1,"_2":0,"_3":1,"_4":null,"_5":null},"countZero":1,"pos":null}}}}},"outer":{"countRow":{"left":0,"right":0},"byColumn":{}}}}"""
     )*/
-    val paFromJson = ParkaAnalysisSerde.fromJson(paJson).right.get
+    val paFromJson = Serde.fromJson(paJson).right.get
     assert(pa == paFromJson)
   }
 
@@ -240,7 +240,7 @@ class ParkaTest extends FunSuite with SparkTest {
     ).toDF("id", "str")
 
     val result = Parka(left, right)("id").result
-    println(ParkaPrinter.printParkaResult(result))
+    println(Printer.printParkaResult(result))
   }
 
 }

@@ -9,6 +9,11 @@ import io.circe.{ Decoder, Encoder }
 import io.circe.generic.auto._
 case class KeyVal[K, V](key: K, value: V)
 
+object Serde extends ParkaDecoder {
+  def toJson(pa: ParkaAnalysis): Json             = pa.asJson
+  def fromJson(json: Json): Result[ParkaAnalysis] = json.as[ParkaAnalysis]
+}
+
 trait ParkaDecoder {
   case class QTU(offset: Long,
                  level: Int,
@@ -41,9 +46,4 @@ trait ParkaDecoder {
 
   implicit val decoderMap: Decoder[Map[Seq[String], Long]] =
     Decoder.decodeSeq[KeyVal[Seq[String], Long]].map(x => x.map(x => x.key -> x.value).toMap)
-}
-
-object ParkaAnalysisSerde extends ParkaDecoder {
-  def toJson(pa: ParkaAnalysis): Json             = pa.asJson
-  def fromJson(json: Json): Result[ParkaAnalysis] = json.as[ParkaAnalysis]
 }

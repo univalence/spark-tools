@@ -2,7 +2,7 @@ package io.univalence.parka
 
 import cats.Monoid
 
-object ParkaPrinter {
+object Printer {
   val sep   = "    "
   val start = ""
 

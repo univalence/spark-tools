@@ -40,9 +40,9 @@ First give the two Datasets to compare to and then column(s) that are keys.
 Here is an example :
 
 ```scala
-import io.univalence.parka.ParkaPrinter
+import io.univalence.parka.Printer
 
-println(ParkaPrinter.printParkaResult(pa.result))
+println(Printer.printParkaResult(pa.result))
 ``` 
 ## Support
 
