@@ -35,8 +35,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   private var configuration: SparkTestConfiguration = SparkTestConfiguration()
 
   /**
-    * You can wrap your Spark-Test's function using a configuration to customize the behaviour of the function
-    * Each functions who can be modified using the configuration have the tag @configuration
+    * You can wrap your Spark-Test's blocks using a different configuration to customize the behaviour of the functions.
     *
     * Example:
     * withConfiguration(failOnMissingExpectedCol = false, failOnMissingOriginalCol = false)({ df1.assertEquals(df2) })

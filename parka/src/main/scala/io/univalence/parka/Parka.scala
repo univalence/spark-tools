@@ -54,14 +54,14 @@ object Describe {
 
   def apply(a: Any): Describe =
     a match {
-      case null          => count("nNull", 1)
-      case true          => count("nTrue", 1)
-      case false         => count("nFalse", 1)
-      case s: String     => histo("length", s.length.toLong)
-      case d: Double     => histo("value", d)
-      case l: Long       => histo("value", l)
-      case ts: Timestamp => histo("timestamp", ts.getTime)
-      case d: Date       => histo("date", d.getTime)
+      case null           => count("nNull", 1)
+      case true           => count("nTrue", 1)
+      case false          => count("nFalse", 1)
+      case s: String      => histo("length", s.length.toLong)
+      case d: Double      => histo("value", d)
+      case l: Long        => histo("value", l)
+      case ts: Timestamp  => histo("timestamp", ts.getTime)
+      case d: Date        => histo("date", d.getTime)
       case b: Array[Byte] => histo("length", b.length.toLong)
     }
 }
@@ -92,12 +92,13 @@ object Delta {
       case (_, null)                => Describe.count("leftToNull", 1)
       case (l1: Long, l2: Long)     => Describe(l1 - l2)
       case (d1: Double, d2: Double) => Describe(d1 - d2)
-      case (s1: String, s2: String) => Describe.histo("levenshtein", levenshtein_generified(s1.toCharArray, s2.toCharArray).toLong)
+      case (s1: String, s2: String) =>
+        Describe.histo("levenshtein", levenshtein_generified(s1.toCharArray, s2.toCharArray).toLong)
       case (b1: Boolean, b2: Boolean) =>
         val key: String = (if (b1) "t" else "f") + (if (b2) "t" else "f")
         Describe.count(key, 1)
-      case (d1: Date, d2: Date)           => Describe(d1.getTime - d2.getTime)
-      case (t1: Timestamp, t2: Timestamp) => Describe(t1.getTime - t2.getTime)
+      case (d1: Date, d2: Date)               => Describe(d1.getTime - d2.getTime)
+      case (t1: Timestamp, t2: Timestamp)     => Describe(t1.getTime - t2.getTime)
       case (b1: Array[Byte], b2: Array[Byte]) => Describe.histo("levenstein", levenshtein_generified(b1, b2).toLong)
     }
 
@@ -164,7 +165,7 @@ object Parka {
 
     val isEqual            = byNames.forall(_._2.nEqual == 1)
     val nDiff: Seq[String] = if (isEqual) Nil else byNames.filter(_._2.nNotEqual > 0).keys.toSeq.sorted
-    Inner(if (isEqual) 1 else 0, if (isEqual) 0 else 1, if(nDiff.isEmpty) Map.empty else Map(nDiff -> 1), byNames)
+    Inner(if (isEqual) 1 else 0, if (isEqual) 0 else 1, if (nDiff.isEmpty) Map.empty else Map(nDiff -> 1), byNames)
   }
 
   private val emptyInner: Inner = MonoidGen.empty[Inner]

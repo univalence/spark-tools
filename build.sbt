@@ -63,6 +63,8 @@ lazy val sparkTools = (project in file("."))
     description  := "Spark tools",
     startYear    := Option(2019),
     homepage     := Option(url("https://github.com/univalence/spark-tools")),
+    //it undefined those tasks on the projet. 
+    //you can use directly : `sbt test` and `sbt releaseEarly`.
     releaseEarly := {},
     test         := {}
   )
