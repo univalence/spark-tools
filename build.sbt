@@ -144,10 +144,10 @@ lazy val parka =
       homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/parka")),
       startYear   := Some(2019),
       useSpark(libVersion.sparkScala212)("sql"),
-      libraryDependencies += "com.twitter" %% "algebird-core" % "0.13.4" excludeAll ExclusionRule(
+      libraryDependencies += "com.twitter" %% "algebird-core" % "0.13.5" excludeAll ExclusionRule(
         organization = "org.typelevel"
       ),
-      libraryDependencies += "org.typelevel"  %% "cats-core"     % "1.5.0",
+      libraryDependencies += "org.typelevel"  %% "algebra"       % "1.0.1",
       libraryDependencies += "com.propensive" %% "magnolia"      % "0.10.0",
       libraryDependencies += "org.jline"      % "jline-terminal" % "3.12.1",
       libraryDependencies ++= Seq(
