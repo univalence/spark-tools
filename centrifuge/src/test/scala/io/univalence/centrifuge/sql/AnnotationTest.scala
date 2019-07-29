@@ -362,26 +362,4 @@ BetterPerson(,None)
     // .show(false)
 
   }
-
-  test("rename + ajout des sources") {}
-
-  test("deltaQA 2 df") {
-    val df1 =
-      ss.sparkContext.makeRDD(Seq(("abc", 2, 3), ("def", 13, 17))).toDF()
-
-    val df2 = ss.sparkContext.makeRDD(Seq(("abc", 5, 7))).toDF()
-
-    val delta = df1.deltaWith(df2)
-
-    assert(delta.cols.forall(_.hasDifference))
-  }
-
-  test("delta QA same DF") {
-    val df = ss.sparkContext.makeRDD(Seq(("abc", 2, 3), ("def", 13, 17))).toDF()
-
-    assert(df.deltaWith(df).cols.forall(!_.hasDifference))
-  }
-
-  test("support non numeric type in delta qa (equality + diff squared)") {}
-
 }

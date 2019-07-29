@@ -25,28 +25,7 @@ import org.apache.spark.sql.types._
 import scala.collection.mutable
 import scala.reflect.runtime.universe.TypeTag
 
-package object centrifuge_sql {
-
-  case class DeltaPart(
-    colName: String,
-    sumOnlyLeft: Option[Long],
-    sumOnlyRight: Option[Long],
-    sumBothRight: Option[Long],
-    sumBothLeft: Option[Long],
-    sumBothDelta: Option[Long],
-    sumBothDeltaSquared: Option[Long],
-    countNbExact: Option[Long]
-  ) {
-
-    def hasDifference: Boolean =
-      Seq(
-        sumOnlyLeft.isDefined,
-        sumOnlyRight.isDefined,
-        !sumBothDeltaSquared.contains(0)
-      ).exists(identity)
-  }
-
-  case class Delta(counts: DeltaPart, cols: Seq[DeltaPart])
+object centrifuge_sql {
 
   class QATools(val sparkSession: SparkSession) {
 
@@ -190,91 +169,6 @@ package object centrifuge_sql {
     def includeRejectFlags: DataFrame =
       //ajout des champs pour avec un boolean qui dit s'il y a un champ en erreur, et un autre pour dire s'il y a des warnings
       ???
-
-    def deltaWith(df: DataFrame): Delta = {
-
-      assert(dataFrame.columns.toSeq == df.columns.toSeq)
-      import org.apache.spark.sql.functions._
-
-      val leftKey  = dataFrame(dataFrame.columns.head)
-      val rightKey = df(dataFrame.columns.head)
-      val j = dataFrame.join(
-        df,
-        leftKey
-          ===
-            rightKey,
-        "fullOuter"
-      )
-
-      val valueCouple: Seq[(String, Column, Column)] =
-        ("count1", Column(Literal(1)), Column(Literal(1))) :: dataFrame.columns.tail
-          .map(x => {
-            (x, dataFrame(x), df(x))
-          })
-          .toList
-
-      val onlyLeft: Column  = leftKey.isNotNull.&&(rightKey.isNull)
-      val onlyRight: Column = leftKey.isNull.&&(rightKey.isNotNull)
-      val both: Column      = leftKey.isNotNull.&&(rightKey.isNotNull)
-
-      type KpiApplier = (Column, Column) => (String, Column)
-
-      //FMT has trouble with this peace of code.
-      // format: off
-      val kpis: Seq[KpiApplier] = Seq[KpiApplier](
-        (c1,  _) => ("OnlyLeft",  when(onlyLeft, c1)),
-        (_ , c2) => ("OnlyRight", when(onlyRight, c2)),
-        (c1,  _) => ("BothLeft",  when(both, c1)),
-        (_ , c2) => ("BothRight", when(both, c2)),
-        (c1, c2) => ("BothDelta", when(both, c1 - c2)),
-        (c1, c2) => ("BothDeltaSquared",  when(both, (c1 - c2).multiply(c1 - c2))),
-        (c1, c2) => ("BothCountEqual",    when(both && (c1 === c2), Column(Literal(1))))
-      )
-      // format: on
-
-      val allCols: Seq[Column] = valueCouple.flatMap({
-        case (n, c1, c2) =>
-          kpis.map(f => {
-            val (id, c) = f(c1, c2)
-            Column(Alias(sum(c).expr, n + "____" + id)())
-          })
-      })
-
-      val r = j.select(allCols: _*).collect().head
-
-      def deltaPart(fieldName: String): DeltaPart = {
-
-        def e(kpi: String): Option[Long] =
-          Option(r.getAs[Long](fieldName + "____" + kpi))
-
-        DeltaPart(
-          colName             = fieldName,
-          sumOnlyLeft         = e("OnlyLeft"),
-          sumOnlyRight        = e("OnlyRight"),
-          sumBothRight        = e("BothRight"),
-          sumBothLeft         = e("BothLeft"),
-          sumBothDelta        = e("BothDelta"),
-          sumBothDeltaSquared = e("BothDeltaSquared"),
-          countNbExact        = e("BothCountEqual")
-        )
-      }
-
-      Delta(deltaPart("count1"), dataFrame.columns.tail.map(deltaPart))
-    }
-
-    /*
-     ArrayType(StructType(StructField(message,StringType,false),
-     StructField(isError,BooleanType,false),
-      StructField(count,LongType,false),
-      StructField(onField,StringType,true),
-       StructField(fromFields,ArrayType(StringType,false),false)),false) to
-
-       ArrayType(StructType(StructField(message,StringType,true),
-       StructField(onField,StringType,true),
-       StructField(fromFields,ArrayType(StringType,true),true),
-       StructField(isError,BooleanType,true),
-        StructField(count,LongType,true)),true);
-     */
 
     /*
 
