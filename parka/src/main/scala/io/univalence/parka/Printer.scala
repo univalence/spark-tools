@@ -12,6 +12,11 @@ object Printer {
       case _           => printAccumulator(level - 1, acc + sep)
     }
 
+  def printListInformation(info: String*): String = {
+    val relevant = info.filter(_.nonEmpty)
+    relevant.mkString("\n")
+  }
+
   import MonoidGen._
 
   def printInformation(information: String, field: String, level: Int, jump: Boolean = false): String =
@@ -95,7 +100,7 @@ object Printer {
         case k @ "rightToNull" => printInformation(m2(k).toString, "# null -> not null", level)
         case k @ "leftToNull"  => printInformation(m2(k).toString, "# not null -> null", level)
       }.mkString("\n")
-      s"$counts\n$histograms"
+      printListInformation(counts, histograms)
   }
 
   def printHistogram(histogram: Histogram, level: Int, name: String = "Histogram"): String = {
@@ -177,11 +182,8 @@ object Printer {
       case k @ "nFalse" => printInformation(counts(k).toString, "Number of false", level)
       case k @ "nNull"  => printInformation(counts(k).toString, "Number of null", level)
     }.mkString("\n")
-
-    if (strHistogram.isEmpty) s"$strCounts"
-    else if (strCounts.isEmpty) s"$strHistogram"
-    else s"$strCounts\n$strHistogram"
-
+    
+    printListInformation(strCounts, strHistogram)
   }
 
   def printBothDescribe(describes: Both[Describe], level: Int): String =
