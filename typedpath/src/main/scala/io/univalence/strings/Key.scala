@@ -316,6 +316,7 @@ object FieldKey {
       .fold[Try[String with Name]](Success(s"""\"${string}\"""".stripMargin.asInstanceOf[String with Name]))(
         _ => Success(string.asInstanceOf[String with Name])
       )
+    
       /**.fold[Try[String with Name]](Failure(new Exception(s"$string is not a valid field name")))(
         _ => Success(string.asInstanceOf[String with Name])
       )*/
