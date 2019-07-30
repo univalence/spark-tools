@@ -308,18 +308,28 @@ sealed trait FieldName
 object FieldKey {
   type Name = FieldName
 
-  // TODO : @Jon that's ok for you ?
+  /**
   def createName(string: String): Try[String with Name] = {
     val regExp = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
     regExp
       .findPrefixMatchOf(string)
-      .fold[Try[String with Name]](Success(s"""\"${string}\"""".stripMargin.asInstanceOf[String with Name]))(
+      .fold[Try[String with Name]](Failure(new Exception(s"$string is not a valid field name")))(
         _ => Success(string.asInstanceOf[String with Name])
       )
-    
-      /**.fold[Try[String with Name]](Failure(new Exception(s"$string is not a valid field name")))(
-        _ => Success(string.asInstanceOf[String with Name])
-      )*/
+  }*/
+  def createName(string: String): Try[String with Name] = {
+    val regExp        = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
+    val regExpSpecial = "^\".*\"$".r
+
+    regExpSpecial.findPrefixMatchOf(string) match {
+      case None => {
+        regExp.findPrefixMatchOf(string) match {
+          case None => Failure(new Exception(s"$string is not a valid field name"))
+          case _    => Success(string.asInstanceOf[String with Name])
+        }
+      }
+      case _ => Success(string.asInstanceOf[String with Name])
+    }
   }
 
   def apply(name: String, parent: KeyOrRoot): Try[FieldKey] =

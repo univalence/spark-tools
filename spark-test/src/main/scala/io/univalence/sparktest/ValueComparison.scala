@@ -144,12 +144,20 @@ object ValueComparison {
             acc ++ loop(curr1, curr2, ArrayIndex(index, prefix))
         }
 
+      def validColName(name: String): String = {
+        val regExp = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
+        regExp.findPrefixMatchOf(name) match {
+          case None => s"""\"${name}\""""
+          case _ => name
+        }
+      }
+
       for {
         (name, (leftField, rightField)) <- cogroup(v1.fields, v2.fields)(_._1, _._1)
 
         left        = Option(leftField.headOption.getOrElse((Nil, NullValue))._2)
         right       = Option(rightField.headOption.getOrElse((Nil, NullValue))._2)
-        path: Index = FieldIndex(FieldKey.createName(name).get, prefix)
+        path: Index = FieldIndex(FieldKey.createName(validColName(name)).get, prefix)
 
         modifications: Seq[ObjectModification] = (left, right) match {
           case (Some(l), None)    => Seq(ObjectModification(path, RemoveValue(l)))

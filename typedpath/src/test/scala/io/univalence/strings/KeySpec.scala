@@ -85,9 +85,13 @@ class KeySpec extends FunSuite {
   }
 
   test("error") {
-
     assert(Key.create("123").isFailure)
   }
+
+  ignore("create special Key") {
+    assert(Key.create("\"12.*+.-3\"").isSuccess)
+  }
+
   test("follow up") {
 
     assert(Key.create("").get == Root)
