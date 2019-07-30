@@ -195,33 +195,21 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     val left = Seq(
       (1, "aaaa"),
       (2, "bbbb"),
-      (3, null)
+      (3, null),
+      (4, null)
     ).toDF("id", "str")
 
     val right = Seq(
       (1, null),
       (2, "bbbb"),
       (3, "cccc"),
-      (4, "dddd")
+      (4, null),
+      (5, "eeee")
     ).toDF("id", "str")
 
     val result = Parka(left, right)("id").result
     println(Printer.printParkaResult(result))
   }
-
-  test("test null 2") {
-    val left = Seq(
-      (1, null)
-    ).toDF("id", "str")
-
-    val right = Seq(
-      (1, null)
-    ).toDF("id", "str")
-
-    val result = Parka(left, right)("id").result
-    println(Printer.printParkaResult(result))
-  }
-
 }
 
 case class Element(key: String, value: Long)

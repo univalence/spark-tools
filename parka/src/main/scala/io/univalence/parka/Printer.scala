@@ -126,7 +126,7 @@ object Printer {
 
     val barMax            = 22
     val maxCount          = bins.map(_.count).max
-    val maxLengthBinLower = bins.map(bin => printDecimal(bin.pos).length).max //printDecimal(lastBin.pos).length
+    val maxLengthBinLower = bins.map(bin => printDecimal(bin.pos).length).max
 
     val histobar = "o"
 
