@@ -72,6 +72,15 @@ class DataFrameComparisonTest extends FunSuite with SparkTest {
     }
   }
 
+  test("should assertEquals ordered between equal DF with columns containing special character") {
+    val dfUT       = Seq(1, 2, 3).toDF("id.a")
+    val dfExpected = Seq(2, 1, 4).toDF("id.a")
+
+    assertThrows[SparkTestError] {
+      dfUT.assertEquals(dfExpected)
+    }
+  }
+
   /*test("assertEquals (DF & Map) : a DF and a Map with the same content are equal") {
 
   }*/
