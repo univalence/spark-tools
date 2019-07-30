@@ -1,12 +1,13 @@
 package io.univalence.parka
 
+import cats.Monoid
 import io.univalence.parka.MonoidGen._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import org.scalatest.FunSuite
 
 class HistogramTest extends FunSuite with ScalaCheckPropertyChecks {
 
-  val histogramMonoid = MonoidGen.gen[Histogram]
+  val histogramMonoid: Monoid[Histogram] = MonoidGen.gen[Histogram]
 
   test("work with MinValue and MaxValue") {
     Histogram.value(Long.MinValue)
