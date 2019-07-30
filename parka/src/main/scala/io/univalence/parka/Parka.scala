@@ -7,6 +7,8 @@ import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.{ Dataset, Row }
 import java.sql.{ Date, Timestamp }
 
+import io.univalence.parka.Delta.DeltaBoolean
+
 case class Both[+T](left: T, right: T) {
   def fold[U](f: (T, T) => U): U = f(left, right)
 
@@ -66,23 +68,45 @@ object Describe {
     }
 }
 
-case class Delta(nEqual: Long, nNotEqual: Long, describe: Both[Describe], error: Describe)
+case class Delta(nEqual: Long, nNotEqual: Long, describe: Both[Describe], error: Describe) {
+  def asBoolean: Option[DeltaBoolean] =
+    if (describe.left.counts.isDefinedAt("nTrue") || describe.left.counts.isDefinedAt("nFalse"))
+      Option(new DeltaBoolean {
+        override val ft: Long = error.counts.getOrElse("ft", 0)
+        override val tf: Long = error.counts.getOrElse("tf", 0)
+        private val t_ : Long = describe.left.counts.getOrElse("nTrue", 0)
+        override val tt: Long = t_ - tf
+        override val ff: Long = nEqual - tt
+      })
+    else None
+}
 
 object Delta {
 
+  trait DeltaBoolean {
+    def ft: Long
+    def tf: Long
+    def tt: Long
+    def ff: Long
+
+  }
+
   def levenshtein_generified[T](a1: Array[T], a2: Array[T]): Int = {
     import scala.math._
-    def minimum(i1: Int, i2: Int, i3: Int) = min(min(i1, i2), i3)
-    val dist = Array.tabulate(a2.length + 1, a1.length + 1) { (j, i) =>
+    def minimum(i1: Int, i2: Int, i3: Int): Int = min(min(i1, i2), i3)
+    val dist: Array[Array[Int]] = Array.tabulate(a2.length + 1, a1.length + 1) { (j, i) =>
       if (j == 0) i else if (i == 0) j else 0
     }
     for {
       j <- 1 to a2.length
       i <- 1 to a1.length
-    } dist(j)(i) =
-      if (a2(j - 1) == a1(i - 1)) dist(j - 1)(i - 1)
-      else
+    } {
+      dist(j)(i) = if (a2(j - 1) == a1(i - 1)) {
+        dist(j - 1)(i - 1)
+      } else {
         minimum(dist(j - 1)(i) + 1, dist(j)(i - 1) + 1, dist(j - 1)(i - 1) + 1)
+      }
+    }
     dist(a2.length)(a1.length)
   }
 

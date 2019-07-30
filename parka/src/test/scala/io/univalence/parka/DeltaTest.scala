@@ -20,11 +20,9 @@ class DeltaTest extends FunSuite with ScalaCheckPropertyChecks {
 
       def count(left: Boolean, right: Boolean): Long = bb.count(_ == ((left, right)))
 
-      val ft: Long  = delta.error.counts.getOrElse("ft", 0)
-      val tf: Long  = delta.error.counts.getOrElse("tf", 0)
-      val t_ : Long = delta.describe.left.counts.getOrElse("nTrue", 0)
-      val tt: Long  = t_ - tf
-      val ff: Long  = delta.nEqual - tt
+      val deltaBoolean = delta.asBoolean.get
+
+      import deltaBoolean._
 
       assert(ft == count(left = false, right = true))
       assert(tf == count(left = true, right  = false))
