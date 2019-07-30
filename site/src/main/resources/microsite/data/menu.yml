@@ -4,38 +4,34 @@ options:
     menu_section: spark-test
     menu_type: spark-test
 
-  - title: Centrifuge
-    url: centrifuge/
-    menu_section: centrifuge
-    menu_type: centrifuge
-
-  - title: Fenek
-    url: fenek/
-    menu_section: fenek
-    menu_type: fenek
+  - title: Parka
+    url: parka
+    menu_type: parka
+    menu_section: parka-parka
 
   - title: Plumbus
     url: plumbus/
     menu_section: plumbus
     menu_type: plumbus
 
+  - title: Fenek
+    url: fenek/
+    menu_section: fenek
+    menu_type: fenek
+
   - title: Spark-ZIO
     url: spark-zio/
     menu_section: spark-zio
     menu_type: spark-zio
 
-    ###########################
-    # Spark-ZIO Menu Options  #
-    ###########################
+  ###########################
+  # Spark Zio Menu Options  #
+  ###########################
+  -
   - title: Getting Started
     url: spark-zio/getting_started
     menu_type: spark-zio
     menu_section: spark-zio-getting-started
-
-  - title: TypedPath
-    url: typedpath/
-    menu_section: typedpath
-    menu_type: typedpath
 
   ###########################
   # Spark Test Menu Options #
@@ -57,13 +53,8 @@ options:
     menu_section: spark-test-features
 
   ###########################
-  # Parka Menu Options #
+  #    Parka Menu Options   #
   ###########################
-
-  - title: Parka
-    url: parka
-    menu_type: parka
-    menu_section: parka-parka
 
   - title: Analysis
     url: parka/parka_analysis

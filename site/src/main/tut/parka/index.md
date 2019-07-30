@@ -1,6 +1,6 @@
 ---
 layout: docs
-position: 8
+position: 3
 section: parka
 title: "Parka"
 ---

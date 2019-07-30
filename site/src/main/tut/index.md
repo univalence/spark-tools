@@ -59,9 +59,8 @@ There are many other features! To learn more about Spark-Test, see the [Spark-Te
 
 Each tools are open source and available on Github
 
-* [Centrifuge](https://github.com/univalence/spark-tools/tree/master/centrifuge), a couple of techniques for data quality on Spark
-* [Fenek](https://github.com/univalence/spark-tools/tree/master/fenek), a DSL for *semi-typed* transformation in Scala for Spark
-* [Plumbus](https://github.com/univalence/spark-tools/tree/master/plumbus), light misc things for Spark
-* [Spark-ZIO](https://github.com/univalence/spark-tools/tree/master/spark-zio), Spark in ZIO environment
 * [Spark-test](https://github.com/univalence/spark-tools/tree/master/spark-test), testing tools for Spark
 * [Parka](https://github.com/univalence/spark-tools/tree/master/parka), a tool that applies deltaQA for Datasets
+* [Plumbus](https://github.com/univalence/spark-tools/tree/master/plumbus), light misc things for Spark
+* [Fenek](https://github.com/univalence/spark-tools/tree/master/fenek), a DSL for *semi-typed* transformation in Scala for Spark
+* [Spark-ZIO](https://github.com/univalence/spark-tools/tree/master/spark-zio), Spark in ZIO environment
