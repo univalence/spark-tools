@@ -5,9 +5,6 @@ Parka is a library about data quality of a Datasets in Scala.
 
 It implements DeltaQA for Datasets, comparing two Datasets to each other and notifying differences into Parka Analysis which is an object that contains the comparison’s data..
 
-For more information about what deltaQA is, Here is a talk that explain clearly this concept!
-
-
 ## Table of content
 
 - [Installation](#installation)
@@ -77,11 +74,13 @@ Unless required by applicable law or agreed to in writing, software distributed 
 * [magnolia](https://github.com/propensive/magnolia) - 0.10.0
 * [jline](https://github.com/jline/jline3) - 3.12.1
 * [circe](https://github.com/circe/circe) - 0.11.1
+* [spark-test](https://github.com/univalence/spark-tools/tree/master/spark-test) - current
 
 ## Links
 
 * [Univalence Web site](https://www.univalence.io/)
-* [Documentation](https://univalence.github.io/spark-tools/parka/)
+* [Microsite](https://univalence.github.io/spark-tools/parka/)
 * [Source code](https://github.com/univalence/spark-tools/tree/master/parka/src/main/scala/io/univalence/parka)
+* [Video](https://www.youtube.com/watch?v=t24sUF2zWLY) - DeltaQA introduction between [14:25](http://www.youtube.com/watch?v=t24sUF2zWLY&t=14m25s) and [28:10](http://www.youtube.com/watch?v=t24sUF2zWLY&t=28m10s)
 
 :star: Star us on GitHub — it helps!
