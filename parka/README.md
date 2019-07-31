@@ -20,7 +20,20 @@ For more information about what deltaQA is, Here is a talk that explain clearly 
 
 ## Installation
 
-TO BE CONTINUED
+### Stable version
+
+A stable version isn't available yet.
+
+### Latest version
+
+If you want to get the very last version of this library you can still download it using bintray here : https://bintray.com/univalence/univalence-jvm/parka
+
+Here is an example using ```version 0.3+79-4936e981``` that work with ```scala 2.11.X```:
+
+```scala
+resolvers += "parka" at "http://dl.bintray.com/univalence/univalence-jvm"
+libraryDependencies += "io.univalence" %% "parka" % "0.3+79-4936e981"
+```
 
 ## Usage
 
