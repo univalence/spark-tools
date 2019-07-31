@@ -88,8 +88,9 @@ class KeySpec extends FunSuite {
     assert(Key.create("123").isFailure)
   }
 
-  ignore("create special Key") {
-    assert(Key.create("\"12.*+.-3\"").isSuccess)
+  test("create special Key") {
+    assert(FieldKey.createName("12.*+.-3").isFailure)
+    assert(FieldKey.createName("\"12.*+.-3\"").isSuccess)
   }
 
   test("follow up") {

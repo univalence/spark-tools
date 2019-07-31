@@ -59,14 +59,6 @@ object SchemaComparison {
           case (true, false)  => Seq(SchemaModification(prefix, SetNonNullable))
         }
 
-      def validColName(name: String): String = {
-        val regExp = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
-        regExp.findPrefixMatchOf(name) match {
-          case None => s"""\"${name}\""""
-          case _ => name
-        }
-      }
-
       val allFields = (sc1.fieldNames ++ sc2.fieldNames).distinct.map(validColName)
 
       for {
@@ -187,5 +179,13 @@ object SchemaComparison {
         Failure(source)
     })
 
+  }
+
+  def validColName(name: String): String = {
+    val regExp = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
+    regExp.findPrefixMatchOf(name) match {
+      case None => s"""\"${name}\""""
+      case _ => name
+    }
   }
 }
