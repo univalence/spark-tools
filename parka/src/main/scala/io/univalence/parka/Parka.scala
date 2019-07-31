@@ -20,26 +20,41 @@ case class ParkaAnalysis(datasetInfo: Both[DatasetInfo], result: ParkaResult)
 case class DatasetInfo(source: Seq[String], nStage: Long)
 case class ParkaResult(inner: Inner, outer: Outer)
 
+case class DeltaByRow(count: Long, byColumn: Map[String, Delta])
+
+/**
+  * @param count               The number of additional rows for each Datasets
+  * @param byColumn               Map with column name as a key and for each of them two Describe, one for each row's Dataset - only for outer row
+  */
+case class DescribeByRow(count: Long, byColumn: Map[String, Describe])
+
 /**
   * Inner contains information about rows with similar keys
-  *
   * @param countRowEqual          The number of equal rows (with the same values for each columns which are not keys)
   * @param countRowNotEqual       The number of unequal rows
-  * @param countDiffByRow         Map with number of differences between two rows as a key and for each them how many times they occured between the two Datasets
-  * @param byColumn               Map with column name as a key and for each of them two Describe, one for each row's Dataset - only for inner row
+  * @param countDeltaByRow         Map with number of differences between two rows as a key and for each them how many times they occured between the two Datasets
+  *                Map with column name as a key and for each of them two Describe, one for each row's Dataset - only for inner row
+  *
   */
 case class Inner(countRowEqual: Long,
                  countRowNotEqual: Long,
-                 countDiffByRow: Map[Seq[String], Long],
-                 byColumn: Map[String, Delta])
+                 countDeltaByRow: Map[Seq[String], DeltaByRow],
+                 equalRows: DescribeByRow) {
+
+  @transient lazy val byColumn: Map[String, Delta] = {
+    val m = implicitly[Monoid[Map[String, Delta]]]
+    m.combineAll(countDeltaByRow.map(_._2.byColumn).toSeq :+ equalRows.byColumn.mapValues(d => {
+      Delta(d.count, 0, Both(d, d), Describe.empty)
+    }))
+  }
+}
 
 /**
   * Outer contains information about rows that are only present in one of the two datasets
   *
-  * @param countRow               The number of additional rows for each Datasets
-  * @param byColumn               Map with column name as a key and for each of them two Describe, one for each row's Dataset - only for outer row
+
   */
-case class Outer(countRow: Both[Long], byColumn: Both[Map[String, Describe]])
+case class Outer(both: Both[DescribeByRow])
 
 case class Describe(count: Long, histograms: Map[String, Histogram], counts: Map[String, Long])
 
@@ -165,10 +180,7 @@ object Parka {
         case Left  => Both(left = value, right                       = implicitly[Monoid[T]].empty)
         case Right => Both(left = implicitly[Monoid[T]].empty, right = value)
       }
-    Outer(
-      countRow = valueAndZero(1),
-      byColumn = valueAndZero(describe(row)(keys))
-    )
+    Outer(both = valueAndZero(DescribeByRow(1, describe(row)(keys))))
   }
 
   /**
@@ -189,11 +201,17 @@ object Parka {
 
     val isEqual            = byNames.forall(_._2.nEqual == 1)
     val nDiff: Seq[String] = if (isEqual) Nil else byNames.filter(_._2.nNotEqual > 0).keys.toSeq.sorted
-    Inner(if (isEqual) 1 else 0, if (isEqual) 0 else 1, if (nDiff.isEmpty) Map.empty else Map(nDiff -> 1), byNames)
+
+    if (nDiff.isEmpty) {
+      Inner(1, 0, Map.empty, DescribeByRow(1, byNames.mapValues(x => x.describe.left).map(x => x)))
+    } else {
+      Inner(0, 1, Map(nDiff -> DeltaByRow(1, byNames)), emptyDescribeByRow)
+    }
   }
 
-  private val emptyInner: Inner = MonoidGen.empty[Inner]
-  private val emptyOuter: Outer = MonoidGen.empty[Outer]
+  private val emptyInner: Inner                 = MonoidGen.empty[Inner]
+  private val emptyOuter: Outer                 = MonoidGen.empty[Outer]
+  private val emptyDescribeByRow: DescribeByRow = MonoidGen.empty[DescribeByRow]
 
   /**
     * @param left           Row from the left Dataset for a particular key

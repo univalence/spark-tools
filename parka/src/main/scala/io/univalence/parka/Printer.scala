@@ -26,22 +26,23 @@ object Printer {
     s"""|${printAccumulator(level)}Inner:
         |${printInformation(inner.countRowEqual.toString, "Number of equal row", level + 1)}
         |${printInformation(inner.countRowNotEqual.toString, "Number of different row", level + 1)}
-        |${printDiffByRow(inner.countDiffByRow, level + 1)}
-        |${printInnerByColumn(inner.byColumn, level + 1)}""".stripMargin
+        |${printDiffByRow(inner.countDeltaByRow, level + 1)}""".stripMargin
 
   def printOuter(outer: Outer, level: Int = 0): String =
     s"""|${printAccumulator(level)}Outer:
-        |${printInformation(outer.countRow.left.toString, "Number of unique row on the left dataset", level + 1)}
-        |${printInformation(outer.countRow.right.toString, "Number of unique row on the right dataset", level + 1)}
-        |${printOuterByColumn(bmxToMbx(outer.byColumn), level + 1)}""".stripMargin
+        |${printInformation(outer.both.left.count.toString, "Number of unique row on the left dataset", level + 1)}
+        |${printInformation(outer.both.right.count.toString, "Number of unique row on the right dataset", level + 1)}
+        |${printOuterByColumn(outer.both, level + 1)}""".stripMargin
 
-  def printDiffByRow(differences: Map[Seq[String], Long], level: Int = 0): String = {
+  def printDeltaByRow(value: DeltaByRow, i: Int): String = ""
+
+  def printDiffByRow(differences: Map[Seq[String], DeltaByRow], level: Int = 0): String = {
     val stringifyDiff = differences
       .filter(_._1.nonEmpty)
       .map {
         case (key, value) =>
           printAccumulator(level + 1) + "Key (" + key.mkString(",").toString + ") has " + value + " occurrence" + {
-            if (value > 1) "s" else ""
+            printDeltaByRow(value, level + 1)
           }
       }
       .mkString("\n")
@@ -68,7 +69,9 @@ object Printer {
       .combine(bmx.left.mapValues(x => Both(x, mono.empty)), bmx.right.mapValues(x => Both(mono.empty, x)))
   }
 
-  def printOuterByColumn(byColumn: Map[String, Both[Describe]], level: Int = 0): String = {
+  def printOuterByColumn(byColumn: Both[DescribeByRow], level: Int = 0): String =
+    ""
+  /*
     val stringifyDiff = byColumn.map {
       case (key, value) =>
         s"""|${printAccumulator(level + 1)}$key:
@@ -76,7 +79,7 @@ object Printer {
     }.mkString("\n")
 
     printInformation(stringifyDiff, "Describe by key", level, jump = true)
-  }
+   */
 
   def printDelta(delta: Delta, level: Int = 0): String =
     s"""|${printInformation(delta.nEqual.toString, "Number of similarities", level + 1)}

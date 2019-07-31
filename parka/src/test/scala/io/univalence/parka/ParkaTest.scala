@@ -35,10 +35,14 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     val result = Parka(left, right)("id").result
     println(Printer.printParkaResult(result))
 
-    assert(result.inner.countDiffByRow == Map(Seq("n", "value") -> 1))
-    assert(result.inner.countDiffByRow.values.sum === result.inner.countRowNotEqual)
+    //assert(result.inner.countDeltaByRow == Map(Seq("n", "value") -> 1))
+    assert(result.inner.countDeltaByRow.values.map(_.count).sum === result.inner.countRowNotEqual)
 
-    val histograms = result.inner.byColumn("value").error.histograms
+    val deltaByRowM = MonoidGen.gen[DeltaByRow]
+
+    val deltaByRow: DeltaByRow = deltaByRowM.combineAll(result.inner.countDeltaByRow.values)
+
+    val histograms = deltaByRow.byColumn("value").error.histograms
     assertHistoEqual(histograms("levenshtein"), 1)
   }
 
@@ -61,8 +65,8 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     val result: ParkaResult = analysis.result
     assert(result.inner.countRowEqual === 1L)
     assert(result.inner.countRowNotEqual === 2L)
-    assert(result.inner.countDiffByRow === Map(Seq("value") -> 2))
-    assert(result.inner.countDiffByRow.values.sum === result.inner.countRowNotEqual)
+    assert(result.inner.countDeltaByRow.mapValues(_.count) === Map(Seq("value") -> 2))
+    assert(result.inner.countDeltaByRow.values.map(_.count).sum === result.inner.countRowNotEqual)
 
     val diff      = Seq(l1 - l5, l2 - l6).map(x => x * x).sum
     val deltaLong = result.inner.byColumn("value")
@@ -77,7 +81,7 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     assertHistoEqual(deltaLong.describe.left.histograms("value"), l1, l2, l3)
     assertHistoEqual(deltaLong.describe.right.histograms("value"), l5, l6, l3)
 
-    assert(result.outer.countRow === Both(1L, 0L))
+    assert(result.outer.both.map(_.count) === Both(1L, 0L))
   }
 
   test("test deltaBoolean") {
