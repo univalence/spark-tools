@@ -223,7 +223,8 @@ object Parka {
     */
   def apply(leftDs: Dataset[_], rightDs: Dataset[_])(keyNames: String*): ParkaAnalysis = {
     assert(keyNames.nonEmpty, "you must have at least one key")
-    assert(leftDs.schema.map(_.nullable == true) == rightDs.schema.map(_.nullable == true), "schemas are not equal : " + leftDs.schema + " != " + rightDs.schema)
+    assert(leftDs.schema.map(_.nullable == true) == rightDs.schema.map(_.nullable == true),
+           "schemas are not equal : " + leftDs.schema + " != " + rightDs.schema)
 
     val schema = leftDs.schema
 

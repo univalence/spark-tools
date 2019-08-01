@@ -184,8 +184,8 @@ object SchemaComparison {
   def validColName(name: String): String = {
     val regExp = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
     regExp.findPrefixMatchOf(name) match {
-      case None => s"""\"${name}\""""
-      case _ => name
+      case None => s"""\"$name\""""
+      case _    => name
     }
   }
 }
