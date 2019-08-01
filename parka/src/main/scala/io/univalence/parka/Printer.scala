@@ -47,8 +47,6 @@ object Printer {
   val sep   = "    "
   val start = ""
 
-  def printAccumulator(level: Int, acc: String = ""): String = start + sep * level + acc
-
   def printListInformation(info: Part*): Part = Col(info: _*)
 
   import MonoidGen._
@@ -65,7 +63,7 @@ object Printer {
       Col(
         printInformation(inner.countRowEqual.toString, "Number of equal row"),
         printInformation(inner.countRowNotEqual.toString, "Number of different row"),
-        printDiffByRow(inner.countDiffByRow),
+        printDiffByRow(inner.countDeltaByRow.mapValues(_.count)),
         printInnerByColumn(inner.byColumn)
       )
     )
@@ -74,9 +72,9 @@ object Printer {
     Section(
       "Outer",
       Col(
-        printInformation(outer.countRow.left.toString, "Number of unique row on the left dataset"),
-        printInformation(outer.countRow.right.toString, "Number of unique row on the right dataset"),
-        printOuterByColumn(bmxToMbx(outer.byColumn))
+        printInformation(outer.both.left.count.toString, "Number of unique row on the left dataset"),
+        printInformation(outer.both.right.count.toString.toString, "Number of unique row on the right dataset"),
+        printOuterByColumn(bmxToMbx(outer.both.map(_.byColumn)))
       )
     )
 
