@@ -1,89 +1,108 @@
 package io.univalence.parka
 
 import cats.Monoid
+import io.univalence.parka.Part.{ Col, Key, Row, Section, Value }
+
+import scala.collection.immutable
+import scala.util.Try
+
+sealed trait Part
+
+object Part {
+  case class Section(key: String, element: Part) extends Part
+  case class Key(key: String, element: Part) extends Part
+  case class Value(string: String) extends Part
+  case class Row(element: Part*) extends Part
+  case class Col(element: Part*) extends Part
+
+  def toString(element: Part): String = {
+    val sep = Printer.sep
+    element match {
+      case Value(string) => string
+      case Section(k, e) => k + ":\n" + toString(e).split('\n').map(sep + _).mkString("\n")
+      case Key(k, e) =>
+        val se = toString(e)
+        if (se.count(_ == '\n') > 1) toString(Section(k, e)) else s"$k: $se"
+      case c: Col => c.element.map(toString).mkString("\n")
+      case r: Row =>
+        val blocks: Seq[Array[String]] = r.element.map(x => toString(x).split('\n'))
+        val ws: Seq[Int]               = blocks.map(_.map(_.length).reduceOption(Math.max).getOrElse(0))
+        val lines: Int                 = blocks.map(_.length).max
+
+        (0 until lines)
+          .map(line => {
+            blocks.indices
+              .map(col => {
+                val v = Try(blocks(col)(line)).getOrElse("")
+                v + (" " * (ws(col) - v.length))
+              })
+              .mkString("  ")
+          })
+          .mkString("\n")
+    }
+  }
+}
 
 object Printer {
   val sep   = "    "
   val start = ""
 
-  def printAccumulator(level: Int, acc: String = "")(): String =
-    level match {
-      case l if l <= 0 => start + acc + " "
-      case _           => printAccumulator(level - 1, acc + sep)
-    }
+  def printAccumulator(level: Int, acc: String = ""): String = start + sep * level + acc
 
-  def printListInformation(info: String*): String = {
-    val relevant = info.filter(_.nonEmpty)
-    relevant.mkString("\n")
-  }
+  def printListInformation(info: Part*): Part = Col(info: _*)
 
   import MonoidGen._
 
-  def printInformation(information: String, field: String, level: Int, jump: Boolean = false): String =
-    printAccumulator(level) + s"""$field:${if (jump) "\n" else " "}$information"""
+  def printInformation(information: String, field: String, jump: Boolean = false): Part =
+    if (jump) Section(field, Value(information)) else Key(field, Value(information))
 
-  def printParkaResult(parkaResult: ParkaResult, level: Int = 0): String =
-    s"""|${printAccumulator(level)}Parka Result:
-        |${printInner(parkaResult.inner, level + 1)}
-        |${printOuter(parkaResult.outer, level + 1)}""".stripMargin
+  def printParkaResult(parkaResult: ParkaResult): Part =
+    Section("Parka Result", Part.Col(printInner(parkaResult.inner), printOuter(parkaResult.outer)))
 
-  def printInner(inner: Inner, level: Int = 0): String = {
-    val innerStr = s"""|${printAccumulator(level)}Inner:
-                       |${printInformation(inner.countRowEqual.toString, "Number of equal row", level + 1)}
-                       |${printInformation(inner.countRowNotEqual.toString, "Number of different row", level + 1)}""".stripMargin
-    val byRow    = s"""${printDiffByRow(inner.countDiffByRow, level + 1)}"""
-    val byColumn = s"""${printInnerByColumn(inner.byColumn, level + 1)}"""
-    printListInformation(innerStr, byRow, byColumn)
-  }
+  def printInner(inner: Inner): Part =
+    Section(
+      "Inner",
+      Col(
+        printInformation(inner.countRowEqual.toString, "Number of equal row"),
+        printInformation(inner.countRowNotEqual.toString, "Number of different row"),
+        printDiffByRow(inner.countDiffByRow),
+        printInnerByColumn(inner.byColumn)
+      )
+    )
 
-  def printOuter(outer: Outer, level: Int = 0): String = {
-    val outerStr = s"""|${printAccumulator(level)}Outer:
-                       |${printInformation(outer.countRow.left.toString,
-                                           "Number of unique row on the left dataset",
-                                           level + 1)}
-                       |${printInformation(outer.countRow.right.toString,
-                                           "Number of unique row on the right dataset",
-                                           level + 1)}""".stripMargin
-    val byColumn = s"""${printOuterByColumn(bmxToMbx(outer.byColumn), level + 1)}"""
-    printListInformation(outerStr, byColumn)
-  }
+  def printOuter(outer: Outer, level: Int = 0): Part =
+    Section(
+      "Outer",
+      Col(
+        printInformation(outer.countRow.left.toString, "Number of unique row on the left dataset"),
+        printInformation(outer.countRow.right.toString, "Number of unique row on the right dataset"),
+        printOuterByColumn(bmxToMbx(outer.byColumn))
+      )
+    )
 
-  def printDiffByRow(differences: Map[Seq[String], Long], level: Int = 0): String = differences.size match {
-    case 0 => ""
-    case _ => {
-      val stringifyDiff = differences
-        .filter(_._1.nonEmpty)
-        .map {
-          case (key, value) =>
-            printAccumulator(level + 1) + "Key (" + key.mkString(",").toString + ") has " + value + " occurrence" + {
-              if (value > 1) "s" else ""
-            }
-        }
-        .mkString("\n")
+  def printDiffByRow(differences: Map[Seq[String], Long]): Part =
+    Key(
+      "Differences by sequence of keys",
+      Col(
+        differences
+          .filter(_._1.nonEmpty)
+          .map({
+            case (key, value) =>
+              Value("Key (" + key.mkString(",").toString + ") has " + value + " occurrence" + {
+                if (value > 1) "s" else ""
+              })
+          })
+          .toSeq: _*
+      )
+    )
 
-      printInformation(stringifyDiff, "Differences by sequence of keys", level, jump = true)
-    }
-  }
+  def printMap[T](mp: Map[String, T], printT: T => Part, name: String): Part =
+    Section(name, Col(mp.map({ case (k, v) => Key(k, printT(v)) }).toSeq: _*))
 
-  def printMap[T](mp: Map[String, T], printT: (T, Int) => String, name: String, level: Int = 0): String =
-    mp.size match {
-      case 0 => ""
-      case _ => {
-        val mapStr = mp.map {
-          case (key, value) =>
-            s"""|${printAccumulator(level + 1)}$key:
-              |${printT(value, level + 2)}""".stripMargin
-        }.mkString("\n")
+  def printInnerByColumn(byColumn: Map[String, Delta]): Part = printMap(byColumn, printDelta, "Delta by key")
 
-        printInformation(mapStr, name, level, jump = true)
-      }
-    }
-
-  def printInnerByColumn(byColumn: Map[String, Delta], level: Int = 0): String =
-    printMap(byColumn, printDelta, "Delta by key", level)
-
-  def printOuterByColumn(byColumn: Map[String, Both[Describe]], level: Int = 0): String =
-    printMap(byColumn, printBothDescribe, "Describe by key", level)
+  def printOuterByColumn(byColumn: Map[String, Both[Describe]]): Part =
+    printMap(byColumn, printBothDescribe, "Describe by key")
 
   def bmxToMbx[K, T: Monoid](bmx: Both[Map[K, T]]): Map[K, Both[T]] = {
     val mono = implicitly[Monoid[T]]
@@ -93,111 +112,80 @@ object Printer {
       .combine(bmx.left.mapValues(x => Both(x, mono.empty)), bmx.right.mapValues(x => Both(mono.empty, x)))
   }
 
-  def printDelta(delta: Delta, level: Int = 0): String = {
-    val deltaStr = s"""|${printInformation(delta.nEqual.toString, "Number of similarities", level + 1)}
-                       |${printInformation(delta.nNotEqual.toString, "Number of differences", level + 1)}""".stripMargin
-    val describe = s"""${printBothDescribe(delta.describe, level + 1)}"""
-    val specific = s"""${printDeltaSpecific(delta, level + 1)}"""
-    printListInformation(deltaStr, describe, specific)
+  def printDelta(delta: Delta): Part =
+    printListInformation(
+      printInformation(delta.nEqual.toString, "Number of similarities"),
+      printInformation(delta.nNotEqual.toString, "Number of differences"),
+      printBothDescribe(delta.describe),
+      printDeltaSpecific(delta)
+    )
+
+  def printDeltaSpecific(delta: Delta): Part = {
+    val error = delta.error
+
+    val m2 = error.counts
+
+    val histograms: immutable.Iterable[Part] = error.histograms.map({
+      case (k, v) => printHistogram(v, k)
+    })
+
+    def countName(key: String): String = key match {
+      case "tf"          => "# true -> false"
+      case "ft"          => "# false -> true"
+      case "rightToNull" => "# null -> not null"
+      case "leftToNull"  => "# not null -> null"
+      case _             => "# " + key
+    }
+
+    val counts: immutable.Iterable[Part] = error.counts.map({
+      case (k, v) => printInformation(v.toString, countName(k))
+    })
+
+    printListInformation((counts ++ histograms).toSeq: _*)
   }
 
-  def printDeltaSpecific(delta: Delta, level: Int = 0): String = delta match {
-    case Delta(_, _, _, error) =>
-      val m1         = error.histograms
-      val m2         = error.counts
-      val histograms = error.histograms.keySet.map(k => printHistogram(m1(k), level)).mkString("\n")
-      val counts = error.counts.keySet.map {
-        case k @ "tf"          => printInformation(m2(k).toString, "# true -> false", level)
-        case k @ "ft"          => printInformation(m2(k).toString, "# false -> true", level)
-        case k @ "rightToNull" => printInformation(m2(k).toString, "# null -> not null", level)
-        case k @ "leftToNull"  => printInformation(m2(k).toString, "# not null -> null", level)
-      }.mkString("\n")
-      printListInformation(counts, histograms)
-  }
-
-  def printHistogram(histogram: Histogram, level: Int, name: String = "Histogram"): String = {
+  def printHistogram(histogram: Histogram, name: String = "Histogram"): Part = {
+    val bins                                = histogram.bin(6)
     def printDecimal(value: Double): String = f"$value%.2f"
-    def fillSpaceBefore(value: String, focus: Int = 0): String = value match {
-      case v if v.length >= focus => v
-      case v                      => fillSpaceBefore(" " + v, focus)
-    }
+    val histobar                            = "o"
+    val barMax                              = 22
+    val maxCount                            = bins.map(_.count).max
+    val maxLengthBinLower                   = bins.map(bin => printDecimal(bin.pos).length).max
 
-    val bins = histogram.bin(6)
+    def fillSpaceBefore(value: String, focus: Int = 0): String = " " * Math.max(focus - value.length, 0) + value
 
-    val barMax            = 22
-    val maxCount          = bins.map(_.count).max
-    val maxLengthBinLower = bins.map(bin => printDecimal(bin.pos).length).max
-
-    val histobar = "o"
-
-    val stringifyBins = bins
-      .map(bin => {
-        val binCount     = bin.count
-        val binRange     = fillSpaceBefore(printDecimal(bin.pos), maxLengthBinLower)
-        val binStringify = s"""$binRange"""
-
-        if (binCount > 0) {
-          val bar = histobar * (binCount * barMax / maxCount).toInt
-          s"${printAccumulator(level)}$binStringify |$histobar$bar $binCount"
-        } else {
-          s"${printAccumulator(level)}$binStringify |$histobar $binCount"
-        }
-
-      })
-      .mkString("\n")
-
-    printInformation(stringifyBins, name, level, jump = true)
+    Section(
+      name,
+      Col(bins.map(b => {
+        val barL = (b.count.toDouble / maxCount * barMax).toInt
+        Value(printDecimal(b.pos) + " | " + (histobar * barL) + (" " * (barMax - barL)) + " " + b.count)
+      }): _*)
+    )
   }
 
-  def printBoth[A](both: Both[A], level: Int, printA: (A, Int) => String): String = {
-    def fillSpaceAfter(value: String, focus: Int = 0): String = value match {
-      case v if v.length >= focus => v
-      case v                      => fillSpaceAfter(v + " ", focus)
-    }
+  def printBoth[A](both: Both[A], printA: A => Part): Part =
+    Row(Section("Left", printA(both.left)), Section("Right", printA(both.right)))
 
-    val left  = printInformation(printA(both.left, 1), "Left", 0, jump   = true)
-    val right = printInformation(printA(both.right, 1), "Right", 0, jump = true)
-
-    val fragmentedLeft  = left.split("\n")
-    val fragmentedRight = right.split("\n")
-
-    val maxLengthLeft  = fragmentedLeft.map(_.length).max
-    val maxLengthRight = fragmentedRight.map(_.length).max
-
-    val colSize = ConsoleSize.get.columns
-
-    if (colSize < maxLengthLeft + maxLengthRight + sep.length) {
-      s"""|${fragmentedLeft.map(printAccumulator(level) + _).mkString("\n")}
-          |${fragmentedRight.map(printAccumulator(level) + _).mkString("\n")}t""".stripMargin
-    } else {
-      val both = fragmentedLeft
-        .zipAll(fragmentedRight, "", "")
-        .map {
-          case (l, r) =>
-            printAccumulator(level) + fillSpaceAfter(l, maxLengthLeft) + printAccumulator(1) + fillSpaceAfter(
-              r,
-              maxLengthRight
-            )
-        }
-        .mkString("\n")
-      s"""|$both""".stripMargin
-    }
-  }
-
-  def printOneDescribe(describe: Describe, level: Int): String = {
+  def printOneDescribe(describe: Describe): Part = {
     import describe._
-    val strHistogram: String = histograms.keySet.map(k => printHistogram(histograms(k), level)).mkString("\n")
-    val strCounts = counts.keySet.map {
-      case k @ "nTrue"  => printInformation(counts(k).toString, "Number of true", level)
-      case k @ "nFalse" => printInformation(counts(k).toString, "Number of false", level)
-      case k @ "nNull"  => printInformation(counts(k).toString, "Number of null", level)
-    }.mkString("\n")
 
-    printListInformation(strCounts, strHistogram)
+    val strHistogram: Seq[Part] = histograms.keys.map(k => printHistogram(histograms(k))).toSeq
+
+    def keyTitle(key: String): String = key match {
+      case "nTrue"  => "Number of true"
+      case "nFalse" => "Number of false"
+      case "nNull"  => "Number of null"
+      case _        => s"# $key"
+    }
+
+    val strCounts: Seq[Part] = counts
+      .map({
+        case (k, v) => printInformation(v.toString, keyTitle(k))
+      })
+      .toSeq
+
+    printListInformation(strCounts ++ strHistogram: _*)
   }
 
-  def printBothDescribe(describes: Both[Describe], level: Int): String =
-    s"""|${printAccumulator(level)}Describes:
-        |${printBoth(describes, level + 1, printOneDescribe)}""".stripMargin
-
+  def printBothDescribe(describes: Both[Describe]): Part = Section("Describes", printBoth(describes, printOneDescribe))
 }

@@ -208,7 +208,8 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     ).toDF("id", "str")
 
     val result = Parka(left, right)("id").result
-    println(Printer.printParkaResult(result))
+    val part   = Printer.printParkaResult(result)
+    println(Part.toString(part))
   }
 }
 
