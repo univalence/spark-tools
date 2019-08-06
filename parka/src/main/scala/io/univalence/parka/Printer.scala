@@ -143,20 +143,34 @@ object Printer {
   }
 
   def printHistogram(histogram: Histogram, name: String = "Histogram"): Part = {
-    val bins                                = histogram.bin(6)
-    def printDecimal(value: Double): String = f"$value%.2f"
-    val histobar                            = "o"
-    val barMax                              = 22
-    val maxCount                            = bins.map(_.count).max
-    val maxLengthBinLower                   = bins.map(bin => printDecimal(bin.pos).length).max
+    def fixBins(bins: Seq[histogram.Bin]): Seq[histogram.Bin] = (histogram.count, bins.map(_.count).sum) match {
+      case (rc, bc) if rc > bc => {
+        val head: histogram.Bin = histogram.Bin(bins.head.pos, rc)
+        head +: bins.tail
+      }
+      case (rc, bc) if bc != 0 => {
+        val adjusment = rc.toDouble / bc
+        bins.map(bin => histogram.Bin(bin.pos, Math.round(bin.count * adjusment)))
+      }
+      case _ => bins
+    }
 
+    val bins                                = histogram.bin(6)
+    val binsFixed                           = fixBins(bins)
+    def printDecimal(value: Double): String = f"$value%.2f"
     def fillSpaceBefore(value: String, focus: Int = 0): String = " " * Math.max(focus - value.length, 0) + value
+    val histobar          = "o"
+    val barMax            = 22
+    val maxCount          = binsFixed.map(_.count).max
+    val maxLengthBinLower = binsFixed.map(bin => printDecimal(bin.pos).length).max
 
     Section(
       name,
-      Col(bins.map(b => {
+      Col(binsFixed.map(b => {
         val barL = (b.count.toDouble / maxCount * barMax).toInt
-        Value(printDecimal(b.pos) + " | " + (histobar * barL) + (" " * (barMax - barL)) + " " + b.count)
+        Value(
+          fillSpaceBefore(printDecimal(b.pos), maxLengthBinLower) + " | " + (histobar * barL) + (" " * (barMax - barL)) + " " + b.count
+        )
       }): _*)
     )
   }

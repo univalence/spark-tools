@@ -183,7 +183,8 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
       Element("10", 100)
     )
     val result = Parka(left, right)("key").result
-    println(Printer.printParkaResult(result))
+    val part   = Printer.printParkaResult(result)
+    println(Part.toString(part))
   }
 
   test("Json Serde") {
