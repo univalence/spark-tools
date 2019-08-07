@@ -38,7 +38,7 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
   def thirdQuartile(): Double = mean(quantileBounds(0.75))*/
 
   private def foldToSeq[R](negT: QTree[Unit] => R,
-                           countZeroT: Long  => Option[R],
+                           countZeroT: Long => Option[R],
                            posT: QTree[Unit] => R)(combine: (R, R) => R, empty: R): R =
     Seq(negatives.map(negT), countZeroT(countZero), positives.map(posT)).flatten.reduceOption(combine).getOrElse(empty)
 
@@ -77,6 +77,36 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
 
       Bin((lower + upper) / 2, approxCountBetween(lower, upper).toLong)
     }
+  }
+
+  def fixedBin(n: Int): Seq[Bin] = {
+    def fix(bins: Seq[Bin]): Seq[Bin] =  {
+        val bc = bins.map(_.count).sum
+        /*
+        Create a list of number with a proportionnal distribution giving a count and size
+        A way better implementation must exist
+         */
+        def distribute(count: Long, size: Long, acc: (Long, Seq[Long]) = (0, Seq.empty)): Seq[Long] = size match {
+          case 0 => Seq.empty
+          case 1 => (count - acc._1) +: acc._2
+          case _ => {
+            val potential = (count.toDouble / size).toInt
+            val sure = if (potential + acc._1 <= count) potential else 0
+            distribute(count, size - 1, (acc._1 + sure, sure.toLong +: acc._2))
+          }
+
+        }
+        def adjust(bins: Seq[Bin]): Seq[Bin] = {
+          val adjustment = if (bc != 0) this.count.toDouble / bc else 1
+          val adjustedBins = bins.map(bin => Bin(bin.pos, Math.round(bin.count * adjustment)))
+          val diff = adjustedBins.map(_.count).sum - count
+          val distributedDiff = distribute(diff, n)
+          adjustedBins.zip(distributedDiff).map{case (Bin(p, c), d) => Bin(p, c - d)}
+        }
+        adjust(bins)
+    }
+
+    fix(bin(n))
   }
 
 }
