@@ -80,30 +80,35 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
   }
 
   def fixedBin(n: Int): Seq[Bin] = {
-    def fix(bins: Seq[Bin]): Seq[Bin] =  {
-        val bc = bins.map(_.count).sum
-        /*
+    def fix(bins: Seq[Bin]): Seq[Bin] = {
+      val bc = bins.map(_.count).sum
+      /*
         Create a list of number with a proportionnal distribution giving a count and size
         A way better implementation must exist
-         */
-        def distribute(count: Long, size: Long, acc: (Long, Seq[Long]) = (0, Seq.empty)): Seq[Long] = size match {
-          case 0 => Seq.empty
-          case 1 => (count - acc._1) +: acc._2
-          case _ => {
-            val potential = (count.toDouble / size).toInt
-            val sure = if (potential + acc._1 <= count) potential else 0
-            distribute(count, size - 1, (acc._1 + sure, sure.toLong +: acc._2))
+       */
+      def distribute(count: Long, size: Int, acc: (Int, Seq[Long]) = (0, Seq.empty)): Seq[Long] = size match {
+        case 0 => Seq.empty
+        case 1 => (count - acc._1) +: acc._2
+        case _ => {
+          val potential: Int = (count.toDouble / size).toInt
+          if (potential + acc._1 <= count) {
+            distribute(count, size - 1, acc = (acc._1 + potential, potential.toLong +: acc._2))
+          } else {
+            val filler: Seq[Long] = Seq.fill(size - 1)(0)
+            val head: Seq[Long]   = Seq(count - acc._1)
+            head ++ filler ++ acc._2
           }
+        }
+      }
 
-        }
-        def adjust(bins: Seq[Bin]): Seq[Bin] = {
-          val adjustment = if (bc != 0) this.count.toDouble / bc else 1
-          val adjustedBins = bins.map(bin => Bin(bin.pos, Math.round(bin.count * adjustment)))
-          val diff = adjustedBins.map(_.count).sum - count
-          val distributedDiff = distribute(diff, n)
-          adjustedBins.zip(distributedDiff).map{case (Bin(p, c), d) => Bin(p, c - d)}
-        }
-        adjust(bins)
+      def adjust(bins: Seq[Bin]): Seq[Bin] = {
+        val adjustment      = if (bc != 0) this.count.toDouble / bc else 1
+        val adjustedBins    = bins.map(bin => Bin(bin.pos, Math.round(bin.count * adjustment)))
+        val diff            = adjustedBins.map(_.count).sum - count
+        val distributedDiff = distribute(diff, n)
+        adjustedBins.zip(distributedDiff).map { case (Bin(p, c), d) => Bin(p, c - d) }
+      }
+      adjust(bins)
     }
 
     fix(bin(n))
