@@ -38,7 +38,7 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
   def thirdQuartile(): Double = mean(quantileBounds(0.75))*/
 
   private def foldToSeq[R](negT: QTree[Unit] => R,
-                           countZeroT: Long => Option[R],
+                           countZeroT: Long  => Option[R],
                            posT: QTree[Unit] => R)(combine: (R, R) => R, empty: R): R =
     Seq(negatives.map(negT), countZeroT(countZero), positives.map(posT)).flatten.reduceOption(combine).getOrElse(empty)
 
@@ -80,38 +80,32 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
   }
 
   def fixedBin(n: Int): Seq[Bin] = {
-    def fix(bins: Seq[Bin]): Seq[Bin] = {
-      val bc = bins.map(_.count).sum
-      /*
+    /*
         Create a list of number with a proportionnal distribution giving a count and size
-        A way better implementation must exist
-       */
-      def distribute(count: Long, size: Int, acc: (Int, Seq[Long]) = (0, Seq.empty)): Seq[Long] = size match {
-        case 0 => Seq.empty
-        case 1 => (count - acc._1) +: acc._2
-        case _ => {
-          val potential: Int = (count.toDouble / size).toInt
-          if (potential + acc._1 <= count) {
-            distribute(count, size - 1, acc = (acc._1 + potential, potential.toLong +: acc._2))
-          } else {
-            val filler: Seq[Long] = Seq.fill(size - 1)(0)
-            val head: Seq[Long]   = Seq(count - acc._1)
-            head ++ filler ++ acc._2
-          }
-        }
+     */
+    def distribute(total: Int, size: Int): Seq[Int] = size match {
+      case 0 => Seq.empty
+      case 1 => Seq(total)
+      case _ if total % size == 0 => Seq.fill(size)(total / size)
+      case _ if Math.abs(total) < size => {
+        val left  = Seq.fill(Math.abs(total))(if (total > 0) 1 else -1)
+        val right = Seq.fill(size - total)(0)
+        left ++ right
       }
-
-      def adjust(bins: Seq[Bin]): Seq[Bin] = {
-        val adjustment      = if (bc != 0) this.count.toDouble / bc else 1
-        val adjustedBins    = bins.map(bin => Bin(bin.pos, Math.round(bin.count * adjustment)))
-        val diff            = adjustedBins.map(_.count).sum - count
-        val distributedDiff = distribute(diff, n)
-        adjustedBins.zip(distributedDiff).map { case (Bin(p, c), d) => Bin(p, c - d) }
+      case _ => {
+        val border = size - (Math.abs(total) % size)
+        val value  = total / size
+        val left   = Seq.fill(border)(value)
+        val right  = Seq.fill(size - border)(value + (if (total > 0) 1 else -1))
+        left ++ right
       }
-      adjust(bins)
     }
 
-    fix(bin(n))
+    val bins            = bin(n)
+    val bins_sum        = bins.map(_.count).sum
+    val diff            = bins_sum - count
+    val distributedDiff = distribute(diff.toInt, n)
+    bins.zip(distributedDiff).map { case (Bin(p, c), d) => Bin(p, c - d) }
   }
 
 }
