@@ -8,6 +8,7 @@ import org.apache.spark.sql.{ Dataset, Row }
 import java.sql.{ Date, Timestamp }
 
 import io.univalence.parka.Delta.DeltaBoolean
+import org.apache.spark.sql
 
 case class Both[+T](left: T, right: T) {
   def fold[U](f: (T, T) => U): U = f(left, right)
@@ -279,6 +280,25 @@ object Parka {
       .reduce(combine)
 
     ParkaAnalysis(datasetInfo = Both(leftDs, rightDs).map(datasetInfo), result = res)
+  }
+
+  def fromCSV(leftPath: String, rightPath: String)(keyNames: String*): ParkaAnalysis = {
+    val spark = org.apache.spark.sql.SparkSession.builder
+      .master("local")
+      .appName("Parka")
+      .getOrCreate;
+
+    def csvToDf(path: String): sql.DataFrame =
+      spark.read
+        .format("csv")
+        .option("header", "true")
+        .option("sep", ";")
+        .load(path)
+
+    val leftDf  = csvToDf(leftPath)
+    val rightDf = csvToDf(rightPath)
+
+    Parka(leftDf, rightDf)(keyNames: _*)
   }
 
   def datasetInfo(ds: Dataset[_]): DatasetInfo = DatasetInfo(Nil, 0L)

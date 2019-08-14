@@ -247,6 +247,15 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     val part   = Printer.printParkaResult(result)
     println(Part.toString(part))
   }
+
+  test("Csv test") {
+    val left = "parka/src/test/resources/leftTest.csv"
+    val right = "parka/src/test/resources/rightTest.csv"
+
+    val result = Parka.fromCSV(left, right)("key").result
+    val part   = Printer.printParkaResult(result)
+    println(Part.toString(part))
+  }
 }
 
 case class Element(key: String, value: Long)
