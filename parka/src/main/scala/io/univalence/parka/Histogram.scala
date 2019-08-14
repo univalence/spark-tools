@@ -105,7 +105,7 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
     val bins_sum        = bins.map(_.count).sum
     val diff            = bins_sum - count
     val distributedDiff = distribute(diff.toInt, n)
-    bins.zip(distributedDiff).map { case (Bin(p, c), d) => Bin(p, c - d) }
+    bins.zip(distributedDiff).map{ case (bin, d) => bin.copy(count = bin.count - d) }
   }
 
 }

@@ -97,7 +97,7 @@ object Printer {
   def printMap[T](mp: Map[String, T], printT: T => Part, name: String): Part =
     Section(name, Col(mp.map({ case (k, v) => Key(k, printT(v)) }).toSeq: _*))
 
-  def printInnerByColumn(byColumn: Map[String, Delta]): Part = printMap(byColumn, printDelta, "Delta by key")
+  def printInnerByColumn(byColumn: Map[String, Delta]): Part = printMap(byColumn, printDelta, "Delta by column")
 
   def printOuterByColumn(byColumn: Map[String, Both[Describe]]): Part =
     printMap(byColumn, printBothDescribe, "Describe by key")
@@ -121,10 +121,8 @@ object Printer {
   def printDeltaSpecific(delta: Delta): Part = {
     val error = delta.error
 
-    val m2 = error.counts
-
     val histograms: immutable.Iterable[Part] = error.histograms.map({
-      case (k, v) => printHistogram(v, k)
+      case (k, v) => printHistogram(v, "Delta")
     })
 
     def countName(key: String): String = key match {
@@ -168,7 +166,7 @@ object Printer {
   def printOneDescribe(describe: Describe): Part = {
     import describe._
 
-    val strHistogram: Seq[Part] = histograms.keys.map(k => printHistogram(histograms(k))).toSeq
+    val strHistogram: Seq[Part] = histograms.keys.map(k => printHistogram(histograms(k), "Values repartition")).toSeq
 
     def keyTitle(key: String): String = key match {
       case "nTrue"  => "Number of true"
