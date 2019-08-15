@@ -79,6 +79,35 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
     }
   }
 
+  def fixedBin(n: Int): Seq[Bin] = {
+    /*
+        Create a list of number with a proportionnal distribution giving a count and size
+     */
+    def distribute(total: Int, size: Int): Seq[Int] = size match {
+      case 0 => Seq.empty
+      case 1 => Seq(total)
+      case _ if total % size == 0 => Seq.fill(size)(total / size)
+      case _ if Math.abs(total) < size => {
+        val left  = Seq.fill(Math.abs(total))(if (total > 0) 1 else -1)
+        val right = Seq.fill(size - total)(0)
+        left ++ right
+      }
+      case _ => {
+        val border = size - (Math.abs(total) % size)
+        val value  = total / size
+        val left   = Seq.fill(border)(value)
+        val right  = Seq.fill(size - border)(value + (if (total > 0) 1 else -1))
+        left ++ right
+      }
+    }
+
+    val bins            = bin(n)
+    val bins_sum        = bins.map(_.count).sum
+    val diff            = bins_sum - count
+    val distributedDiff = distribute(diff.toInt, n)
+    bins.zip(distributedDiff).map{ case (bin, d) => bin.copy(count = bin.count - d) }
+  }
+
 }
 
 object Histogram {

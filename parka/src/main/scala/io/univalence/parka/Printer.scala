@@ -99,6 +99,11 @@ object Printer {
   def map[K, T](mp: Map[K, T], name: String)(keyT: K => String, valueT: T => Part) =
     Section(name, Col(mp.map({ case (k, v) => Key(keyT(k), valueT(v)) }).toSeq: _*))
 
+
+  def printInnerByColumn(byColumn: Map[String, Delta]): Part = map(byColumn, "Delta by column")(x => x, delta)
+
+  //def printOuterByColumn(byColumn: Map[String, Both[Describe]]): Part = map(byColumn, "Describe by key")(x => x,x => printBoth(x, printOneDescribe))
+
   def bothMap2MapBoth[K, T: Monoid](bmx: Both[Map[K, T]]): Map[K, Both[T]] = {
     val mono = implicitly[Monoid[T]]
 
@@ -118,10 +123,8 @@ object Printer {
   def printDeltaSpecific(delta: Delta): Part = {
     val error = delta.error
 
-    val m2 = error.counts
-
     val histograms: immutable.Iterable[Part] = error.histograms.map({
-      case (k, v) => printHistogram(v, k)
+      case (k, v) => printHistogram(v, "Delta")
     })
 
     def countName(key: String): String = key match {
@@ -140,20 +143,21 @@ object Printer {
   }
 
   def printHistogram(histogram: Histogram, name: String = "Histogram"): Part = {
-    val bins                                = histogram.bin(6)
+    val bins                                = histogram.fixedBin(6)
     def printDecimal(value: Double): String = f"$value%.2f"
-    val histobar                            = "o"
-    val barMax                              = 22
-    val maxCount                            = bins.map(_.count).max
-    val maxLengthBinLower                   = bins.map(bin => printDecimal(bin.pos).length).max
-
     def fillSpaceBefore(value: String, focus: Int = 0): String = " " * Math.max(focus - value.length, 0) + value
+    val histobar          = "o"
+    val barMax            = 22
+    val maxCount          = bins.map(_.count).max
+    val maxLengthBinLower = bins.map(bin => printDecimal(bin.pos).length).max
 
     Section(
       name,
       Col(bins.map(b => {
         val barL = (b.count.toDouble / maxCount * barMax).toInt
-        Value(printDecimal(b.pos) + " | " + (histobar * barL) + (" " * (barMax - barL)) + " " + b.count)
+        Value(
+          fillSpaceBefore(printDecimal(b.pos), maxLengthBinLower) + " | " + (histobar * barL) + (" " * (barMax - barL)) + " " + b.count
+        )
       }): _*)
     )
   }
@@ -164,7 +168,7 @@ object Printer {
   def printOneDescribe(describe: Describe): Part = {
     import describe._
 
-    val strHistogram: Seq[Part] = histograms.keys.map(k => printHistogram(histograms(k))).toSeq
+    val strHistogram: Seq[Part] = histograms.keys.map(k => printHistogram(histograms(k), "Values repartition")).toSeq
 
     def keyTitle(key: String): String = key match {
       case "nTrue"  => "Number of true"

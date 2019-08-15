@@ -183,7 +183,39 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
       Element("10", 100)
     )
     val result = Parka(left, right)("key").result
-    println(Printer.printParkaResult(result))
+    val part   = Printer.printParkaResult(result)
+    println(Part.toString(part))
+  }
+
+  test("Prettify test 2 column") {
+    val left: Dataset[Element2] = dataset(
+      Element2("0", 0, 0),
+      Element2("1", 10, 0),
+      Element2("2", 20, 0),
+      Element2("3", 30, 10),
+      Element2("4", 40, 0),
+      Element2("5", 50, 20),
+      Element2("6", 60, 0),
+      Element2("7", 70, 30),
+      Element2("8", 80, 0),
+      Element2("9", 80, 30)
+    )
+    val right: Dataset[Element2] = dataset(
+      Element2("0", 0, 0),
+      Element2("1", 10, 0),
+      Element2("2", 20, 10),
+      Element2("3", 30, 10),
+      Element2("4", 40, 20),
+      Element2("5", 50, 20),
+      Element2("6", 60, 30),
+      Element2("7", 70, 30),
+      Element2("8", 80, 40),
+      Element2("9", 90, 40),
+      Element2("10", 100, 50)
+    )
+    val result = Parka(left, right)("key").result
+    val part   = Printer.printParkaResult(result)
+    println(Part.toString(part))
   }
 
   test("Json Serde") {
@@ -212,6 +244,15 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     ).toDF("id", "str")
 
     val result = Parka(left, right)("id").result
+    val part   = Printer.printParkaResult(result)
+    println(Part.toString(part))
+  }
+
+  test("Csv test") {
+    val left = "parka/src/test/resources/leftTest.csv"
+    val right = "parka/src/test/resources/rightTest.csv"
+
+    val result = Parka.fromCSV(left, right)("key").result
     val part   = Printer.printParkaResult(result)
     println(Part.toString(part))
   }

@@ -82,7 +82,18 @@ class HistogramTestTest extends FunSuite with ScalaCheckPropertyChecks with Hist
 
   test("test test") {
     forAll((xs: Seq[Long]) => assertHistoEqual(histogramMonoid.combineAll(xs.map(x => Histogram.value(x))), xs: _*))
+  }
 
+  test("fix bins => value 100, 1 time") {
+    val histo: Histogram = histogramMonoid.combineAll(List(Histogram.value(100)))
+    assert(histo.bin(6).map(_.count).sum != histo.count)
+    assert(histo.fixedBin(6).map(_.count).sum == histo.count)
+  }
+
+  test("fix bins => value 100, 10 times") {
+    val histo: Histogram = histogramMonoid.combineAll(List.fill(10)(Histogram.value(100)))
+    assert(histo.bin(6).map(_.count).sum != histo.count)
+    assert(histo.fixedBin(6).map(_.count).sum == histo.count)
   }
 
 }

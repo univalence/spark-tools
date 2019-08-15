@@ -8,6 +8,7 @@ import org.apache.spark.sql.{ Dataset, Row }
 import java.sql.{ Date, Timestamp }
 
 import io.univalence.parka.Delta.DeltaBoolean
+import org.apache.spark.sql
 
 case class Both[+T](left: T, right: T) {
   def fold[U](f: (T, T) => U): U = f(left, right)
@@ -20,27 +21,39 @@ case class ParkaAnalysis(datasetInfo: Both[DatasetInfo], result: ParkaResult)
 case class DatasetInfo(source: Seq[String], nStage: Long)
 case class ParkaResult(inner: Inner, outer: Outer)
 
+/**
+  * Inner side - When there is a difference between the left and right Datasets according to a set of column
+  *
+  * If we have a similar key for both Datasets and there are value in two columns named 'a' and 'b' that are different from both Datasets
+  * Then we obtain a new DeltaByRow for Seq(a, b)
+  *
+  * @param count                  Number of occurence for a particular set of column
+  * @param byColumn               For each keys, the Delta structure that represent the difference between left and right
+  */
 case class DeltaByRow(count: Long, byColumn: Map[String, Delta])
 
 /**
-  * @param count               The number of additional rows for each Datasets
-  * @param byColumn               Map with column name as a key and for each of them two Describe, one for each row's Dataset - only for outer row
+  * Inner side - When there is no difference between the left and right Datasets
+  * Outer side - Every row has a DescribeByRow since there are no similar keys which means no differences
+  *
+  * @param count                  The number of similar row (similar to countRowEqual for the inner part)
+  * @param byColumn               Map with column name as a key and for each of them a Describe
   */
 case class DescribeByRow(count: Long, byColumn: Map[String, Describe])
 
 /**
-  * Inner contains information about rows with similar keys
+  * Inner contains information about rows with similar keys between the left and right Datasets
+  *
   * @param countRowEqual          The number of equal rows (with the same values for each columns which are not keys)
   * @param countRowNotEqual       The number of unequal rows
-  * @param countDeltaByRow         Map with number of differences between two rows as a key and for each them how many times they occured between the two Datasets
-  *                Map with column name as a key and for each of them two Describe, one for each row's Dataset - only for inner row
-  *
+  * @param countDeltaByRow        Map for each column that has at least one column that differs with Seq
+  *                               of columns that are different as key and a DeltaByRow as value
+  * @param equalRows              DescribeByRow that contains Describe for each column of similar rows
   */
 case class Inner(countRowEqual: Long,
                  countRowNotEqual: Long,
                  countDeltaByRow: Map[Seq[String], DeltaByRow],
                  equalRows: DescribeByRow) {
-
   @transient lazy val byColumn: Map[String, Delta] = {
     val m = implicitly[Monoid[Map[String, Delta]]]
     m.combineAll(countDeltaByRow.map(_._2.byColumn).toSeq :+ equalRows.byColumn.mapValues(d => {
@@ -50,12 +63,21 @@ case class Inner(countRowEqual: Long,
 }
 
 /**
-  * Outer contains information about rows that are only present in one of the two datasets
+  * Outer contains information about rows with no similar keys between the left and right Datasets
   *
-
+  * @param both          DescribeByRow for the left and the right Datasets
   */
 case class Outer(both: Both[DescribeByRow])
 
+/**
+  * Store a large amount of information to describe a particular value
+  *
+  * @param count          Number of Describe
+  * @param histograms     Map of Histogram for each kind of value such as Date, String, Double and so on
+  *                       Normally because a column as a type you shouldn't have more than one Histogram per column
+  * @param counts         Map of special counts depending of the row type for example, if the row accept nulls then
+  *                       there is a count for them stored here with the key "nNull"
+  */
 case class Describe(count: Long, histograms: Map[String, Histogram], counts: Map[String, Long])
 
 object Describe {
@@ -214,10 +236,10 @@ object Parka {
   private val emptyDescribeByRow: DescribeByRow = MonoidGen.empty[DescribeByRow]
 
   /**
-    * @param left           Row from the left Dataset for a particular key
-    * @param right          Row from the right Dataset for a particular key
+    * @param left           Row from the left Dataset for a particular set of key
+    * @param right          Row from the right Dataset for a particular set of key
     * @param keys           Column's names of both Datasets that are considered as keys
-    * @return               ParkaResult containing outer or inner information for a key
+    * @return               ParkaResult containing outer or inner information for a particular set of key
     */
   def result(left: Iterable[Row], right: Iterable[Row])(keys: Set[String]): ParkaResult =
     (left, right) match {
@@ -244,8 +266,6 @@ object Parka {
     assert(leftDs.schema.map(_.nullable == true) == rightDs.schema.map(_.nullable == true),
            "schemas are not equal : " + leftDs.schema + " != " + rightDs.schema)
 
-    val schema = leftDs.schema
-
     val keyValue: Row => String = r => keyNames.map(r.getAs[Any]).mkString(keyValueSeparator)
 
     val keys = keyNames.toSet
@@ -260,6 +280,25 @@ object Parka {
       .reduce(combine)
 
     ParkaAnalysis(datasetInfo = Both(leftDs, rightDs).map(datasetInfo), result = res)
+  }
+
+  def fromCSV(leftPath: String, rightPath: String)(keyNames: String*): ParkaAnalysis = {
+    val spark = org.apache.spark.sql.SparkSession.builder
+      .master("local")
+      .appName("Parka")
+      .getOrCreate;
+
+    def csvToDf(path: String): sql.DataFrame =
+      spark.read
+        .format("csv")
+        .option("header", "true")
+        .option("sep", ";")
+        .load(path)
+
+    val leftDf  = csvToDf(leftPath)
+    val rightDf = csvToDf(rightPath)
+
+    Parka(leftDf, rightDf)(keyNames: _*)
   }
 
   def datasetInfo(ds: Dataset[_]): DatasetInfo = DatasetInfo(Nil, 0L)
