@@ -47,11 +47,11 @@ object Printer {
   val sep   = "    "
   val start = ""
 
-  def printListInformation(info: Part*): Part = Col(info: _*)
+  def list(info: Part*): Part = Col(info: _*)
 
   import MonoidGen._
 
-  def printInformation(information: String, field: String, jump: Boolean = false): Part =
+  def information(field: String, information: String, jump: Boolean = false): Part =
     if (jump) Section(field, Value(information)) else Key(field, Value(information))
 
   def printParkaResult(parkaResult: ParkaResult): Part =
@@ -61,29 +61,31 @@ object Printer {
     Section(
       "Inner",
       Col(
-        printInformation(inner.countRowEqual.toString, "Number of equal row"),
-        printInformation(inner.countRowNotEqual.toString, "Number of different row"),
+        information("Number of equal row", inner.countRowEqual.toString),
+        information("Number of different row", inner.countRowNotEqual.toString),
         printDiffByRow(inner.countDeltaByRow.mapValues(_.count)),
-        printInnerByColumn(inner.byColumn)
+        map(inner.byColumn, "Delta by key")(x => x, delta)
       )
     )
 
-  def printOuter(outer: Outer, level: Int = 0): Part =
+  def printOuter(outer: Outer): Part =
     Section(
       "Outer",
       Col(
-        printInformation(outer.both.left.count.toString, "Number of unique row on the left dataset"),
-        printInformation(outer.both.right.count.toString.toString, "Number of unique row on the right dataset"),
-        printOuterByColumn(bmxToMbx(outer.both.map(_.byColumn)))
+        information("Number of unique row on the left dataset", outer.both.left.count.toString),
+        information("Number of unique row on the right dataset", outer.both.right.count.toString),
+        printOuterByColumn(bothMap2MapBoth(outer.both.map(_.byColumn)))
       )
     )
+
+  def printOuterByColumn(byColumn: Map[String, Both[Describe]]): Part =
+    map(byColumn, "Describe by key")(x => x, bd => Section("Describes", printBoth(bd, printOneDescribe)))
 
   def printDiffByRow(differences: Map[Seq[String], Long]): Part =
     Key(
       "Differences by sequence of keys",
       Col(
         differences
-          .filter(_._1.nonEmpty)
           .map({
             case (key, value) =>
               Value("Key (" + key.mkString(",").toString + ") has " + value + " occurrence" + {
@@ -94,15 +96,10 @@ object Printer {
       )
     )
 
-  def printMap[T](mp: Map[String, T], printT: T => Part, name: String): Part =
-    Section(name, Col(mp.map({ case (k, v) => Key(k, printT(v)) }).toSeq: _*))
+  def map[K, T](mp: Map[K, T], name: String)(keyT: K => String, valueT: T => Part) =
+    Section(name, Col(mp.map({ case (k, v) => Key(keyT(k), valueT(v)) }).toSeq: _*))
 
-  def printInnerByColumn(byColumn: Map[String, Delta]): Part = printMap(byColumn, printDelta, "Delta by key")
-
-  def printOuterByColumn(byColumn: Map[String, Both[Describe]]): Part =
-    printMap(byColumn, printBothDescribe, "Describe by key")
-
-  def bmxToMbx[K, T: Monoid](bmx: Both[Map[K, T]]): Map[K, Both[T]] = {
+  def bothMap2MapBoth[K, T: Monoid](bmx: Both[Map[K, T]]): Map[K, Both[T]] = {
     val mono = implicitly[Monoid[T]]
 
     import MonoidGen._
@@ -110,11 +107,11 @@ object Printer {
       .combine(bmx.left.mapValues(x => Both(x, mono.empty)), bmx.right.mapValues(x => Both(mono.empty, x)))
   }
 
-  def printDelta(delta: Delta): Part =
-    printListInformation(
-      printInformation(delta.nEqual.toString, "Number of similarities"),
-      printInformation(delta.nNotEqual.toString, "Number of differences"),
-      printBothDescribe(delta.describe),
+  def delta(delta: Delta): Part =
+    list(
+      information("Number of similarities", delta.nEqual.toString),
+      information("Number of differences", delta.nNotEqual.toString),
+      Section("Describes", printBoth(delta.describe, printOneDescribe)),
       printDeltaSpecific(delta)
     )
 
@@ -136,10 +133,10 @@ object Printer {
     }
 
     val counts: immutable.Iterable[Part] = error.counts.map({
-      case (k, v) => printInformation(v.toString, countName(k))
+      case (k, v) => information(countName(k), v.toString)
     })
 
-    printListInformation((counts ++ histograms).toSeq: _*)
+    list((counts ++ histograms).toSeq: _*)
   }
 
   def printHistogram(histogram: Histogram, name: String = "Histogram"): Part = {
@@ -178,12 +175,11 @@ object Printer {
 
     val strCounts: Seq[Part] = counts
       .map({
-        case (k, v) => printInformation(v.toString, keyTitle(k))
+        case (k, v) => information(keyTitle(k), v.toString)
       })
       .toSeq
 
-    printListInformation(strCounts ++ strHistogram: _*)
+    list(strCounts ++ strHistogram: _*)
   }
 
-  def printBothDescribe(describes: Both[Describe]): Part = Section("Describes", printBoth(describes, printOneDescribe))
 }
