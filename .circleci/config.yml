@@ -176,7 +176,7 @@ jobs:
             build() {
               sudo apt-get update
               sudo apt-get install -y ruby ruby-dev
-              sudo gem install jekyll
+              sudo gem install jekyll -v 3.8.6
               git config --global user.name "Univalence"
               git config --global user.email "${UNIVALENCE_EMAIL}"
               export SBT_GHPAGES_COMMIT_MESSAGE='publishing microSite [ci skip]'
