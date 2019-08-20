@@ -26,9 +26,9 @@ object CompressMap {
       } else {
         val keys: Vector[K] = map.keys.reduce(_ ++ _).toVector
 
-        val ksToInts: Set[K] => Array[Int] = set => keys.map(k => if (set(k)) 1 else 0).toArray
+        val ksToInts: Set[K] => BitSet = set => set.map(keys.indexOf).foldLeft(BitSet.empty)(_ + _)
 
-        val model = new KModes(map.keys.map(ksToInts).toArray, maxSize, 1)
+        val model = KModes2.fit(map.keys.map(ksToInts).map(x => 1.0 -> x).toVector, maxSize, 20)
 
         map.toSeq
           .groupBy(row => model.predict(ksToInts(row._1)))
@@ -51,11 +51,11 @@ case class KModes2(centers: Vector[BitSet]) {
     centers.zipWithIndex
       .map({
         case (x, i) =>
-          val n1 = x.count(bitSet)
-          val n2 = x.size
-          val n4 = bitSet.size
+          val core = x.count(bitSet)
+          val n2   = x.size
+          val n4   = bitSet.size
 
-          val distance = (n2 - n1) + (n4 - n1) * 2
+          val distance = ((n2 - core) + (n4 - core)) * (1 + Math.sqrt(n2 + n4 + core))
 
           (distance.toDouble, i)
       })
@@ -101,7 +101,7 @@ object KModes2 {
         case (s, m) =>
           m.zipWithIndex
             .collect({
-              case (n, i) if n * 3 >= s => i
+              case (n, i) if n * 4 >= s => i
             })
             .foldLeft(BitSet.empty)({
               case (b, i) => b + i
@@ -134,9 +134,8 @@ object KModes2 {
     val dim: Int = data.map(_._2).map(maxBitSet).max + 1
 
     (0 until maxIteration).foldLeft(newKModes2(k, dim))({
-      case (kmodes2, _) => {
+      case (kmodes2, _) =>
         iterate(kmodes2, data, dim)
-      }
     })
   }
 
