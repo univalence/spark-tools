@@ -1,8 +1,10 @@
 package io.univalence.parka
 
 import cats.kernel.Semigroup
-import org.clustering4ever.clustering.kcenters.scala.{ KModes, KModesModel }
-import org.clustering4ever.math.distances.binary.Hamming
+import smile.clustering.KModes
+import smile.math.distance.Distance
+
+import scala.collection.immutable.BitSet
 
 object CompressMap {
 
@@ -26,10 +28,10 @@ object CompressMap {
 
         val ksToInts: Set[K] => Array[Int] = set => keys.map(k => if (set(k)) 1 else 0).toArray
 
-        val model = KModes.fit(map.keys.map(ksToInts).toVector, maxSize, Hamming(), 50, 3)
+        val model = new KModes(map.keys.map(ksToInts).toArray, maxSize, 1)
 
         map.toSeq
-          .groupBy(row => model.centerPredict(ksToInts(row._1)))
+          .groupBy(row => model.predict(ksToInts(row._1)))
           .map(x => {
             val xs    = x._2
             val key   = xs.map(_._1).reduce(_ ++ _)
@@ -40,5 +42,102 @@ object CompressMap {
       }
 
     }
+}
+
+case class KModes2(centers: Vector[BitSet]) {
+  def predict(point: BitSet): Int = nearest(point)._2
+
+  def nearest(bitSet: BitSet): (Double, Int) =
+    centers.zipWithIndex
+      .map({
+        case (x, i) =>
+          val n1 = x.count(bitSet)
+          val n2 = x.size
+          val n4 = bitSet.size
+
+          val distance = (n2 - n1) + (n4 - n1) * 2
+
+          (distance.toDouble, i)
+      })
+      .minBy(_._1)
+}
+
+object KModes2 {
+
+  def iterate(kModes2: KModes2, data: Vector[(Double, BitSet)], dim: Int): KModes2 = {
+    val k = kModes2.centers.size
+
+    val nearest_0 = data.map(d => kModes2.nearest(d._2))
+
+    val wcss: Double   = nearest_0.map(_._1).sum
+    val y: Vector[Int] = nearest_0.map(_._2)
+
+    case class State(size: Vector[Int], modes: Vector[Vector[Int]])
+    val zero: State = State(Vector.fill(k)(0), Vector.fill(k, dim)(0))
+
+    type Elem = ((Double, BitSet), Int)
+    def nextState(state: State, elem: Elem): State = {
+
+      val i2 = y(elem._2)
+
+      val modes = state.modes.updated(i2,
+                                      state
+                                        .modes(i2)
+                                        .zipWithIndex
+                                        .map({
+                                          case (x, j) if elem._1._2(j) => x + 1
+                                          case (x, _)                  => x
+                                        }))
+
+      State(size = state.size.updated(i2, state.size(i2) + 1), modes = modes)
+    }
+
+    val state: State = data.zipWithIndex.foldLeft(zero)(nextState)
+
+    val centers: Vector[BitSet] = state.size
+      .zip(state.modes)
+      .map({
+        case (0, m) => randBitSet(dim)
+        case (s, m) =>
+          m.zipWithIndex
+            .collect({
+              case (n, i) if n * 3 >= s => i
+            })
+            .foldLeft(BitSet.empty)({
+              case (b, i) => b + i
+            })
+      })
+
+    KModes2(centers)
+  }
+
+  def newKModes2(k: Int, dim: Int): KModes2 =
+    KModes2(
+      (0 until k)
+        .map(_ => {
+          randBitSet(dim)
+        })
+        .toVector
+    )
+
+  private def randBitSet(dim: Int): BitSet = {
+    val int = scala.util.Random.nextInt(Math.pow(2, dim).intValue)
+    BitSet.fromBitMaskNoCopy(Array(int.toLong))
+  }
+
+  def fit(data: Vector[(Double, BitSet)], k: Int, maxIteration: Int): KModes2 = {
+    require(data.nonEmpty)
+
+    def maxBitSet(bitSet: BitSet): Int =
+      bitSet.max
+
+    val dim: Int = data.map(_._2).map(maxBitSet).max + 1
+
+    (0 until maxIteration).foldLeft(newKModes2(k, dim))({
+      case (kmodes2, _) => {
+        iterate(kmodes2, data, dim)
+      }
+    })
+  }
 
 }

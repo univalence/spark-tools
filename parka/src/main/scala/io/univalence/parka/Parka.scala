@@ -161,6 +161,7 @@ object Delta {
       case (d1: Date, d2: Date)               => Describe(d1.getTime - d2.getTime)
       case (t1: Timestamp, t2: Timestamp)     => Describe(t1.getTime - t2.getTime)
       case (b1: Array[Byte], b2: Array[Byte]) => Describe.histo("levenstein", levenshtein_generified(b1, b2).toLong)
+      case _                                  => ???
     }
 
   def apply(x: Any, y: Any): Delta =

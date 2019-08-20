@@ -10,7 +10,12 @@ import io.circe.generic.auto._
 case class KeyVal[K, V](key: K, value: V)
 
 object Serde extends ParkaDecoder {
-  def toJson(pa: ParkaAnalysis): Json             = pa.asJson
+  def toJson(pa: ParkaAnalysis): Json = pa.asJson
+
+  object subPart {
+    def toJson(x: Histogram): Json = x.asJson
+  }
+
   def fromJson(json: Json): Result[ParkaAnalysis] = json.as[ParkaAnalysis]
 }
 

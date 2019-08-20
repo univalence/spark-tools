@@ -7,13 +7,11 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
   lazy val negativesCount: Long = negatives.map(_.count).getOrElse(0L)
   lazy val count: Long          = positivesCount + countZero + negativesCount
 
-  lazy val min: Double = foldToSeq(x => -x.quantileBounds(1)._2,
-                                   x => if (x > 0) Some(0.0) else None,
-                                   x => x.quantileBounds(0)._1)(Math.min, Double.NegativeInfinity)
+  lazy val min: Double =
+    foldToSeq(x => -x.quantileBounds(1)._2, x => 0.0, x => x.quantileBounds(0)._1)(Math.min, Double.NegativeInfinity)
 
-  lazy val max: Double = foldToSeq(x => -x.quantileBounds(0)._1,
-                                   x => if (x > 0) Some(0.0) else None,
-                                   x => x.quantileBounds(1)._2)(Math.max, Double.PositiveInfinity)
+  lazy val max: Double =
+    foldToSeq(x => -x.quantileBounds(0)._1, x => 0.0, x => x.quantileBounds(1)._2)(Math.max, Double.PositiveInfinity)
 
   def quantileBounds(percentile: Double): (Double, Double) = {
     require(percentile >= 0.0 && percentile <= 1.0, "The given percentile must be of the form 0 <= p <= 1.0")
@@ -37,10 +35,11 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
   def median(): Double = mean(quantileBounds(0.5))
   def thirdQuartile(): Double = mean(quantileBounds(0.75))*/
 
-  private def foldToSeq[R](negT: QTree[Unit] => R,
-                           countZeroT: Long  => Option[R],
-                           posT: QTree[Unit] => R)(combine: (R, R) => R, empty: R): R =
-    Seq(negatives.map(negT), countZeroT(countZero), positives.map(posT)).flatten.reduceOption(combine).getOrElse(empty)
+  private def foldToSeq[R](negT: QTree[Unit] => R, zeroT: Long => R, posT: QTree[Unit] => R)(combine: (R, R) => R,
+                                                                                             empty: R): R =
+    Seq(negatives.map(negT), Option(countZero).filter(_ > 0).map(zeroT), positives.map(posT)).flatten
+      .reduceOption(combine)
+      .getOrElse(empty)
 
   private def approxCountBetween(lower: Double, upper: Double): Double =
     foldToSeq[Double](
@@ -53,7 +52,7 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
           (b1 + b2) / 2.0
         } else 0.0
       },
-      x => if (lower <= 0 && 0 <= upper) Some(x.toDouble) else None,
+      x => if (lower <= 0 && 0 <= upper) x.toDouble else 0.0,
       pos => {
         if (upper > 0.0) {
           val l: Double = Math.max(lower, 0.0)
@@ -105,7 +104,7 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
     val bins_sum        = bins.map(_.count).sum
     val diff            = bins_sum - count
     val distributedDiff = distribute(diff.toInt, n)
-    bins.zip(distributedDiff).map{ case (bin, d) => bin.copy(count = bin.count - d) }
+    bins.zip(distributedDiff).map { case (bin, d) => bin.copy(count = bin.count - d) }
   }
 
 }

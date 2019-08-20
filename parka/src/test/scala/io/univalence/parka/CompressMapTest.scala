@@ -17,13 +17,12 @@ class CompressMapTest extends FunSuite {
 
     assert(
       CompressMap(Map(
-                    Set(1, 2)    -> 3,
-                    Set(2, 3)    -> 2,
-                    Set(4, 5)    -> 5,
-                    Set(5, 6, 7) -> 7,
-                    Set(6, 7)    -> 1
+                    Set(1, 2) -> 3,
+                    Set(2, 3) -> 2,
+                    Set(5, 6) -> 7,
+                    Set(6, 7) -> 1
                   ),
-                  2)(addInt) == Map(Set(1, 2, 3) -> 5, Set(4, 5, 6, 7) -> 13)
+                  2)(addInt) == Map(Set(1, 2, 3) -> 5, Set(5, 6, 7) -> 8)
     )
 
   }

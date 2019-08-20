@@ -99,7 +99,6 @@ object Printer {
   def map[K, T](mp: Map[K, T], name: String)(keyT: K => String, valueT: T => Part) =
     Section(name, Col(mp.map({ case (k, v) => Key(keyT(k), valueT(v)) }).toSeq: _*))
 
-
   def printInnerByColumn(byColumn: Map[String, Delta]): Part = map(byColumn, "Delta by column")(x => x, delta)
 
   //def printOuterByColumn(byColumn: Map[String, Both[Describe]]): Part = map(byColumn, "Describe by key")(x => x,x => printBoth(x, printOneDescribe))

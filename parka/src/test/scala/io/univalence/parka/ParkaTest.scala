@@ -249,7 +249,7 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
   }
 
   test("Csv test") {
-    val left = "parka/src/test/resources/leftTest.csv"
+    val left  = "parka/src/test/resources/leftTest.csv"
     val right = "parka/src/test/resources/rightTest.csv"
 
     val result = Parka.fromCSV(left, right)("key").result
