@@ -20,12 +20,16 @@ object MonoidGen {
 
     override def combine(x: Histogram, y: Histogram): Histogram =
       (x, y) match {
-        case (l: SmallHistogram, r: SmallHistogram) => smallHistogram.combine(l, r)
-        case (l: LargeHistogram, r: LargeHistogram) => largeHistogram.combine(l, r)
-        case (l: SmallHistogram, r: LargeHistogram) => largeHistogram.combine(l.toLargeHistogram, r)
-        case (l: LargeHistogram, r: SmallHistogram) => largeHistogram.combine(l, r.toLargeHistogram)
-      }
+        case (l: SmallHistogram, r: SmallHistogram) =>
+          val histo = smallHistogram.combine(l, r)
 
+          if (histo.values.size > 256)
+            histo.toLargeHistogram
+          else
+            histo
+
+        case _ => largeHistogram.combine(x.toLargeHistogram, y.toLargeHistogram)
+      }
   }
 
   implicit def mapMonoid[K, V: Monoid]: Monoid[Map[K, V]] =

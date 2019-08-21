@@ -14,6 +14,8 @@ sealed trait Histogram {
   def max: Double
 
   def quantileBounds(percentile: Double): (Double, Double)
+
+  def toLargeHistogram: LargeHistogram
 }
 
 case class SmallHistogram(values: Map[Double, Long]) extends Histogram {
@@ -169,6 +171,7 @@ case class LargeHistogram(negatives: Option[QTree[Unit]], countZero: Long, posit
     bins.zip(distributedDiff).map { case (bin, d) => bin.copy(count = bin.count - d) }
   }
 
+  override def toLargeHistogram: LargeHistogram = this
 }
 
 object Histogram {
