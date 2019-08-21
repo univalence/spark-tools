@@ -148,10 +148,10 @@ lazy val parka =
       libraryDependencies += "com.twitter" %% "algebird-core" % "0.13.5" excludeAll ExclusionRule(
         organization = "org.typelevel"
       ),
-      libraryDependencies += "org.typelevel"       %% "algebra"       % "1.0.1",
-      libraryDependencies += "com.propensive"      %% "magnolia"      % "0.10.0",
-      libraryDependencies += "org.jline"           % "jline-terminal" % "3.12.1",
-      libraryDependencies += "com.github.haifengl" %% "smile-scala"   % "1.5.3",
+      libraryDependencies += "org.typelevel"  %% "algebra"       % "1.0.1",
+      libraryDependencies += "com.propensive" %% "magnolia"      % "0.10.0",
+      libraryDependencies += "org.jline"      % "jline-terminal" % "3.12.1",
+      //libraryDependencies += "com.github.haifengl" %% "smile-scala"   % "1.5.3",
       libraryDependencies ++= Seq(
         "circe-core",
         "circe-generic",
