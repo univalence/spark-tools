@@ -1,8 +1,74 @@
 package io.univalence.parka
 
+import cats.Monoid
 import com.twitter.algebird.QTree
+import io.univalence.parka.Histogram.Bin
 
-case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives: Option[QTree[Unit]]) {
+import scala.util.Try
+
+sealed trait Histogram {
+  def count: Long
+  def bin(n: Int): Seq[Bin]
+
+  def min: Double
+  def max: Double
+
+  def quantileBounds(percentile: Double): (Double, Double)
+}
+
+case class SmallHistogram(values: Map[Double, Long]) extends Histogram {
+
+  def toLargeHistogram: LargeHistogram = {
+
+    import MonoidGen._
+
+    val monoid: Monoid[LargeHistogram] = gen[LargeHistogram]
+
+    monoid.combineAll(values.map({
+      case (k, v) => monoid.combineN(LargeHistogram.value(k), v.toInt)
+    }))
+  }
+
+  override def bin(n: Int): Seq[Bin] =
+    if (values.isEmpty) Nil
+    else {
+      val min = values.keys.min
+      val max = values.keys.max
+
+      val step: Double = Try(Math.max((max - min) / (n - 1), 1)).getOrElse(1)
+
+      (0 until n).map(i => {
+        val center = min + step * i
+        Bin(center,
+            values
+              .collect({
+                case (k, m) if k <= center + step / 2 && k > center - step / 2 => m
+              })
+              .sum)
+      })
+    }
+
+  override def count: Long = values.values.sum
+
+  override def quantileBounds(percentile: Double): (Double, Double) = {
+    val xs: Seq[(Double, Long)] = values.toSeq.sortBy(_._1)
+
+    val n: Int = (percentile * count).toInt
+
+    val ys: Seq[Double] = xs.flatMap(x => Seq.fill(x._2.toInt)(x._1))
+
+    val v = ys(n)
+
+    (v, v)
+  }
+
+  override def min: Double = values.keys.min
+
+  override def max: Double = values.keys.max
+}
+
+case class LargeHistogram(negatives: Option[QTree[Unit]], countZero: Long, positives: Option[QTree[Unit]])
+    extends Histogram {
   lazy val positivesCount: Long = positives.map(_.count).getOrElse(0L)
   lazy val negativesCount: Long = negatives.map(_.count).getOrElse(0L)
   lazy val count: Long          = positivesCount + countZero + negativesCount
@@ -63,9 +129,7 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
       }
     )(_ + _, 0)
 
-  case class Bin(pos: Double, count: Long)
-
-  def bin(n: Int): Seq[Bin] = {
+  private def oldBin(n: Int): Seq[Bin] = {
     require(n >= 2, "at least 2 bins")
 
     val step = (max - min) / (n - 1)
@@ -78,7 +142,7 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
     }
   }
 
-  def fixedBin(n: Int): Seq[Bin] = {
+  def bin(n: Int): Seq[Bin] = {
     /*
         Create a list of number with a proportionnal distribution giving a count and size
      */
@@ -86,21 +150,19 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
       case 0 => Seq.empty
       case 1 => Seq(total)
       case _ if total % size == 0 => Seq.fill(size)(total / size)
-      case _ if Math.abs(total) < size => {
+      case _ if Math.abs(total) < size =>
         val left  = Seq.fill(Math.abs(total))(if (total > 0) 1 else -1)
         val right = Seq.fill(size - total)(0)
         left ++ right
-      }
-      case _ => {
+      case _ =>
         val border = size - (Math.abs(total) % size)
         val value  = total / size
         val left   = Seq.fill(border)(value)
         val right  = Seq.fill(size - border)(value + (if (total > 0) 1 else -1))
         left ++ right
-      }
     }
 
-    val bins            = bin(n)
+    val bins            = oldBin(n)
     val bins_sum        = bins.map(_.count).sum
     val diff            = bins_sum - count
     val distributedDiff = distribute(diff.toInt, n)
@@ -110,26 +172,32 @@ case class Histogram(negatives: Option[QTree[Unit]], countZero: Long, positives:
 }
 
 object Histogram {
-  def empty: Histogram = Histogram(negatives = None, countZero = 0, positives = None)
+  case class Bin(pos: Double, count: Long)
 
-  def value(x: Long): Histogram =
+  def empty: Histogram = SmallHistogram(Map.empty)
+
+  def value(x: Long): Histogram   = SmallHistogram(Map(x.toDouble -> 1))
+  def value(x: Double): Histogram = SmallHistogram(Map(x.toDouble -> 1))
+}
+
+object LargeHistogram {
+  def value(x: Long): LargeHistogram =
     if (x == 0)
-      Histogram(None, 1, None)
+      LargeHistogram(None, 1, None)
     else if (x < (Long.MinValue + 2))
       value(Long.MinValue + 2)
     else if (x > Long.MaxValue - 2)
       value(Long.MaxValue - 2)
     else if (x < 0)
-      Histogram(negatives = Some(QTree.value(-x)), countZero = 0, positives = None)
+      LargeHistogram(negatives = Some(QTree.value(-x)), countZero = 0, positives = None)
     else
-      Histogram(negatives = None, countZero = 0, positives = Some(QTree.value(x)))
+      LargeHistogram(negatives = None, countZero = 0, positives = Some(QTree.value(x)))
 
-  def value(x: Double): Histogram =
+  def value(x: Double): LargeHistogram =
     if (x == 0)
-      Histogram(None, 1, None)
+      LargeHistogram(None, 1, None)
     else if (x < 0)
-      Histogram(negatives = Some(QTree.value(-x)), countZero = 0, positives = None)
+      LargeHistogram(negatives = Some(QTree.value(-x)), countZero = 0, positives = None)
     else
-      Histogram(negatives = None, countZero = 0, positives = Some(QTree.value(x)))
-
+      LargeHistogram(negatives = None, countZero = 0, positives = Some(QTree.value(x)))
 }

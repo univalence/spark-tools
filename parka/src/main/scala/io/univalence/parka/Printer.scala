@@ -142,7 +142,7 @@ object Printer {
   }
 
   def printHistogram(histogram: Histogram, name: String = "Histogram"): Part = {
-    val bins                                = histogram.fixedBin(6)
+    val bins                                = histogram.bin(6)
     def printDecimal(value: Double): String = f"$value%.2f"
     def fillSpaceBefore(value: String, focus: Int = 0): String = " " * Math.max(focus - value.length, 0) + value
     val histobar          = "o"

@@ -12,6 +12,22 @@ object MonoidGen {
     override def empty: T               = _empty
   }
 
+  implicit val histogramMonoid: Monoid[Histogram] = new Monoid[Histogram] {
+    override def empty: Histogram = Histogram.empty
+
+    private val smallHistogram = MonoidGen.gen[SmallHistogram]
+    private val largeHistogram = MonoidGen.gen[LargeHistogram]
+
+    override def combine(x: Histogram, y: Histogram): Histogram =
+      (x, y) match {
+        case (l: SmallHistogram, r: SmallHistogram) => smallHistogram.combine(l, r)
+        case (l: LargeHistogram, r: LargeHistogram) => largeHistogram.combine(l, r)
+        case (l: SmallHistogram, r: LargeHistogram) => largeHistogram.combine(l.toLargeHistogram, r)
+        case (l: LargeHistogram, r: SmallHistogram) => largeHistogram.combine(l, r.toLargeHistogram)
+      }
+
+  }
+
   implicit def mapMonoid[K, V: Monoid]: Monoid[Map[K, V]] =
     MonoidGen(
       Map.empty,

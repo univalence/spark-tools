@@ -155,6 +155,7 @@ lazy val parka =
       libraryDependencies ++= Seq(
         "circe-core",
         "circe-generic",
+        //"circe-generic-extras",
         "circe-parser"
       ).map(name => "io.circe" %% name % libVersion.circeVersion),
       addTestLibs

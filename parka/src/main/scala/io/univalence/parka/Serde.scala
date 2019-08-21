@@ -26,6 +26,27 @@ trait ParkaDecoder {
                  lowerChild: Option[QTree[Unit]],
                  upperChild: Option[QTree[Unit]])
 
+  implicit val doubleKeyEncoder: KeyEncoder[Double] = KeyEncoder[String].contramap(_.toString)
+  implicit val doubleKeyDecoder: KeyDecoder[Double] = KeyDecoder[String].map(_.toDouble)
+
+  implicit val mapEncoderSpecial: Encoder[Map[Double, Long]] = Encoder.encodeMap[Double, Long]
+  implicit val mapDecoderSpecial: Decoder[Map[Double, Long]] = Decoder.decodeMap[Double, Long]
+
+  implicit lazy val encoderLargeHistogram: Encoder[LargeHistogram] = deriveEncoder
+  implicit lazy val encoderSmallHistogram: Encoder[SmallHistogram] = deriveEncoder
+
+  implicit def encoderHistogram: Encoder[Histogram] =
+    Encoder.instance {
+      case l: LargeHistogram => l.asJson
+      case l: SmallHistogram => l.asJson
+    }
+
+  implicit def decoderLargeHistogram: Decoder[LargeHistogram] = deriveDecoder
+  implicit def decoderSmallHistogram: Decoder[SmallHistogram] = deriveDecoder[SmallHistogram]
+
+  import cats.syntax.functor._
+  implicit def decoderHistogram: Decoder[Histogram] = Decoder[LargeHistogram].widen or Decoder[SmallHistogram].widen
+
   // Encoder
   implicit def encoderQTree: Encoder[QTree[Unit]]           = deriveEncoder[QTU].contramap(x => QTU(x._1, x._2, x._3, x._5, x._6))
   implicit val encoderDelta: Encoder[Delta]                 = deriveEncoder
