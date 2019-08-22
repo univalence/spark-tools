@@ -95,7 +95,7 @@ lazy val sparkZio = (project in file("spark-zio"))
     ),
     scalacOptions += "-Yrangepos",
     scalacOptions += "-Ywarn-unused",
-    addCompilerPlugin(scalafixSemanticdb),
+    //addCompilerPlugin(scalafixSemanticdb),
     scalafixDependencies in ThisBuild += "com.github.vovapolu" %% "scaluzzi" % "0.1.2"
   )
 
@@ -216,7 +216,7 @@ lazy val sparkTest = (project in file("spark-test"))
   .settings(
     scalacOptions += "-Yrangepos",
     scalacOptions += "-Ywarn-unused",
-    addCompilerPlugin(scalafixSemanticdb),
+    //addCompilerPlugin(scalafixSemanticdb),
     scalafixDependencies in ThisBuild += "com.github.vovapolu" %% "scaluzzi" % "0.1.2"
   )
 
