@@ -63,10 +63,10 @@ trait ParkaDecoder {
   implicit def encoderQTree: Encoder[QTree[Unit]]           = deriveEncoder[QTU].contramap(x => QTU(x._1, x._2, x._3, x._5, x._6))
   implicit val encoderDelta: Encoder[Delta]                 = deriveEncoder
   implicit val encoderMapDelta: Encoder[Map[String, Delta]] = Encoder.encodeMap[String, Delta]
-  implicit val encodeKeySeqString: KeyEncoder[Seq[String]]  = KeyEncoder.instance[Seq[String]](_.mkString("/"))
+  implicit val encodeKeySeqString: KeyEncoder[Set[String]]  = KeyEncoder.instance[Set[String]](_.mkString("/"))
 
-  implicit val encoderMap: Encoder[Map[Seq[String], Long]] = Encoder
-    .encodeSeq[KeyVal[Seq[String], Long]]
+  implicit val encoderMap: Encoder[Map[Set[String], Long]] = Encoder
+    .encodeSeq[KeyVal[Set[String], Long]]
     .contramap(x => x.map({ case (k, v) => KeyVal(k, v) }).toSeq)
 
   implicit val encoderParkaAnalysis: Encoder[ParkaAnalysis] = deriveEncoder
@@ -77,11 +77,11 @@ trait ParkaDecoder {
   implicit val decoderDescribe: Decoder[Describe]           = deriveDecoder
   implicit val decoderDelta: Decoder[Delta]                 = deriveDecoder
   implicit val decoderMapDelta: Decoder[Map[String, Delta]] = Decoder.decodeMap[String, Delta]
-  implicit val decodeKeySeqString: KeyDecoder[Seq[String]] = KeyDecoder.instance[Seq[String]]({
-    case "" => Some(Nil)
-    case x  => Some(x.split('/'))
+  implicit val decodeKeySeqString: KeyDecoder[Set[String]] = KeyDecoder.instance[Set[String]]({
+    case "" => Some(Set.empty)
+    case x  => Some(x.split('/').toSet)
   })
 
-  implicit val decoderMap: Decoder[Map[Seq[String], Long]] =
-    Decoder.decodeSeq[KeyVal[Seq[String], Long]].map(x => x.map(x => x.key -> x.value).toMap)
+  implicit val decoderMap: Decoder[Map[Set[String], Long]] =
+    Decoder.decodeSeq[KeyVal[Set[String], Long]].map(x => x.map(x => x.key -> x.value).toMap)
 }

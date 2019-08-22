@@ -52,7 +52,7 @@ case class DescribeByRow(count: Long, byColumn: Map[String, Describe])
   */
 case class Inner(countRowEqual: Long,
                  countRowNotEqual: Long,
-                 countDeltaByRow: Map[Seq[String], DeltaByRow],
+                 countDeltaByRow: Map[Set[String], DeltaByRow],
                  equalRows: DescribeByRow) {
   @transient lazy val byColumn: Map[String, Delta] = {
     val m = implicitly[Monoid[Map[String, Delta]]]
@@ -223,7 +223,7 @@ object Parka {
         .toMap
 
     val isEqual            = byNames.forall(_._2.nEqual == 1)
-    val nDiff: Seq[String] = if (isEqual) Nil else byNames.filter(_._2.nNotEqual > 0).keys.toSeq.sorted
+    val nDiff: Set[String] = if (isEqual) Set.empty else byNames.filter(_._2.nNotEqual > 0).keys.toSet
 
     if (nDiff.isEmpty) {
       Inner(1, 0, Map.empty, DescribeByRow(1, byNames.mapValues(x => x.describe.left).map(x => x)))
@@ -254,6 +254,9 @@ object Parka {
 
   def combine(left: ParkaResult, right: ParkaResult): ParkaResult = MonoidUtils.parkaResultMonoid.combine(left, right)
 
+  private def compress(res: ParkaResult): ParkaResult =
+    res.copy(inner = res.inner.copy(countDeltaByRow = CompressMap.apply(res.inner.countDeltaByRow, 128)))
+
   /**
     * Entry point of Parka
     *
@@ -274,20 +277,20 @@ object Parka {
     val leftAndRight: RDD[(String, (Iterable[Row], Iterable[Row]))] =
       leftDs.toDF.rdd.keyBy(keyValue).cogroup(rightDs.toDF.rdd.keyBy(keyValue))
 
-    val res = leftAndRight
+    val res: ParkaResult = leftAndRight
       .map({
         case (k, (left, right)) => result(left, right)(keys)
       })
       .reduce(combine)
 
-    ParkaAnalysis(datasetInfo = Both(leftDs, rightDs).map(datasetInfo), result = res)
+    ParkaAnalysis(datasetInfo = Both(leftDs, rightDs).map(datasetInfo), result = compress(res))
   }
 
   def fromCSV(leftPath: String, rightPath: String)(keyNames: String*): ParkaAnalysis = {
     val spark = org.apache.spark.sql.SparkSession.builder
       .master("local")
       .appName("Parka")
-      .getOrCreate;
+      .getOrCreate
 
     def csvToDf(path: String): sql.DataFrame =
       spark.read

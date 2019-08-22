@@ -81,7 +81,7 @@ object Printer {
   def printOuterByColumn(byColumn: Map[String, Both[Describe]]): Part =
     map(byColumn, "Describe by key")(x => x, bd => Section("Describes", printBoth(bd, printOneDescribe)))
 
-  def printDiffByRow(differences: Map[Seq[String], Long]): Part =
+  def printDiffByRow(differences: Map[Set[String], Long]): Part =
     Key(
       "Differences by sequence of keys",
       Col(

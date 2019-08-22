@@ -55,9 +55,9 @@ sealed abstract class SmallHistogram[K] extends Histogram {
 
     val ys: Seq[Double] = xs.flatMap(x => Seq.fill(x._2.toInt)(x._1))
 
-    val v: Double = ys(n)
+    val bound: Double = ys(n)
 
-    (v, v)
+    (bound, bound)
   }
 
   override def min: Double = num.toDouble(values.keys.min)

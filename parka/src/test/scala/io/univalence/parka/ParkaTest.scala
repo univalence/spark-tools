@@ -65,7 +65,7 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     val result: ParkaResult = analysis.result
     assert(result.inner.countRowEqual === 1L)
     assert(result.inner.countRowNotEqual === 2L)
-    assert(result.inner.countDeltaByRow.mapValues(_.count) === Map(Seq("value") -> 2))
+    assert(result.inner.countDeltaByRow.mapValues(_.count) === Map(Set("value") -> 2))
     assert(result.inner.countDeltaByRow.values.map(_.count).sum === result.inner.countRowNotEqual)
 
     val diff      = Seq(l1 - l5, l2 - l6).map(x => x * x).sum
