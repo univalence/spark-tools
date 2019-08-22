@@ -29,23 +29,35 @@ trait ParkaDecoder {
   implicit val doubleKeyEncoder: KeyEncoder[Double] = KeyEncoder[String].contramap(_.toString)
   implicit val doubleKeyDecoder: KeyDecoder[Double] = KeyDecoder[String].map(_.toDouble)
 
+  implicit val longKeyEncoder: KeyEncoder[Long] = KeyEncoder[String].contramap(_.toString)
+  implicit val longKeyDecoder: KeyDecoder[Long] = KeyDecoder[String].map(_.toLong)
+
   implicit val mapEncoderSpecial: Encoder[Map[Double, Long]] = Encoder.encodeMap[Double, Long]
   implicit val mapDecoderSpecial: Decoder[Map[Double, Long]] = Decoder.decodeMap[Double, Long]
 
-  implicit lazy val encoderLargeHistogram: Encoder[LargeHistogram] = deriveEncoder
-  implicit lazy val encoderSmallHistogram: Encoder[SmallHistogram] = deriveEncoder
+  implicit val mapEncoderSpecialL: Encoder[Map[Long, Long]] = Encoder.encodeMap[Long, Long]
+  implicit val mapDecoderSpecialL: Decoder[Map[Long, Long]] = Decoder.decodeMap[Long, Long]
+
+  implicit lazy val encoderLargeHistogram: Encoder[LargeHistogram]  = deriveEncoder
+  implicit lazy val encoderSmallHistogram: Encoder[SmallHistogramD] = deriveEncoder
 
   implicit def encoderHistogram: Encoder[Histogram] =
     Encoder.instance {
-      case l: LargeHistogram => l.asJson
-      case l: SmallHistogram => l.asJson
+      case l: LargeHistogram  => l.asJson
+      case l: SmallHistogramD => l.asJson
+      case l: SmallHistogramL => l.asJson
+
     }
 
-  implicit def decoderLargeHistogram: Decoder[LargeHistogram] = deriveDecoder
-  implicit def decoderSmallHistogram: Decoder[SmallHistogram] = deriveDecoder[SmallHistogram]
+  implicit def decoderLargeHistogram: Decoder[LargeHistogram]   = deriveDecoder
+  implicit def decoderSmallHistogram: Decoder[SmallHistogramD]  = deriveDecoder[SmallHistogramD]
+  implicit def decoderSmallHistogramL: Decoder[SmallHistogramL] = deriveDecoder[SmallHistogramL]
 
   import cats.syntax.functor._
-  implicit def decoderHistogram: Decoder[Histogram] = Decoder[LargeHistogram].widen or Decoder[SmallHistogram].widen
+  implicit def decoderHistogram: Decoder[Histogram] =
+    Decoder[LargeHistogram].widen or
+      Decoder[SmallHistogramL].widen[Histogram] or
+      Decoder[SmallHistogramD].widen[Histogram]
 
   // Encoder
   implicit def encoderQTree: Encoder[QTree[Unit]]           = deriveEncoder[QTU].contramap(x => QTU(x._1, x._2, x._3, x._5, x._6))

@@ -1,8 +1,6 @@
 package io.univalence.parka
 
 import cats.kernel.Semigroup
-import smile.clustering.KModes
-import smile.math.distance.Distance
 
 import scala.collection.immutable.BitSet
 
@@ -45,6 +43,15 @@ object CompressMap {
 }
 
 case class KModes2(centers: Vector[BitSet]) {
+  def findKeyset(point: BitSet): Option[(Double, Int)] =
+    centers.zipWithIndex
+      .collect({
+        case (x, i) if point.forall(x) =>
+          (x.count(x => !point(x)).toDouble, i)
+      })
+      .sortBy(_._1)
+      .headOption
+
   def predict(point: BitSet): Int = nearest(point)._2
 
   def nearest(bitSet: BitSet): (Double, Int) =
@@ -67,7 +74,7 @@ object KModes2 {
   def iterate(kModes2: KModes2, data: Vector[(Double, BitSet)], dim: Int): KModes2 = {
     val k = kModes2.centers.size
 
-    val nearest_0 = data.map(d => kModes2.nearest(d._2))
+    val nearest_0: Vector[(Double, Int)] = data.map(d => kModes2.findKeyset(d._2).getOrElse(kModes2.nearest(d._2)))
 
     val wcss: Double   = nearest_0.map(_._1).sum
     val y: Vector[Int] = nearest_0.map(_._2)

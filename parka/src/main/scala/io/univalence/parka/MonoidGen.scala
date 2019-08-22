@@ -15,13 +15,23 @@ object MonoidGen {
   implicit val histogramMonoid: Monoid[Histogram] = new Monoid[Histogram] {
     override def empty: Histogram = Histogram.empty
 
-    private val smallHistogram = MonoidGen.gen[SmallHistogram]
+    private val smallHistogramD = MonoidGen.gen[SmallHistogramD]
+    private val smallHistogramL = MonoidGen.gen[SmallHistogramL]
+
     private val largeHistogram = MonoidGen.gen[LargeHistogram]
 
     override def combine(x: Histogram, y: Histogram): Histogram =
       (x, y) match {
-        case (l: SmallHistogram, r: SmallHistogram) =>
-          val histo = smallHistogram.combine(l, r)
+        case (l: SmallHistogramD, r: SmallHistogramD) =>
+          val histo = smallHistogramD.combine(l, r)
+
+          if (histo.values.size > 256)
+            histo.toLargeHistogram
+          else
+            histo
+
+        case (l: SmallHistogramL, r: SmallHistogramL) =>
+          val histo = smallHistogramL.combine(l, r)
 
           if (histo.values.size > 256)
             histo.toLargeHistogram
@@ -61,21 +71,21 @@ object MonoidGen {
   }
 
   implicit def optionMonoid[T: Semigroup]: Monoid[Option[T]] = new Monoid[Option[T]] {
+    private val semi = Semigroup[T]
+
     override def empty: Option[T] = None
 
-    override def combine(x: Option[T], y: Option[T]): Option[T] = {
-      val semi = Semigroup[T]
+    override def combine(x: Option[T], y: Option[T]): Option[T] =
       (x, y) match {
         case (None, _) => y
         case (_, None) => x
         case (Some(xv), Some(yv)) =>
           Some(semi.combine(xv, yv))
       }
-    }
   }
 
   //The monoid on Option[QTree[Unit]]
-  implicit val qTreeSemigroup: Semigroup[QTree[Unit]] = new QTreeSemigroup[Unit](7)
+  implicit lazy val qTreeSemigroup: Semigroup[QTree[Unit]] = new QTreeSemigroup[Unit](7)
 
   type Typeclass[T] = Monoid[T]
 

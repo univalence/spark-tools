@@ -13,8 +13,11 @@ trait HistogramTest {
 
   def assertHistoEqual(longHisto: Histogram, value: Long*): Unit =
     longHisto match {
-      case smallHistogram: SmallHistogram =>
+      case smallHistogram: SmallHistogramD =>
         assert(smallHistogram.values == value.groupBy(x => x.toDouble).mapValues(_.size))
+
+      case smallHistogram: SmallHistogramL =>
+        assert(smallHistogram.values == value.groupBy(x => x).mapValues(_.size))
 
       case largeHistogram: LargeHistogram =>
         val sorted = value.sorted
@@ -46,10 +49,17 @@ class HistogramTestTest extends FunSuite with ScalaCheckPropertyChecks with Hist
     Histogram.value(Long.MaxValue)
   }
 
-  def invariant(xs: Seq[Long]): Unit =
+  def invariant(xs: Seq[Long], large: Boolean): Unit =
     if (xs.distinct.size >= 2 && xs.forall(x => (x < Long.MaxValue - 2) && (x > Long.MinValue + 2))) {
-      val ys    = xs.sorted
-      val histo = histogramMonoid.combineAll(xs.view.map(Histogram.value))
+      val ys = xs.sorted
+      val histo = {
+
+        val histo = histogramMonoid.combineAll(xs.view.map(Histogram.value))
+        if (large)
+          histo.toLargeHistogram
+        else
+          histo
+      }
 
       assert(histo.count == ys.length)
 
@@ -63,7 +73,42 @@ class HistogramTestTest extends FunSuite with ScalaCheckPropertyChecks with Hist
       })
     }
 
-  ignore("hello") {
+  test("vector(0,1), false") {
+    invariant(Vector(0, 1), large = false)
+  }
+
+  test("vector(2,1), true") {
+    invariant(Vector(2, 1), large = true)
+  }
+
+  test("Histo Neg") {
+
+    val value   = -1633067063087769L
+    val histo_0 = LargeHistogram.value(value)
+
+    assert(histo_0.min == value - 1)
+    assert(histo_0.max == value)
+    assert(histo_0.quantileBounds(0) == ((value - 1, value)))
+    assert(histo_0.quantileBounds(1) == ((value - 1, value)))
+
+    val histo_1 = LargeHistogram.value(0)
+    assert(histo_1.min == 0)
+    assert(histo_1.max == 0)
+    assert(histo_1.quantileBounds(0) == ((0, 0)))
+    assert(histo_1.quantileBounds(1) == ((0, 0)))
+
+    val histo_2 = MonoidGen.gen[LargeHistogram].combine(histo_0, histo_1)
+    assert(histo_2.min == value - 1)
+    assert(histo_2.max == 0)
+    assert(histo_2.quantileBounds(0) == ((value - 1, value)))
+
+  }
+
+  test("vector ... true") {
+    invariant(Vector(-1633067063087769L, 0L), large = true)
+  }
+
+  test("hello") {
     forAll(invariant _)
   }
 

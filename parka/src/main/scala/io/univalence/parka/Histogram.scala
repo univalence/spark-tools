@@ -18,10 +18,56 @@ sealed trait Histogram {
   def toLargeHistogram: LargeHistogram
 }
 
-case class SmallHistogram(values: Map[Double, Long]) extends Histogram {
+sealed abstract class SmallHistogram[K] extends Histogram {
 
-  def toLargeHistogram: LargeHistogram = {
+  def values: Map[K, Long]
+  implicit protected def num: Numeric[K]
 
+  final override def count: Long = values.values.sum
+
+  override def bin(n: Int): Seq[Bin] =
+    if (values.isEmpty) Nil
+    else {
+      val min: Double = num.toDouble(values.keys.min)
+      val max: Double = num.toDouble(values.keys.max)
+
+      val step: Double = Try(Math.max((max - min) / (n - 1), 1)).getOrElse(1)
+
+      (0 until n).map(i => {
+        val center: Double = min + step * i
+        Bin(center,
+            values
+              .collect({
+                case (k, m) if num.toDouble(k) <= center + step / 2 && num.toDouble(k) > center - step / 2 => m
+              })
+              .sum)
+      })
+    }
+
+  override def quantileBounds(percentile: Double): (Double, Double) = {
+    val xs: Seq[(Double, Long)] = values.toSeq
+      .map({
+        case (k, v) => (num.toDouble(k), v)
+      })
+      .sortBy(_._1)
+
+    val n: Int = Math.min((percentile * count).toInt, count - 1).toInt
+
+    val ys: Seq[Double] = xs.flatMap(x => Seq.fill(x._2.toInt)(x._1))
+
+    val v: Double = ys(n)
+
+    (v, v)
+  }
+
+  override def min: Double = num.toDouble(values.keys.min)
+
+  override def max: Double = num.toDouble(values.keys.max)
+
+}
+
+case class SmallHistogramL(values: Map[Long, Long]) extends SmallHistogram[Long] {
+  override def toLargeHistogram: LargeHistogram = {
     import MonoidGen._
 
     val monoid: Monoid[LargeHistogram] = gen[LargeHistogram]
@@ -31,42 +77,21 @@ case class SmallHistogram(values: Map[Double, Long]) extends Histogram {
     }))
   }
 
-  override def bin(n: Int): Seq[Bin] =
-    if (values.isEmpty) Nil
-    else {
-      val min = values.keys.min
-      val max = values.keys.max
+  override protected def num: Numeric[Long] = Numeric.LongIsIntegral
+}
 
-      val step: Double = Try(Math.max((max - min) / (n - 1), 1)).getOrElse(1)
+case class SmallHistogramD(values: Map[Double, Long]) extends SmallHistogram[Double] {
+  def toLargeHistogram: LargeHistogram = {
+    import MonoidGen._
 
-      (0 until n).map(i => {
-        val center = min + step * i
-        Bin(center,
-            values
-              .collect({
-                case (k, m) if k <= center + step / 2 && k > center - step / 2 => m
-              })
-              .sum)
-      })
-    }
+    val monoid: Monoid[LargeHistogram] = gen[LargeHistogram]
 
-  override def count: Long = values.values.sum
-
-  override def quantileBounds(percentile: Double): (Double, Double) = {
-    val xs: Seq[(Double, Long)] = values.toSeq.sortBy(_._1)
-
-    val n: Int = (percentile * count).toInt
-
-    val ys: Seq[Double] = xs.flatMap(x => Seq.fill(x._2.toInt)(x._1))
-
-    val v = ys(n)
-
-    (v, v)
+    monoid.combineAll(values.map({
+      case (k, v) => monoid.combineN(LargeHistogram.value(k), v.toInt)
+    }))
   }
 
-  override def min: Double = values.keys.min
-
-  override def max: Double = values.keys.max
+  override protected def num: Numeric[Double] = Numeric.DoubleIsFractional
 }
 
 case class LargeHistogram(negatives: Option[QTree[Unit]], countZero: Long, positives: Option[QTree[Unit]])
@@ -90,7 +115,7 @@ case class LargeHistogram(negatives: Option[QTree[Unit]], countZero: Long, posit
     if (portion <= negativesCount && negatives.isDefined) {
       val (l, u) = negatives.get.quantileBounds(1 - (portion / negativesCount))
       (-u, -l)
-    } else if (portion <= p2) {
+    } else if (portion <= p2 && countZero > 0) {
       (0.0, 0.0)
     } else {
       val portionPos: Double = portion - p2
@@ -177,10 +202,10 @@ case class LargeHistogram(negatives: Option[QTree[Unit]], countZero: Long, posit
 object Histogram {
   case class Bin(pos: Double, count: Long)
 
-  def empty: Histogram = SmallHistogram(Map.empty)
+  def empty: Histogram = SmallHistogramD(Map.empty)
 
-  def value(x: Long): Histogram   = SmallHistogram(Map(x.toDouble -> 1))
-  def value(x: Double): Histogram = SmallHistogram(Map(x.toDouble -> 1))
+  def value(x: Long): Histogram   = SmallHistogramL(Map(x          -> 1))
+  def value(x: Double): Histogram = SmallHistogramD(Map(x.toDouble -> 1))
 }
 
 object LargeHistogram {
