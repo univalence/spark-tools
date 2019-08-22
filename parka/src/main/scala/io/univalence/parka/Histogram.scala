@@ -25,13 +25,15 @@ sealed abstract class SmallHistogram[K] extends Histogram {
 
   final override def count: Long = values.values.sum
 
+  def minStep: Double
+
   override def bin(n: Int): Seq[Bin] =
     if (values.isEmpty) Nil
     else {
       val min: Double = num.toDouble(values.keys.min)
       val max: Double = num.toDouble(values.keys.max)
 
-      val step: Double = Try(Math.max((max - min) / (n - 1), 1)).getOrElse(1)
+      val step: Double = Try(Math.max((max - min) / (n - 1), minStep)).getOrElse(1)
 
       (0 until n).map(i => {
         val center: Double = min + step * i
@@ -78,6 +80,8 @@ case class SmallHistogramL(values: Map[Long, Long]) extends SmallHistogram[Long]
   }
 
   override protected def num: Numeric[Long] = Numeric.LongIsIntegral
+
+  override def minStep: Double = 1.0
 }
 
 case class SmallHistogramD(values: Map[Double, Long]) extends SmallHistogram[Double] {
@@ -92,6 +96,8 @@ case class SmallHistogramD(values: Map[Double, Long]) extends SmallHistogram[Dou
   }
 
   override protected def num: Numeric[Double] = Numeric.DoubleIsFractional
+
+  override def minStep: Double = 0.01
 }
 
 case class LargeHistogram(negatives: Option[QTree[Unit]], countZero: Long, positives: Option[QTree[Unit]])
