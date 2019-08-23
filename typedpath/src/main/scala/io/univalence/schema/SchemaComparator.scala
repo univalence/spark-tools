@@ -6,7 +6,6 @@ import org.apache.spark.sql.types.{ ArrayType, DataType, StructField, StructType
 import scala.util.{ Failure, Try }
 
 object SchemaComparator {
-
   case class SchemaError(modifications: Seq[SchemaModification]) extends Exception {
     override lazy val getMessage: String =
       modifications.foldLeft("") {
@@ -70,7 +69,6 @@ object SchemaComparator {
     * @return    Rhe sequence of schema modification from sc1 to s2
     */
   def compareSchema(sc1: StructType, sc2: StructType): Seq[SchemaModification] = {
-
     def compareSchema(sc1: StructType, sc2: StructType, prefix: KeyOrRoot): Seq[SchemaModification] = {
       def compareDataType(d1: DataType, d2: DataType, prefix: Key): Seq[SchemaModification] =
         (d1, d2) match {

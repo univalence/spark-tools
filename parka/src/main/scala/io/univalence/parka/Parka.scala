@@ -286,7 +286,7 @@ object Parka {
     ParkaAnalysis(datasetInfo = Both(leftDs, rightDs).map(datasetInfo), result = compress(res))
   }
 
-  def fromCSV(leftPath: String, rightPath: String)(keyNames: String*): ParkaAnalysis = {
+  def fromCSV(leftPath: String, rightPath: String, sep: String = ";")(keyNames: String*): ParkaAnalysis = {
     val spark = org.apache.spark.sql.SparkSession.builder
       .master("local")
       .appName("Parka")
@@ -296,7 +296,7 @@ object Parka {
       spark.read
         .format("csv")
         .option("header", "true")
-        .option("sep", ";")
+        .option("sep", sep)
         .load(path)
 
     val leftDf  = csvToDf(leftPath)

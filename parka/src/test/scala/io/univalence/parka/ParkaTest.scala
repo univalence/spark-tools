@@ -1,11 +1,13 @@
 package io.univalence.parka
 
+import java.io.{BufferedWriter, File, FileWriter}
+
 import cats.kernel.Monoid
 import io.univalence.sparktest.SparkTest
-import java.sql.{ Date, Timestamp }
+import java.sql.{Date, Timestamp}
 
 import io.circe.Json
-import org.apache.spark.sql.{ DataFrame, Dataset }
+import org.apache.spark.sql.{DataFrame, Dataset}
 import org.scalactic.Prettifier
 import org.scalatest.FunSuite
 
