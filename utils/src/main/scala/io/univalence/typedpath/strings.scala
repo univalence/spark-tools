@@ -1,6 +1,6 @@
 package io.univalence
 
-package object strings {
+package object typedpath {
   implicit class KeyHelper(val sc: StringContext) extends AnyVal {
     def key(args: Key*): Key = macro KeyMacro.keyMacro
 

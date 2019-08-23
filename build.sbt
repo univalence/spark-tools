@@ -56,7 +56,7 @@ lazy val projectDescription =
   )
 
 lazy val sparkTools = (project in file("."))
-  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio, site, sparkTest, parka)
+  .aggregate(centrifuge, fenek, utils, plumbus, sparkZio, site, sparkTest, parka)
   .settings(projectDescription, defaultConfiguration)
   .settings(
     name        := "spark-tools",
@@ -70,7 +70,7 @@ lazy val sparkTools = (project in file("."))
   )
 
 lazy val schema = (project in file("schema"))
-  .dependsOn(typedpath, sparkTest % "test -> compile")
+  .dependsOn(utils, sparkTest % "test -> compile")
   .settings(projectDescription, defaultConfiguration)
   .settings(
     name        := "schema",
@@ -123,7 +123,7 @@ lazy val centrifuge = project
   )
 
 lazy val fenek = project
-  .dependsOn(typedpath, sparkTest % "test -> compile")
+  .dependsOn(utils, sparkTest % "test -> compile")
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     description        := "Fenek is for better mapping",
@@ -178,15 +178,16 @@ lazy val plumbus =
       addTestLibs
     )
 
-lazy val typedpath = project
+lazy val utils = project
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
-    description := "Typedpath are for refined path",
-    homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/typedpath")),
+    description := "Utils contains many mini library",
+    homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/utils")),
     startYear   := Some(2019),
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value
     ),
+    useSpark(sparkVersion = "2.1.1")(modules = "sql"),
     addTestLibs
   )
 
@@ -203,7 +204,7 @@ lazy val site = project
   )
 
 lazy val sparkTest = (project in file("spark-test"))
-  .dependsOn(typedpath)
+  .dependsOn(utils)
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     name        := "spark-test",

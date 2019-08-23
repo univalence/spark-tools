@@ -2,7 +2,7 @@ package io.univalence.fenek
 
 import io.univalence.fenek.Expr.Ops.{ IsEmpty, JsonMap, Lit, Map1, Map2, Map3, SelectField, TypeCasted }
 import io.univalence.fenek.Expr.{ StructField, UntypedExpr }
-import io.univalence.strings.{ FieldKey, Key }
+import io.univalence.typedpath.{ FieldKey, Key }
 import org.json4s.JsonAST._
 
 import scala.language.implicitConversions
@@ -88,7 +88,7 @@ object Expr {
   type UntypedExpr = Expr[Any]
 
   implicit def pathToExpr(path: Key): UntypedExpr = {
-    import io.univalence.strings._
+    import io.univalence.typedpath._
 
     path match {
       case f: FieldKey => Expr.Ops.RootField(f)

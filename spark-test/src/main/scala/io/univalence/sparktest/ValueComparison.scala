@@ -2,11 +2,12 @@ package io.univalence.sparktest
 
 import java.sql.Timestamp
 
-import io.univalence.strings.Index.{ ArrayIndex, FieldIndex }
-import io.univalence.strings.{ FieldKey, Index, IndexOrRoot, Root }
+import io.univalence.schema.SchemaComparator
+import io.univalence.typedpath.Index.{ArrayIndex, FieldIndex}
+import io.univalence.typedpath.{FieldKey, Index, IndexOrRoot, Root}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.types.{ ArrayType, StructType }
+import org.apache.spark.sql.types.{ArrayType, StructType}
 
 import scala.collection.mutable
 import scala.math.abs
@@ -149,7 +150,7 @@ object ValueComparison {
 
         left        = Option(leftField.headOption.getOrElse((Nil, NullValue))._2)
         right       = Option(rightField.headOption.getOrElse((Nil, NullValue))._2)
-        path: Index = FieldIndex(FieldKey.createName(SchemaComparison.validColName(name)).get, prefix)
+        path: Index = FieldIndex(FieldKey.createName(SchemaComparator.validColName(name)).get, prefix)
 
         modifications: Seq[ObjectModification] = (left, right) match {
           case (Some(l), None)    => Seq(ObjectModification(path, RemoveValue(l)))

@@ -156,7 +156,7 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     assert(deltaDate.nNotEqual == 2)
   }
 
-  test("Prettify test") {
+  ignore("Prettify test") {
     val left: Dataset[Element] = dataset(
       Element("0", 100),
       Element("1", 100),
@@ -187,7 +187,7 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     println(Part.toString(part))
   }
 
-  test("Prettify test 2 column") {
+  ignore("Prettify test 2 column") {
     val left: Dataset[Element2] = dataset(
       Element2("0", 0, 0),
       Element2("1", 10, 0),
@@ -248,7 +248,7 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     println(Part.toString(part))
   }
 
-  test("Csv test") {
+  ignore("Csv test") {
     val left  = "parka/src/test/resources/leftTest.csv"
     val right = "parka/src/test/resources/rightTest.csv"
 

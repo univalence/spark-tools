@@ -4,10 +4,11 @@ import cats.kernel.Monoid
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.{ Dataset, Row }
-import java.sql.{ Date, Timestamp }
+import org.apache.spark.sql.{Dataset, Row}
+import java.sql.{Date, Timestamp}
 
 import io.univalence.parka.Delta.DeltaBoolean
+import io.univalence.schema.SchemaComparator
 import org.apache.spark.sql
 
 case class Both[+T](left: T, right: T) {
@@ -267,8 +268,7 @@ object Parka {
     */
   def apply(leftDs: Dataset[_], rightDs: Dataset[_])(keyNames: String*): ParkaAnalysis = {
     assert(keyNames.nonEmpty, "you must have at least one key")
-    assert(leftDs.schema.map(_.nullable == true) == rightDs.schema.map(_.nullable == true),
-           "schemas are not equal : " + leftDs.schema + " != " + rightDs.schema)
+    SchemaComparator.assert(leftDs.schema, rightDs.schema)
 
     val keyValue: Row => String = r => keyNames.map(r.getAs[Any]).mkString(keyValueSeparator)
 

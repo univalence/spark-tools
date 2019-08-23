@@ -4,7 +4,7 @@ import io.univalence.fenek.Expr.Ops._
 import io.univalence.fenek.Expr._
 import org.joda.time.{ Days, Months }
 import org.json4s.JsonAST._
-import io.univalence.strings._
+import io.univalence.typedpath._
 
 import scala.collection.BitSet
 import scala.util.{ Failure, Success, Try }
@@ -207,7 +207,7 @@ object DebugInterpreter {
 
   def main(args: Array[String]): Unit = {
 
-    import io.univalence.strings.Key._
+    import io.univalence.typedpath.Key._
 
     val a: UntypedExpr = key"a"
     val b: UntypedExpr = key"b"

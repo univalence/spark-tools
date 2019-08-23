@@ -1,8 +1,9 @@
 package io.univalence.sparktest
 
+import io.univalence.schema.SchemaComparator.SchemaError
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.{ Row, SparkSession }
-import org.apache.spark.sql.types.{ DoubleType, StructField, StructType }
+import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types.{DoubleType, StructField, StructType}
 import org.scalatest.FunSuite
 
 class DataSetComparisonTest extends FunSuite with SparkTest {
@@ -48,7 +49,7 @@ class DataSetComparisonTest extends FunSuite with SparkTest {
     val dsUT       = Seq(1, 2, 3).toDF("id").as[Int]
     val dsExpected = Seq(1, 2, 3).toDF("di").as[Int]
 
-    assertThrows[SparkTestError] {
+    assertThrows[SchemaError] {
       dsUT.assertEquals(dsExpected)
     }
   }

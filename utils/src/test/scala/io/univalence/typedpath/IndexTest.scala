@@ -1,6 +1,6 @@
-package io.univalence.strings
+package io.univalence.typedpath
 
-import io.univalence.strings.Index.{ ArrayIndex, FieldIndex }
+import io.univalence.typedpath.Index.{ ArrayIndex, FieldIndex }
 import org.scalatest.FunSuite
 
 import scala.util.Try

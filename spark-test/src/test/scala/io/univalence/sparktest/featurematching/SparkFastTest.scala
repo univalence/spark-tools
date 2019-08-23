@@ -1,9 +1,10 @@
 package io.univalence.sparktest.featurematching
 
+import io.univalence.schema.SchemaComparator.SchemaError
 import io.univalence.sparktest.SparkTest
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.{ Row, SparkSession }
-import org.apache.spark.sql.types.{ DoubleType, IntegerType, StructField, StructType }
+import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}
 import org.scalatest.FunSuite
 
 //https://github.com/MrPowers/spark-fast-tests
@@ -74,11 +75,9 @@ class SparkFastTest extends FunSuite with SparkTest {
       StructType(List(StructField("number", IntegerType, nullable = true)))
     )
 
-    //assertSmallDatasetEquality(sourceDF, expectedDF, ignoreNullable = true) // OK
-    //assertSmallDatasetEquality(sourceDF, expectedDF, ignoreNullable = false) // not equal
     sourceDF.assertEquals(expectedDF)
 
-    assertThrows[SparkTestError] {
+    assertThrows[SchemaError] {
       withConfiguration(failOnNullable = true)(sourceDF.assertEquals(expectedDF))
     }
   }

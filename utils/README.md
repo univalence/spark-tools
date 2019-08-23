@@ -1,29 +1,33 @@
-Typedpath
+Utils
 ======================
+
+Utils contains mini librairies, it's like a mini monorepository inside our monorepository.
 
 ## Installation
 
-### Stable version
-
-Version for scala 2.11.X :
-
-```scala
-libraryDependencies += "io.univalence" % "typedpath_2.11" % "46e659ce"
-```
-
-### Latest version
-
-If you want to get the very last version of this library you can still download it using bintray here : https://bintray.com/univalence/univalence-jvm/typedpath
-
-Here is an example using ```version 0.3+79-4936e981``` that work with ```scala 2.11.X```:
-
-```scala
-resolvers += "typedpath" at "http://dl.bintray.com/univalence/univalence-jvm"
-libraryDependencies += "io.univalence" %% "typedpath" % "0.3+79-4936e981"
-```
+TODO
 
 ## Usage
 
+### Schema
+
+Schema is a helper that compare precisely differences between two schemas.
+
+```scala
+import io.univalence.schema.SchemaComparator
+
+val schema_1: StructType = ???
+val schema_2: StructType = ???
+
+// If modifications is empty then there is no differences
+val modifications: Seq[SchemaModification] = compareSchema(schema_1, schema_2)
+
+// If there are modifications, throw a SchemaError with details for each differences
+assert(schema_1, schema_2)
+```
+
+
+### TypedPath
 Typedpath is a set of case classes (Algebraic Data Types) and a StringContext macro to help represented "simple" key in datastructures.
 
 We have the following types : `Key = ArrayKey | FieldKey`  and `KeyOrRoot = Key | Root`. 

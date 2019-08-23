@@ -1,4 +1,4 @@
-package io.univalence.strings
+package io.univalence.typedpath
 
 import org.scalatest.FunSuite
 

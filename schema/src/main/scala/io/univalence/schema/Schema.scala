@@ -1,6 +1,6 @@
 package io.univalence.schema
 
-import io.univalence.strings.{FieldKey, KeyOrRoot, Root}
+import io.univalence.typedpath.{FieldKey, KeyOrRoot, Root}
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.sql.{DataFrame, Dataset}
 

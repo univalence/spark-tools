@@ -1,26 +1,14 @@
 package io.univalence.sparktest
 
+import io.univalence.schema.SchemaComparator
+import io.univalence.schema.SchemaComparator.{AddField, ChangeFieldType, RemoveField, SchemaError, SchemaModification, SetNonNullable, SetNullable}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
-import io.univalence.sparktest.SchemaComparison.{
-  AddField,
-  ChangeFieldType,
-  RemoveField,
-  SchemaModification,
-  SetNonNullable,
-  SetNullable
-}
-import io.univalence.sparktest.ValueComparison.{
-  compareValue,
-  fromRow,
-  toStringModifications,
-  toStringRowsMods,
-  ObjectModification
-}
+import io.univalence.sparktest.ValueComparison.{ObjectModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
 import io.univalence.sparktest.internal.DatasetUtils
-import org.apache.spark.sql.types.{ StructField, StructType }
+import org.apache.spark.sql.types.{StructField, StructType}
 
 import scala.util.Try
 
@@ -73,35 +61,6 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
   protected def _sqlContext: SQLContext = ss.sqlContext
 
   sealed trait SparkTestError extends Exception
-
-  case class SchemaError(modifications: Seq[SchemaModification]) extends SparkTestError {
-    override lazy val getMessage: String =
-      modifications.foldLeft("") {
-        case (msgs, error) =>
-          error match {
-            case SchemaModification(p, RemoveField(_)) =>
-              if (configuration.failOnMissingOriginalCol)
-                s"$msgs\nField ${p.firstName} was not in the expected DataFrame."
-              else msgs
-            case SchemaModification(p, ChangeFieldType(from, to)) =>
-              if (configuration.failOnChangedDataTypeExpectedCol)
-                s"$msgs\nField ${p.firstName} ($from) was not the same datatype as expected ($to)."
-              else msgs
-            case SchemaModification(p, AddField(_)) =>
-              if (configuration.failOnMissingExpectedCol)
-                s"$msgs\nField ${p.firstName} was not in the original DataFrame."
-              else msgs
-            case SchemaModification(p, SetNullable) =>
-              if (configuration.failOnNullable)
-                s"$msgs\nExpected field ${p.firstName} to be nullable."
-              else msgs
-            case SchemaModification(p, SetNonNullable) =>
-              if (configuration.failOnNullable)
-                s"$msgs\nExpected field ${p.firstName} to be non-nullable."
-              else msgs
-          }
-      }
-  }
 
   case class ValueError(modifications: Seq[Seq[ObjectModification]], thisDf: DataFrame, otherDf: DataFrame)
       extends SparkTestError {
@@ -235,7 +194,8 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       * @return               both reduced DataFrames
       */
     def reduceColumn(otherDf: DataFrame): Try[(DataFrame, DataFrame)] = {
-      val modifications = SchemaComparison.compareSchema(thisDf.schema, otherDf.schema)
+      val modifications = SchemaComparator.compareSchema(thisDf.schema, otherDf.schema)
+
       Try(if (modifications.nonEmpty) {
         modifications.foldLeft((thisDf, otherDf)) {
           case ((df1, df2), sm) =>

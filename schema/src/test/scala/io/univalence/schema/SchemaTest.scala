@@ -2,7 +2,7 @@ package io.univalence.schema
 
 import io.univalence.sparktest.SparkTest
 import org.scalatest.FunSuite
-import io.univalence.strings._
+import io.univalence.typedpath._
 
 class SchemaTest extends FunSuite with SparkTest {
 

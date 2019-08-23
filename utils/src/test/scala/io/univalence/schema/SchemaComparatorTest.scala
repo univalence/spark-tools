@@ -1,15 +1,15 @@
-package io.univalence.sparktest
+package io.univalence.schema
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
-import SchemaComparison._
-import io.univalence.sparktest.DatatypeGen.ST
-import org.scalacheck.{ Arbitrary, Shrink }
+import SchemaComparator._
+import io.univalence.schema.DatatypeGen.ST
+import org.scalacheck.{Arbitrary, Shrink}
 import org.scalatest.prop.PropertyChecks
 
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 
 case class DtAndNull(dt: DataType, nullable: Boolean = true)
 
@@ -22,13 +22,19 @@ object SchemaBuilder {
     StructType(args.map({ case (k, DtAndNull(d, b)) => StructField(k, d, b) }))
 }
 
-class SchemaComparisonTest extends FunSuite with SparkTest with PropertyChecks {
-  import io.univalence.strings._
+class SchemaComparatorTest extends FunSuite with PropertyChecks {
+  import io.univalence.typedpath._
 
   import SchemaBuilder._
 
-  val sharedSparkSession: SparkSession = ss
-  val sc: SparkContext                 = ss.sparkContext
+  val ss: SparkSession = SparkSession
+    .builder()
+    .master("local[1]")
+    .config("spark.sql.shuffle.partitions", 1)
+    .config("spark.ui.enabled", value = false)
+    .getOrCreate()
+
+  val sc: SparkContext = ss.sparkContext
 
   test("The two schemas are empty") {
     val sc1: StructType = struct()

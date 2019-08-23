@@ -2,7 +2,7 @@ package io.univalence.fenek
 
 import com.fasterxml.jackson.core.JsonParser
 import io.univalence.fenek.Expr._
-import io.univalence.strings._
+import io.univalence.typedpath._
 import org.json4s.JsonAST._
 import org.scalatest.FunSuite
 

@@ -1,11 +1,40 @@
-package io.univalence.sparktest
+package io.univalence.schema
 
-import io.univalence.strings.{ ArrayKey, FieldKey, Key, KeyOrRoot, Root }
+import io.univalence.typedpath.{ ArrayKey, FieldKey, Key, KeyOrRoot, Root }
 import org.apache.spark.sql.types.{ ArrayType, DataType, StructField, StructType }
 
 import scala.util.{ Failure, Try }
 
-object SchemaComparison {
+object SchemaComparator {
+
+  case class SchemaError(modifications: Seq[SchemaModification]) extends Exception {
+    override lazy val getMessage: String =
+      modifications.foldLeft("") {
+        case (msgs, error) =>
+          error match {
+            case SchemaModification(p, RemoveField(_)) =>
+              //if (configuration.failOnMissingOriginalCol)
+              s"$msgs\nField ${p.firstName} was not in the expected DataFrame."
+            //else msgs
+            case SchemaModification(p, ChangeFieldType(from, to)) =>
+              //if (configuration.failOnChangedDataTypeExpectedCol)
+              s"$msgs\nField ${p.firstName} ($from) was not the same datatype as expected ($to)."
+            //else msgs
+            case SchemaModification(p, AddField(_)) =>
+              //if (configuration.failOnMissingExpectedCol)
+              s"$msgs\nField ${p.firstName} was not in the original DataFrame."
+            //else msgs
+            case SchemaModification(p, SetNullable) =>
+              //if (configuration.failOnNullable)
+              s"$msgs\nExpected field ${p.firstName} to be nullable."
+            //else msgs
+            case SchemaModification(p, SetNonNullable) =>
+              //if (configuration.failOnNullable)
+              s"$msgs\nExpected field ${p.firstName} to be non-nullable."
+            //else msgs
+          }
+      }
+  }
 
   sealed trait FieldModification
 
@@ -81,6 +110,12 @@ object SchemaComparison {
     }
 
     compareSchema(sc1, sc2, Root)
+  }
+
+  def assert(sc1: StructType, sc2: StructType): Unit = {
+    val modifications: Seq[SchemaModification] = compareSchema(sc1, sc2)
+    if (modifications.nonEmpty)
+      throw SchemaError(modifications)
   }
 
   case class ApplyModificationErrorWithSource(error: ApplyModificationError,

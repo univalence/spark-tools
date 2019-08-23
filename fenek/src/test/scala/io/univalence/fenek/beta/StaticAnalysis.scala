@@ -89,7 +89,7 @@ object StaticAnalysis {
 
   def main(args: Array[String]): Unit = {
 
-    import io.univalence.strings._
+    import io.univalence.typedpath._
     import io.univalence.fenek.Expr._
 
     val ab = key"a".as[Int] <*> key"b".as[Int]
