@@ -93,7 +93,7 @@ commands:
       - run:
           name: Deliver all projects to maven central
           command: |
-            cat /dev/null | sbt centrifuge/releaseEarly sparkZio/releaseEarly parka/releaseEarly plumbus/releaseEarly +utils/releaseEarly fenek/releaseEarly +sparkTest/releaseEarly
+            cat /dev/null | sbt centrifuge/releaseEarly sparkZio/releaseEarly parka/releaseEarly plumbus/releaseEarly typedpath/releaseEarly fenek/releaseEarly +sparkTest/releaseEarly
 
 
 jobs:
@@ -127,12 +127,12 @@ jobs:
       - build_project:
           project_name: plumbus
 
-  utils:
+  typedpath:
     <<: *environment
     working_directory: ~/repo
     steps:
       - build_project:
-          project_name: utils
+          project_name: typedpath
 
   fenek:
     <<: *environment
@@ -140,7 +140,7 @@ jobs:
     steps:
       - build_project:
           project_name: fenek
-          extra_fs_deps: utils
+          extra_fs_deps: typedpath
 
   sparkzio:
     <<: *environment
@@ -189,7 +189,7 @@ workflows:
     jobs:
       - update_deps_in_cache: *only_master
       - centrifuge: *only_master
-      - utils: *only_master
+      - typedpath: *only_master
       - fenek: *only_master
       - parka: *only_master
       - plumbus: *only_master

@@ -56,7 +56,7 @@ lazy val projectDescription =
   )
 
 lazy val sparkTools = (project in file("."))
-  .aggregate(centrifuge, fenek, utils, plumbus, sparkZio, site, sparkTest, parka)
+  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio, site, sparkTest, parka)
   .settings(projectDescription, defaultConfiguration)
   .settings(
     name        := "spark-tools",
@@ -70,7 +70,7 @@ lazy val sparkTools = (project in file("."))
   )
 
 lazy val schema = (project in file("schema"))
-  .dependsOn(utils, sparkTest % "test -> compile")
+  .dependsOn(typedpath, sparkTest % "test -> compile")
   .settings(projectDescription, defaultConfiguration)
   .settings(
     name        := "schema",
@@ -123,7 +123,7 @@ lazy val centrifuge = project
   )
 
 lazy val fenek = project
-  .dependsOn(utils, sparkTest % "test -> compile")
+  .dependsOn(typedpath, sparkTest % "test -> compile")
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     description        := "Fenek is for better mapping",
@@ -178,11 +178,11 @@ lazy val plumbus =
       addTestLibs
     )
 
-lazy val utils = project
+lazy val typedpath = project
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
-    description := "Utils contains many mini library",
-    homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/utils")),
+    description := "typedpath contains many mini library",
+    homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/typedpath")),
     startYear   := Some(2019),
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value
@@ -204,7 +204,7 @@ lazy val site = project
   )
 
 lazy val sparkTest = (project in file("spark-test"))
-  .dependsOn(utils)
+  .dependsOn(typedpath)
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     name        := "spark-test",
