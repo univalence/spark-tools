@@ -4,8 +4,8 @@ import cats.kernel.Monoid
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.{Dataset, Row}
-import java.sql.{Date, Timestamp}
+import org.apache.spark.sql.{ Dataset, Row }
+import java.sql.{ Date, Timestamp }
 
 import io.univalence.parka.Delta.DeltaBoolean
 import io.univalence.schema.SchemaComparator

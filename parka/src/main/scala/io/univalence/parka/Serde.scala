@@ -37,8 +37,6 @@ trait ParkaEncodersAndDecoders {
   implicit val encoderMapDL: Encoder[Map[Double, Long]] = Encoder.encodeMap[Double, Long]
   implicit val encoderMapLL: Encoder[Map[Long, Long]]   = Encoder.encodeMap[Long, Long]
 
-  //implicit lazy val encoderLargeHistogram: Encoder[LargeHistogram]  = deriveEncoder
-  //implicit lazy val encoderSmallHistogram: Encoder[SmallHistogramD] = deriveEncoder
   implicit def encoderHistogram: Encoder[Histogram] =
     Encoder.instance {
       case x if x.count == 0  => Json.Null
@@ -65,19 +63,24 @@ trait ParkaEncodersAndDecoders {
   implicit val decoderMapDL: Decoder[Map[Double, Long]] = Decoder.decodeMap[Double, Long]
   implicit val decoderMapLL: Decoder[Map[Long, Long]]   = Decoder.decodeMap[Long, Long]
 
-  //implicit def decoderLargeHistogram: Decoder[LargeHistogram]   = deriveDecoder
-  //implicit def decoderSmallHistogram: Decoder[SmallHistogramD]  = deriveDecoder[SmallHistogramD]
-  //implicit def decoderSmallHistogramL: Decoder[SmallHistogramL] = deriveDecoder[SmallHistogramL]
   import cats.syntax.functor._
   implicit def decoderHistogram: Decoder[Histogram] =
     Decoder[LargeHistogram].widen or
       Decoder[SmallHistogramL].widen[Histogram] or
       Decoder[SmallHistogramD].widen[Histogram] or
       Decoder.decodeNone.map(_ => Histogram.empty)
+
   implicit def decoderQTree: Decoder[QTree[Unit]] =
     deriveDecoder[QTU].map(x => new QTree[Unit](x.offset, x.level, x.count, {}, x.lowerChild, x.upperChild))
 
-  implicit val decoderDescribe: Decoder[Describe]           = deriveDecoder
+  implicit val decoderDescribe: Decoder[Describe] = deriveDecoder[Describe] or Decoder.decodeNone.map(
+    _ => Describe.empty
+  )
+  implicit val encoderDescribe: Encoder[Describe] = Encoder.instance({
+    case x if x.count == 0 => Json.Null
+    case x                 => deriveEncoder[Describe].apply(x)
+  })
+
   implicit val decoderDelta: Decoder[Delta]                 = deriveDecoder
   implicit val decoderMapDelta: Decoder[Map[String, Delta]] = Decoder.decodeMap[String, Delta]
   implicit val decodeKeySeqString: KeyDecoder[Set[String]] = KeyDecoder.instance[Set[String]]({

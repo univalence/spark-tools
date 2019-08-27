@@ -6,10 +6,10 @@ import org.apache.spark.sql.types._
 import org.scalatest.FunSuite
 import SchemaComparator._
 import io.univalence.schema.DatatypeGen.ST
-import org.scalacheck.{Arbitrary, Shrink}
+import org.scalacheck.{ Arbitrary, Shrink }
 import org.scalatest.prop.PropertyChecks
 
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
 case class DtAndNull(dt: DataType, nullable: Boolean = true)
 

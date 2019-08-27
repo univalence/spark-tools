@@ -2,8 +2,8 @@ package io.univalence.sparktest
 
 import io.univalence.schema.SchemaComparator.SchemaError
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.types.{DoubleType, StructField, StructType}
+import org.apache.spark.sql.{ Row, SparkSession }
+import org.apache.spark.sql.types.{ DoubleType, StructField, StructType }
 import org.scalatest.FunSuite
 
 class DataSetComparisonTest extends FunSuite with SparkTest {

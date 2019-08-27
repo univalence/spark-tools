@@ -3,11 +3,11 @@ package io.univalence.sparktest
 import java.sql.Timestamp
 
 import io.univalence.schema.SchemaComparator
-import io.univalence.typedpath.Index.{ArrayIndex, FieldIndex}
-import io.univalence.typedpath.{FieldKey, Index, IndexOrRoot, Root}
+import io.univalence.typedpath.Index.{ ArrayIndex, FieldIndex }
+import io.univalence.typedpath.{ FieldKey, Index, IndexOrRoot, Root }
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.types.{ArrayType, StructType}
+import org.apache.spark.sql.types.{ ArrayType, StructType }
 
 import scala.collection.mutable
 import scala.math.abs

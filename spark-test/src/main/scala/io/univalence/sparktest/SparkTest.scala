@@ -1,14 +1,28 @@
 package io.univalence.sparktest
 
 import io.univalence.schema.SchemaComparator
-import io.univalence.schema.SchemaComparator.{AddField, ChangeFieldType, RemoveField, SchemaError, SchemaModification, SetNonNullable, SetNullable}
+import io.univalence.schema.SchemaComparator.{
+  AddField,
+  ChangeFieldType,
+  RemoveField,
+  SchemaError,
+  SchemaModification,
+  SetNonNullable,
+  SetNullable
+}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
-import io.univalence.sparktest.ValueComparison.{ObjectModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
+import io.univalence.sparktest.ValueComparison.{
+  compareValue,
+  fromRow,
+  toStringModifications,
+  toStringRowsMods,
+  ObjectModification
+}
 import io.univalence.sparktest.internal.DatasetUtils
-import org.apache.spark.sql.types.{StructField, StructType}
+import org.apache.spark.sql.types.{ StructField, StructType }
 
 import scala.util.Try
 
