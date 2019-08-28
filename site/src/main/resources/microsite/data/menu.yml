@@ -56,26 +56,28 @@ options:
   #    Parka Menu Options   #
   ###########################
 
-  - title: Analysis
-    url: parka/parka_analysis
+  - title: Structures
+    url: parka/parka_structures
     menu_type: parka
-    menu_section: parka-analysis
+    menu_section: parka-structures
     nested_options:
-      - title: Dataset Information
-        url: parka/parka_analysis_datasetinfo
-      - title: Inner Analysis
-        url: parka/parka_analysis_inner
-      - title: Outer Analysis
-        url: parka/parka_analysis_outer
+      - title: Inner
+        url: parka/parka_structures_inner
+      - title: Outer
+        url: parka/parka_structures_outer
+      - title: Describe
+        url: parka/parka_structures_describe
+      - title: Delta
+        url: parka/parka_structures_delta
 
   - title: Interpretation
     url: parka/parka_printer
     menu_type: parka
     menu_section: parka-interpretation
     nested_options:
-      - title: Parka Printer
+      - title: Printer
         url: parka/parka_printer
-      - title: Parka Analysis Serde
+      - title: Serde
         url: parka/parka_serde
 
   - title: Q&A
