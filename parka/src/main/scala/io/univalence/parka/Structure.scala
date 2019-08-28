@@ -6,7 +6,6 @@ import java.sql.{ Date, Timestamp }
 
 import io.univalence.parka.Delta.DeltaBoolean
 
-
 case class Both[+T](left: T, right: T) {
   def fold[U](f: (T, T) => U): U = f(left, right)
 

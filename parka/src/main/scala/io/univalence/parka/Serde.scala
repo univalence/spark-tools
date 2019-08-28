@@ -42,23 +42,24 @@ trait ParkaEncodersAndDecoders {
   implicit val encoderMapLL: Encoder[Map[Long, Long]] = Encoder.encodeMap[Long, Long]
   implicit val decoderMapLL: Decoder[Map[Long, Long]] = Decoder.decodeMap[Long, Long]
 
-  implicit def encoderHistogram: Encoder[Histogram] =
+  implicit val encoderQTree: Encoder[QTree[Unit]] = deriveEncoder[QTU].contramap(x => QTU(x._1, x._2, x._3, x._5, x._6))
+  implicit val decoderQTree: Decoder[QTree[Unit]] =
+    deriveDecoder[QTU].map(x => new QTree[Unit](x.offset, x.level, x.count, {}, x.lowerChild, x.upperChild))
+
+  implicit val encoderHistogram: Encoder[Histogram] =
     Encoder.instance {
       case x if x.count == 0  => Json.Null
       case l: LargeHistogram  => l.asJson
       case l: SmallHistogramD => l.asJson
       case l: SmallHistogramL => l.asJson
     }
-  import cats.syntax.functor._
-  implicit def decoderHistogram: Decoder[Histogram] =
+  implicit val decoderHistogram: Decoder[Histogram] = {
+    import cats.syntax.functor._
     Decoder[LargeHistogram].widen or
       Decoder[SmallHistogramL].widen[Histogram] or
       Decoder[SmallHistogramD].widen[Histogram] or
       Decoder.decodeNone.map(_ => Histogram.empty)
-
-  implicit def encoderQTree: Encoder[QTree[Unit]] = deriveEncoder[QTU].contramap(x => QTU(x._1, x._2, x._3, x._5, x._6))
-  implicit def decoderQTree: Decoder[QTree[Unit]] =
-    deriveDecoder[QTU].map(x => new QTree[Unit](x.offset, x.level, x.count, {}, x.lowerChild, x.upperChild))
+  }
 
   implicit val encoderDescribe: Encoder[Describe] = Encoder.instance({
     case x if x.count == 0 => Json.Null
