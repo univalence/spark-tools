@@ -1,8 +1,4 @@
 package io.univalence.parka
-
-import java.io.{ BufferedWriter, File, FileWriter }
-
-import cats.kernel.Monoid
 import io.univalence.sparktest.SparkTest
 import java.sql.{ Date, Timestamp }
 

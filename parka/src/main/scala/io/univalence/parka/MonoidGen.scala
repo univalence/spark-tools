@@ -4,7 +4,6 @@ import cats.kernel.{ Monoid, Semigroup }
 import com.twitter.algebird.{ QTree, QTreeSemigroup }
 
 object MonoidGen {
-
   def empty[T: Monoid]: T = Monoid[T].empty
 
   def apply[T](_empty: T, _combine: (T, T) => T): Monoid[T] = new Monoid[T] {
@@ -102,4 +101,11 @@ object MonoidGen {
     }
 
   implicit def gen[T]: Typeclass[T] = macro Magnolia.gen[T]
+
+  object MonoidUtils {
+    val describeMonoid: Monoid[Describe]           = MonoidGen.gen[Describe]
+    val bothDescribeMonoid: Monoid[Both[Describe]] = MonoidGen.gen
+
+    val parkaResultMonoid: Monoid[ParkaResult] = MonoidGen.gen[ParkaResult]
+  }
 }
