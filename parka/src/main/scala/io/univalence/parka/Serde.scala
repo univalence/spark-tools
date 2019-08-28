@@ -30,12 +30,17 @@ trait ParkaEncodersAndDecoders {
                  lowerChild: Option[QTree[Unit]],
                  upperChild: Option[QTree[Unit]])
 
-  // ENCODERS
+  implicit val encoderDoubleKey: KeyEncoder[Double] = KeyEncoder[String].contramap(_.toString)
+  implicit val decoderDoubleKey: KeyDecoder[Double] = KeyDecoder[String].map(_.toDouble)
 
-  implicit val encoderDoubleKey: KeyEncoder[Double]     = KeyEncoder[String].contramap(_.toString)
-  implicit val encoderLongKey: KeyEncoder[Long]         = KeyEncoder[String].contramap(_.toString)
+  implicit val encoderLongKey: KeyEncoder[Long] = KeyEncoder[String].contramap(_.toString)
+  implicit val decoderLongKey: KeyDecoder[Long] = KeyDecoder[String].map(_.toLong)
+
   implicit val encoderMapDL: Encoder[Map[Double, Long]] = Encoder.encodeMap[Double, Long]
-  implicit val encoderMapLL: Encoder[Map[Long, Long]]   = Encoder.encodeMap[Long, Long]
+  implicit val decoderMapDL: Decoder[Map[Double, Long]] = Decoder.decodeMap[Double, Long]
+
+  implicit val encoderMapLL: Encoder[Map[Long, Long]] = Encoder.encodeMap[Long, Long]
+  implicit val decoderMapLL: Decoder[Map[Long, Long]] = Decoder.decodeMap[Long, Long]
 
   implicit def encoderHistogram: Encoder[Histogram] =
     Encoder.instance {
@@ -44,25 +49,6 @@ trait ParkaEncodersAndDecoders {
       case l: SmallHistogramD => l.asJson
       case l: SmallHistogramL => l.asJson
     }
-  implicit def encoderQTree: Encoder[QTree[Unit]] = deriveEncoder[QTU].contramap(x => QTU(x._1, x._2, x._3, x._5, x._6))
-
-  implicit val encoderDelta: Encoder[Delta]                 = deriveEncoder
-  implicit val encoderMapDelta: Encoder[Map[String, Delta]] = Encoder.encodeMap[String, Delta]
-  implicit val encodeKeySeqString: KeyEncoder[Set[String]]  = KeyEncoder.instance[Set[String]](_.mkString("/"))
-
-  implicit val encoderMap: Encoder[Map[Set[String], Long]] = Encoder
-    .encodeSeq[KeyVal[Set[String], Long]]
-    .contramap(x => x.map({ case (k, v) => KeyVal(k, v) }).toSeq)
-
-  implicit val encoderParkaAnalysis: Encoder[ParkaAnalysis] = deriveEncoder
-
-  // DECODERS
-
-  implicit val decoderDoubleKey: KeyDecoder[Double]     = KeyDecoder[String].map(_.toDouble)
-  implicit val decoderLongKey: KeyDecoder[Long]         = KeyDecoder[String].map(_.toLong)
-  implicit val decoderMapDL: Decoder[Map[Double, Long]] = Decoder.decodeMap[Double, Long]
-  implicit val decoderMapLL: Decoder[Map[Long, Long]]   = Decoder.decodeMap[Long, Long]
-
   import cats.syntax.functor._
   implicit def decoderHistogram: Decoder[Histogram] =
     Decoder[LargeHistogram].widen or
@@ -70,24 +56,36 @@ trait ParkaEncodersAndDecoders {
       Decoder[SmallHistogramD].widen[Histogram] or
       Decoder.decodeNone.map(_ => Histogram.empty)
 
+  implicit def encoderQTree: Encoder[QTree[Unit]] = deriveEncoder[QTU].contramap(x => QTU(x._1, x._2, x._3, x._5, x._6))
   implicit def decoderQTree: Decoder[QTree[Unit]] =
     deriveDecoder[QTU].map(x => new QTree[Unit](x.offset, x.level, x.count, {}, x.lowerChild, x.upperChild))
 
-  implicit val decoderDescribe: Decoder[Describe] = deriveDecoder[Describe] or Decoder.decodeNone.map(
-    _ => Describe.empty
-  )
   implicit val encoderDescribe: Encoder[Describe] = Encoder.instance({
     case x if x.count == 0 => Json.Null
     case x                 => deriveEncoder[Describe].apply(x)
   })
+  implicit val decoderDescribe: Decoder[Describe] = deriveDecoder[Describe] or Decoder.decodeNone.map(
+    _ => Describe.empty
+  )
 
-  implicit val decoderDelta: Decoder[Delta]                 = deriveDecoder
+  implicit val encoderDelta: Encoder[Delta] = deriveEncoder
+  implicit val decoderDelta: Decoder[Delta] = deriveDecoder
+
+  implicit val encoderMapDelta: Encoder[Map[String, Delta]] = Encoder.encodeMap[String, Delta]
   implicit val decoderMapDelta: Decoder[Map[String, Delta]] = Decoder.decodeMap[String, Delta]
+
+  implicit val encodeKeySeqString: KeyEncoder[Set[String]] = KeyEncoder.instance[Set[String]](_.mkString("/"))
   implicit val decodeKeySeqString: KeyDecoder[Set[String]] = KeyDecoder.instance[Set[String]]({
     case "" => Some(Set.empty)
     case x  => Some(x.split('/').toSet)
   })
 
+  implicit val encoderMap: Encoder[Map[Set[String], Long]] = Encoder
+    .encodeSeq[KeyVal[Set[String], Long]]
+    .contramap(x => x.map({ case (k, v) => KeyVal(k, v) }).toSeq)
   implicit val decoderMap: Decoder[Map[Set[String], Long]] =
     Decoder.decodeSeq[KeyVal[Set[String], Long]].map(x => x.map(x => x.key -> x.value).toMap)
+
+  implicit val encoderParkaAnalysis: Encoder[ParkaAnalysis] = deriveEncoder
+  implicit val decoderParkaAnalysis: Decoder[ParkaAnalysis] = deriveDecoder
 }
