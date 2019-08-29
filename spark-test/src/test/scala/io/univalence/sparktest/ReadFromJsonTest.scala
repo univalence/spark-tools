@@ -2,11 +2,14 @@ package io.univalence.sparktest
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
+import org.scalactic.Prettifier
 import org.scalatest.FunSuite
 
 class ReadFromJsonTest extends FunSuite with SparkTest {
   val sharedSparkSession: SparkSession = ss
   val sc: SparkContext                 = ss.sparkContext
+
+  implicit val default: Prettifier = Prettifier.default
 
   test("load Json from String") {
     //manage json option for jackson

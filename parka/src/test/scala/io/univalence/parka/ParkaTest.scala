@@ -44,20 +44,20 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
   
   test("test deltaString") {
 
-    val left  = dataframe("{id:1, value:'a', n:1}", "{id:2, value:'b', n:2}")
-    val right = dataframe("{id:1, value:'a', n:1}", "{id:2, value:'b2', n:3}")
+    val left  = dataframe("{id:1, col1:'a', n:1}", "{id:2, col1:'b', n:2}")
+    val right = dataframe("{id:1, col1:'a', n:1}", "{id:2, col1:'b2', n:3}")
 
     val result = Parka(left, right)("id").result
     println(Printer.printParkaResult(result))
 
-    //assert(result.inner.countDeltaByRow == Map(Seq("n", "value") -> 1))
+    //assert(result.inner.countDeltaByRow == Map(Seq("n", "col1") -> 1))
     assert(result.inner.countDeltaByRow.values.map(_.count).sum === result.inner.countRowNotEqual)
 
     val deltaByRowM = MonoidGen.gen[DeltaByRow]
 
     val deltaByRow: DeltaByRow = deltaByRowM.combineAll(result.inner.countDeltaByRow.values)
 
-    val histograms = deltaByRow.byColumn("value").error.histograms
+    val histograms = deltaByRow.byColumn("col1").error.histograms
     assertHistoEqual(histograms("levenshtein"), 1)
   }
 
@@ -80,16 +80,14 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     val result: ParkaResult = analysis.result
     assert(result.inner.countRowEqual === 1L)
     assert(result.inner.countRowNotEqual === 2L)
-    assert(result.inner.countDeltaByRow.mapValues(_.count) === Map(Set("value") -> 2))
+    assert(result.inner.countDeltaByRow.mapValues(_.count) === Map(Set("col1") -> 2))
     assert(result.inner.countDeltaByRow.values.map(_.count).sum === result.inner.countRowNotEqual)
 
     val diff      = Seq(l1 - l5, l2 - l6).map(x => x * x).sum
-    val deltaLong = result.inner.byColumn("value")
+    val deltaLong = result.inner.byColumn("col1")
 
     assert(deltaLong.nEqual == 1)
     assert(deltaLong.nNotEqual == 2)
-
-    val histogram = deltaLong.describe.left.histograms("value")
 
     assertHistoEqual(deltaLong.error.histograms("value"), l1 - l5, l2 - l6)
 
@@ -100,22 +98,22 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
   }
 
   test("test deltaBoolean") {
-    val left = dataframe("{id:1, value:true}",
-                         "{id:2, value:true}",
-                         "{id:3, value:false}",
-                         "{id:4, value:false}",
-                         "{id:5, value:false}",
-                         "{id:6, value:false}")
-    val right = dataframe("{id:1, value:false}",
-                          "{id:2, value:true}",
-                          "{id:3, value:false}",
-                          "{id:4, value:true}",
-                          "{id:5, value:false}")
+    val left = dataframe("{id:1, col1:true}",
+                         "{id:2, col1:true}",
+                         "{id:3, col1:false}",
+                         "{id:4, col1:false}",
+                         "{id:5, col1:false}",
+                         "{id:6, col1:false}")
+    val right = dataframe("{id:1, col1:false}",
+                          "{id:2, col1:true}",
+                          "{id:3, col1:false}",
+                          "{id:4, col1:true}",
+                          "{id:5, col1:false}")
 
     val result = Parka(left, right)("id").result
     println(Printer.printParkaResult(result))
 
-    val deltaBoolean = result.inner.byColumn("value")
+    val deltaBoolean = result.inner.byColumn("col1")
     val counts       = deltaBoolean.error.counts
     assert(counts("tf") == 1, "at tf")
 
@@ -274,5 +272,5 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
 
 }
 
-case class Element(key: String, value: Long)
-case class Element2(key: String, value: Long, eulav: Long)
+case class Element(key: String, col1: Long)
+case class Element2(key: String, col1: Long, col2: Long)

@@ -18,12 +18,12 @@
       "countDeltaByRow" : [
         {
           "key" : [
-            "value"
+            "col1"
           ],
           "value" : {
             "count" : 999,
             "byColumn" : {
-              "value" : {
+              "col1" : {
                 "nEqual" : 0,
                 "nNotEqual" : 999,
                 "describe" : {
@@ -15807,7 +15807,7 @@
       "equalRows" : {
         "count" : 1,
         "byColumn" : {
-          "value" : {
+          "col1" : {
             "count" : 1,
             "histograms" : {
               "value" : {

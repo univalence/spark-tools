@@ -34,9 +34,9 @@ libraryDependencies += "io.univalence" %% "parka" % "0.3+79-4936e981"
 
 ## Usage
 
-The entry of Parka is the Parka Analysis object, this object contains a lot of information about the comparison between two Datasets which is very important for Data Quality.
+The entry of Parka is the Parka Analysis object, this object contains all the information about the comparison between two Datasets.
 
-To get Parka Analysis, first import parka and then generate the analysis from two Datasets as below :
+To get a Parka Analysis, first import parka and then generate the analysis from two Datasets as below :
 
 ```scala
 import io.univalence.parka.Parka
@@ -44,8 +44,7 @@ import io.univalence.parka.Parka
 val pa: ParkaAnalysis = Parka(df1, d2f)("key")
 ``` 
 
-First give the two Datasets to compare to and then column(s) that are keys.
- the console or export it in JSON. 
+First give the two Datasets to compare to and then column(s) that are keys. then print the result in the console or export it in JSON. 
 
 Here is an example :
 

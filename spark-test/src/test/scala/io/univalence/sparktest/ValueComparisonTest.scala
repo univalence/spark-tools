@@ -2,8 +2,9 @@ package io.univalence.sparktest
 
 import ValueComparison._
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.types.{ IntegerType, StringType, StructField, StructType }
-import org.apache.spark.sql.{ Row, SparkSession }
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+import org.apache.spark.sql.{Row, SparkSession}
+import org.scalactic.Prettifier
 import org.scalatest.FunSuiteLike
 
 import scala.collection.mutable
@@ -14,6 +15,8 @@ class ValueComparisonTest extends FunSuiteLike with SparkTest {
 
   val sharedSparkSession: SparkSession = ss
   val sc: SparkContext                 = ss.sparkContext
+
+  implicit val default: Prettifier = Prettifier.default
 
   test("A row should have no modification with itself") {
     val df = Seq(

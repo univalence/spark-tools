@@ -46,6 +46,10 @@ libraryDependencies += "io.univalence" %% "spark-test" % "0.3+79-4936e981" % Tes
 
 ## Usage
 
+### Implicit Spark Session
+
+Spark-Test provides an implicit Spark Session, it means that you don't have to define a Spark Session for your tests. You can immediately  
+
 ### Create a DataFrame with a JSON string
 
 We start by importing and extending SparkTest.
