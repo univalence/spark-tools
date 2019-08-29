@@ -256,45 +256,6 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     val part   = Printer.printParkaResult(result)
     println(Part.toString(part))
   }
-
-  def parkaAnalysisToJson(pa: ParkaAnalysis, name: String): Unit = {
-    val file         = new File(s"parka/src/test/ressources/reports/$name.json")
-    val bw           = new BufferedWriter(new FileWriter(file))
-    val paJson: Json = Serde.toJson(pa)
-
-    bw.write(paJson.toString())
-    bw.close()
-  }
-
-  test("report 1val_10elem_positifs") {
-    val left: Dataset[Element] = dataset(
-      Element("0", 100),
-      Element("1", 100),
-      Element("2", 100),
-      Element("3", 100),
-      Element("4", 100),
-      Element("5", 100),
-      Element("6", 100),
-      Element("7", 100),
-      Element("8", 100),
-      Element("9", 100)
-    )
-    val right: Dataset[Element] = dataset(
-      Element("0", 0),
-      Element("1", 10),
-      Element("2", 20),
-      Element("3", 30),
-      Element("4", 40),
-      Element("5", 50),
-      Element("6", 60),
-      Element("7", 70),
-      Element("8", 80),
-      Element("9", 90),
-      Element("10", 100)
-    )
-    val pa = Parka(left, right)("key")
-    parkaAnalysisToJson(pa, "report_1val_10elem_positifs")
-  }
 }
 
 case class Element(key: String, value: Long)
