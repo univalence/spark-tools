@@ -1,11 +1,12 @@
 package io.univalence.parka
-import java.io.{ BufferedWriter, File, FileWriter }
+import java.io.{BufferedWriter, File, FileWriter}
 
 import io.univalence.sparktest.SparkTest
-import java.sql.{ Date, Timestamp }
+import java.sql.{Date, Timestamp}
 
 import io.circe.Json
-import org.apache.spark.sql.{ DataFrame, Dataset }
+import io.univalence.schema.SchemaComparator.SchemaError
+import org.apache.spark.sql.{DataFrame, Dataset}
 import org.scalactic.Prettifier
 import org.scalatest.FunSuite
 
@@ -27,6 +28,20 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
 
   assertDistinct(l1, l2, l3, l4, l5, l6)
 
+  test("schemas are different") {
+    val left: Dataset[Element] = dataset(
+      Element("0", 100)
+    )
+
+    val right: Dataset[Element2] = dataset(
+      Element2("0", 100, 100)
+    )
+
+    assertThrows[SchemaError] {
+      Parka(left, right)("key")
+    }
+  }
+  
   test("test deltaString") {
 
     val left  = dataframe("{id:1, value:'a', n:1}", "{id:2, value:'b', n:2}")
@@ -256,6 +271,7 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     val part   = Printer.printParkaResult(result)
     println(Part.toString(part))
   }
+
 }
 
 case class Element(key: String, value: Long)
