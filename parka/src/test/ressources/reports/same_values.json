@@ -1,0 +1,65 @@
+{
+  "datasetInfo" : {
+    "left" : {
+      "source" : [
+      ],
+      "nStage" : 0
+    },
+    "right" : {
+      "source" : [
+      ],
+      "nStage" : 0
+    }
+  },
+  "result" : {
+    "inner" : {
+      "countRowEqual" : 10,
+      "countRowNotEqual" : 0,
+      "countDeltaByRow" : [
+      ],
+      "equalRows" : {
+        "count" : 10,
+        "byColumn" : {
+          "value" : {
+            "count" : 10,
+            "histograms" : {
+              "value" : {
+                "values" : {
+                  "0" : 1,
+                  "10" : 1,
+                  "20" : 1,
+                  "60" : 1,
+                  "70" : 1,
+                  "80" : 1,
+                  "50" : 1,
+                  "40" : 1,
+                  "30" : 1,
+                  "90" : 1
+                }
+              }
+            },
+            "counts" : {
+              
+            }
+          }
+        }
+      }
+    },
+    "outer" : {
+      "both" : {
+        "left" : {
+          "count" : 0,
+          "byColumn" : {
+            
+          }
+        },
+        "right" : {
+          "count" : 0,
+          "byColumn" : {
+            
+          }
+        }
+      }
+    }
+  }
+}

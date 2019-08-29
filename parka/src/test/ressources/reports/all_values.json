@@ -1,0 +1,127 @@
+{
+  "datasetInfo" : {
+    "left" : {
+      "source" : [
+      ],
+      "nStage" : 0
+    },
+    "right" : {
+      "source" : [
+      ],
+      "nStage" : 0
+    }
+  },
+  "result" : {
+    "inner" : {
+      "countRowEqual" : 1,
+      "countRowNotEqual" : 9,
+      "countDeltaByRow" : [
+        {
+          "key" : [
+            "value"
+          ],
+          "value" : {
+            "count" : 9,
+            "byColumn" : {
+              "value" : {
+                "nEqual" : 0,
+                "nNotEqual" : 9,
+                "describe" : {
+                  "left" : {
+                    "count" : 9,
+                    "histograms" : {
+                      "value" : {
+                        "values" : {
+                          "0" : 9
+                        }
+                      }
+                    },
+                    "counts" : {
+                      
+                    }
+                  },
+                  "right" : {
+                    "count" : 9,
+                    "histograms" : {
+                      "value" : {
+                        "values" : {
+                          "10" : 1,
+                          "-50" : 1,
+                          "-40" : 1,
+                          "20" : 1,
+                          "-30" : 1,
+                          "-10" : 1,
+                          "-20" : 1,
+                          "40" : 1,
+                          "30" : 1
+                        }
+                      }
+                    },
+                    "counts" : {
+                      
+                    }
+                  }
+                },
+                "error" : {
+                  "count" : 9,
+                  "histograms" : {
+                    "value" : {
+                      "values" : {
+                        "10" : 1,
+                        "-40" : 1,
+                        "20" : 1,
+                        "-30" : 1,
+                        "-10" : 1,
+                        "-20" : 1,
+                        "50" : 1,
+                        "40" : 1,
+                        "30" : 1
+                      }
+                    }
+                  },
+                  "counts" : {
+                    
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "equalRows" : {
+        "count" : 1,
+        "byColumn" : {
+          "value" : {
+            "count" : 1,
+            "histograms" : {
+              "value" : {
+                "values" : {
+                  "0" : 1
+                }
+              }
+            },
+            "counts" : {
+              
+            }
+          }
+        }
+      }
+    },
+    "outer" : {
+      "both" : {
+        "left" : {
+          "count" : 0,
+          "byColumn" : {
+            
+          }
+        },
+        "right" : {
+          "count" : 0,
+          "byColumn" : {
+            
+          }
+        }
+      }
+    }
+  }
+}

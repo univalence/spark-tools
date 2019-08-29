@@ -1,0 +1,120 @@
+{
+  "datasetInfo" : {
+    "left" : {
+      "source" : [
+      ],
+      "nStage" : 0
+    },
+    "right" : {
+      "source" : [
+      ],
+      "nStage" : 0
+    }
+  },
+  "result" : {
+    "inner" : {
+      "countRowEqual" : 2,
+      "countRowNotEqual" : 2,
+      "countDeltaByRow" : [
+        {
+          "key" : [
+            "value"
+          ],
+          "value" : {
+            "count" : 2,
+            "byColumn" : {
+              "value" : {
+                "nEqual" : 0,
+                "nNotEqual" : 2,
+                "describe" : {
+                  "left" : {
+                    "count" : 2,
+                    "histograms" : {
+                      "length" : {
+                        "values" : {
+                          "4" : 1
+                        }
+                      }
+                    },
+                    "counts" : {
+                      "nNull" : 1
+                    }
+                  },
+                  "right" : {
+                    "count" : 2,
+                    "histograms" : {
+                      "length" : {
+                        "values" : {
+                          "4" : 1
+                        }
+                      }
+                    },
+                    "counts" : {
+                      "nNull" : 1
+                    }
+                  }
+                },
+                "error" : {
+                  "count" : 2,
+                  "histograms" : {
+                    
+                  },
+                  "counts" : {
+                    "rightToNull" : 1,
+                    "leftToNull" : 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "equalRows" : {
+        "count" : 2,
+        "byColumn" : {
+          "value" : {
+            "count" : 2,
+            "histograms" : {
+              "length" : {
+                "values" : {
+                  "4" : 1
+                }
+              }
+            },
+            "counts" : {
+              "nNull" : 1
+            }
+          }
+        }
+      }
+    },
+    "outer" : {
+      "both" : {
+        "left" : {
+          "count" : 0,
+          "byColumn" : {
+            
+          }
+        },
+        "right" : {
+          "count" : 1,
+          "byColumn" : {
+            "value" : {
+              "count" : 1,
+              "histograms" : {
+                "length" : {
+                  "values" : {
+                    "4" : 1
+                  }
+                }
+              },
+              "counts" : {
+                
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
