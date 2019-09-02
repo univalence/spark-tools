@@ -69,11 +69,11 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 ## Dependencies
 
-* [algebird](https://github.com/twitter/algebird) - 0.13.4
-* [magnolia](https://github.com/propensive/magnolia) - 0.10.0
-* [jline](https://github.com/jline/jline3) - 3.12.1
-* [circe](https://github.com/circe/circe) - 0.11.1
-* [spark-test](https://github.com/univalence/spark-tools/tree/master/spark-test) - current
+* [algebird](https://github.com/twitter/algebird) - 0.13.4 --> Approximate data structure
+* [magnolia](https://github.com/propensive/magnolia) - 0.10.0 --> Generic derivation for typeclasses
+* [jline](https://github.com/jline/jline3) - 3.12.1 --> Console's size
+* [circe](https://github.com/circe/circe) - 0.11.1 --> Json serialization
+* [spark-test](https://github.com/univalence/spark-tools/tree/master/spark-test) - current --> Dataframe's testing tool
 
 ## Links
 
