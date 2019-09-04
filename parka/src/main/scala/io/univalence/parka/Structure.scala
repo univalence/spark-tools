@@ -94,7 +94,9 @@ object Describe {
       case false          => count("nFalse", 1)
       case s: String      => histo("length", s.length.toLong)
       case d: Double      => histo("value", d)
+      case f: Float       => histo("value", f)
       case l: Long        => histo("value", l)
+      case i: Int         => histo("value", i)
       case ts: Timestamp  => histo("timestamp", ts.getTime)
       case d: Date        => histo("date", d.getTime)
       case b: Array[Byte] => histo("length", b.length.toLong)
@@ -148,7 +150,9 @@ object Delta {
       case (null, _)                => Describe.count("rightToNull", 1)
       case (_, null)                => Describe.count("leftToNull", 1)
       case (l1: Long, l2: Long)     => Describe(l1 - l2)
+      case (i1: Int, i2: Int)       => Describe(i1 - i2)
       case (d1: Double, d2: Double) => Describe(d1 - d2)
+      case (f1: Float, f2: Float)   => Describe(f1 - f2)
       case (s1: String, s2: String) =>
         Describe.histo("levenshtein", levenshtein_generified(s1.toCharArray, s2.toCharArray).toLong)
       case (b1: Boolean, b2: Boolean) =>

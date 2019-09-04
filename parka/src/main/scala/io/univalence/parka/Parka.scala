@@ -125,6 +125,7 @@ object Parka {
       spark.read
         .format("csv")
         .option("header", "true")
+        .option("inferSchema", "true")
         .option("sep", sep)
         .load(path)
 
