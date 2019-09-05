@@ -1,12 +1,12 @@
 package io.univalence.parka
-import java.io.{BufferedWriter, File, FileWriter}
+import java.io.{ BufferedWriter, File, FileWriter }
 
 import io.univalence.sparktest.SparkTest
-import java.sql.{Date, Timestamp}
+import java.sql.{ Date, Timestamp }
 
 import io.circe.Json
 import io.univalence.schema.SchemaComparator.SchemaError
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
+import org.apache.spark.sql.{ DataFrame, Dataset, SparkSession }
 import org.scalactic.Prettifier
 import org.scalatest.FunSuite
 
@@ -41,7 +41,7 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
       Parka(left, right)("key")
     }
   }
-  
+
   test("test deltaString") {
 
     val left  = dataframe("{id:1, col1:'a', n:1}", "{id:2, col1:'b', n:2}")

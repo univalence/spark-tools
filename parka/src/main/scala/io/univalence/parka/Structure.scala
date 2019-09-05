@@ -30,12 +30,11 @@ case class Inner(countRowEqual: Long,
                  countRowNotEqual: Long,
                  countDeltaByRow: Map[Set[String], DeltaByRow],
                  equalRows: DescribeByRow) {
-  @transient lazy val byColumn: Map[String, Delta] = {
-    val m = implicitly[Monoid[Map[String, Delta]]]
-    m.combineAll(countDeltaByRow.map(_._2.byColumn).toSeq :+ equalRows.byColumn.mapValues(d => {
+  @transient lazy val byColumn: Map[String, Delta] =
+    Monoid.combineAll(countDeltaByRow.map(_._2.byColumn).toSeq :+ equalRows.byColumn.mapValues(d => {
       Delta(d.count, 0, Both(d, d), Describe.empty)
     }))
-  }
+
 }
 
 /**

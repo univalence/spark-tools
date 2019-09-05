@@ -106,7 +106,7 @@ object Parka {
       //Inner
       case (l, r) if l.nonEmpty && r.nonEmpty => ParkaResult(inner(l.head, r.head)(keys), emptyOuter)
     }
-  
+
   def combine(left: ParkaResult, right: ParkaResult): ParkaResult = MonoidUtils.parkaResultMonoid.combine(left, right)
 
   private def compress(res: ParkaResult): ParkaResult =

@@ -72,6 +72,14 @@ trait ParkaEncodersAndDecoders {
   implicit val decoderMap: Decoder[Map[Set[String], DeltaByRow]] =
     Decoder.decodeSeq[KeyVal[Set[String], DeltaByRow]].map(x => x.map(x => x.key -> x.value).toMap)
 
+  implicit val encoderInner: Encoder[Inner] = {
+    val encodeInner = deriveEncoder[Inner]
+    val encodeMap   = Encoder.encodeMap[String, Delta]
+    Encoder.instance(inner => {
+      encodeInner(inner).mapObject(jobj => jobj.add("byColumn", encodeMap(inner.byColumn)))
+    })
+  }
+
   implicit val encoderParkaAnalysis: Encoder[ParkaAnalysis] = deriveEncoder
   implicit val decoderParkaAnalysis: Decoder[ParkaAnalysis] = deriveDecoder
 }
