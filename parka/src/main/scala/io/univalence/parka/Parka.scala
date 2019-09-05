@@ -4,13 +4,30 @@ import cats.kernel.Monoid
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.{ Dataset, Row }
+import org.apache.spark.sql.{ Dataset, Row, SparkSession }
 import io.univalence.schema.SchemaComparator
 import org.apache.spark.sql
 
+/**
+  * Parka is a library that perform deltaQA in Spark.
+  * Basically, it compares two datasets and shows us the difference between the two of them.
+  *
+  * This library serve one principal purpose, facilitate "Regression testing(https://en.wikipedia.org/wiki/Regression_testing)"
+  * using a new approach. The idea behind Parka is quite simple, when you perform some updates of a program, you need to check
+  * if you don't break anything on it. Generally we create unit test and that's cool! However, they just cover a part of our program
+  * and basically they don't check if everything is ok on real data. Parka try to fix that problem. Instead of checking function's behaviours,
+  * let's check data by applying on a same dataset the previous and the new update and comparing them to see if something weird
+  * happens.
+  */
 object Parka {
   private val keyValueSeparator = "§"
 
+  /**
+    * Generate a [Describe] for each column of a particular row
+    * @param row            Row that need to be describe
+    * @param keys           Primary key(s)
+    * @return               Map of [Describe] with each column that are not primary key(s) as a the key
+    */
   def describe(row: Row)(keys: Set[String]): Map[String, Describe] = {
     val fields = row.asInstanceOf[GenericRowWithSchema].schema.fieldNames
 
@@ -21,6 +38,8 @@ object Parka {
   }
 
   /**
+    * Generate [Outer] that describe a row without twin on the other Dataset
+    *
     * @param row            Row from the one of the two Dataset
     * @param side           Right if the row come from the right Dataset otherwise Left
     * @param keys           Column's names of both Datasets that are considered as keys
@@ -37,6 +56,8 @@ object Parka {
   }
 
   /**
+    * Generate [Inner] that describe and compare two rows with the same key
+    *
     * @param left           Row from the left Dataset
     * @param right          Row from the right Dataset
     * @param keys           Column's names of both Datasets that are considered as keys
@@ -67,6 +88,10 @@ object Parka {
   private val emptyDescribeByRow: DescribeByRow = MonoidGen.empty[DescribeByRow]
 
   /**
+    * Create a [ParkaResult] from two rows using the same key on both Datasets
+    * If a key is only available on one side then we perform an [Outer] analysis instead of an [Inner] one
+    * Normally, the key should be unique and the Iterable[Row] should not contains more than one element
+    *
     * @param left           Row from the left Dataset for a particular set of key
     * @param right          Row from the right Dataset for a particular set of key
     * @param keys           Column's names of both Datasets that are considered as keys
@@ -81,14 +106,15 @@ object Parka {
       //Inner
       case (l, r) if l.nonEmpty && r.nonEmpty => ParkaResult(inner(l.head, r.head)(keys), emptyOuter)
     }
-
+  
   def combine(left: ParkaResult, right: ParkaResult): ParkaResult = MonoidUtils.parkaResultMonoid.combine(left, right)
 
   private def compress(res: ParkaResult): ParkaResult =
     res.copy(inner = res.inner.copy(countDeltaByRow = CompressMap.apply(res.inner.countDeltaByRow, 128)))
 
   /**
-    * Entry point of Parka
+    * Entry point of Parka, giving two Datasets we generate one [ParkaAnalysis]
+    * [ParkaResult] is the aggregation of result's row
     *
     * @param leftDs         Left Dataset
     * @param rightDs        Right Dataset
@@ -115,12 +141,19 @@ object Parka {
     ParkaAnalysis(datasetInfo = Both(leftDs, rightDs).map(datasetInfo), result = compress(res))
   }
 
-  def fromCSV(leftPath: String, rightPath: String, sep: String = ";")(keyNames: String*): ParkaAnalysis = {
-    val spark = org.apache.spark.sql.SparkSession.builder
-      .master("local")
-      .appName("Parka")
-      .getOrCreate
-
+  /**
+    * Generate a [ParkaAnalysis] from two CSV file
+    *
+    * @param leftPath       left Dataset's file path
+    * @param rightPath      Right Dataset's file path
+    * @param sep            Separator for the dataset (default is ";")
+    * @param keyNames       Primary key(s)
+    * @param spark          The SparkSession of the application
+    * @return               A Parka Analysis
+    */
+  def fromCSV(leftPath: String, rightPath: String, sep: String = ";")(
+    keyNames: String*
+  )(implicit spark: SparkSession): ParkaAnalysis = {
     def csvToDf(path: String): sql.DataFrame =
       spark.read
         .format("csv")

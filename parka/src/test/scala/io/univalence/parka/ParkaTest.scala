@@ -6,7 +6,7 @@ import java.sql.{Date, Timestamp}
 
 import io.circe.Json
 import io.univalence.schema.SchemaComparator.SchemaError
-import org.apache.spark.sql.{DataFrame, Dataset}
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.scalactic.Prettifier
 import org.scalatest.FunSuite
 
@@ -261,13 +261,14 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     println(Part.toString(part))
   }
 
-  ignore("Csv test") {
+  test("Csv test") {
+    implicit val spark: SparkSession = ss
+
     val left  = "parka/src/test/ressources/leftTest.csv"
     val right = "parka/src/test/ressources/rightTest.csv"
 
     val result = Parka.fromCSV(left, right)("key").result
     val part   = Printer.printParkaResult(result)
-    println(Part.toString(part))
   }
 
 }
