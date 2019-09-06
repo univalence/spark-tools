@@ -30,27 +30,33 @@
                   "left" : {
                     "count" : 2,
                     "histograms" : {
-                      "length" : {
-                        "values" : {
-                          "4" : 1
-                        }
-                      }
+                      
                     },
                     "counts" : {
                       "nNull" : 1
+                    },
+                    "enums" : {
+                      "value" : {
+                        "data" : {
+                          "aaaa" : 1
+                        }
+                      }
                     }
                   },
                   "right" : {
                     "count" : 2,
                     "histograms" : {
-                      "length" : {
-                        "values" : {
-                          "4" : 1
-                        }
-                      }
+                      
                     },
                     "counts" : {
                       "nNull" : 1
+                    },
+                    "enums" : {
+                      "value" : {
+                        "data" : {
+                          "cccc" : 1
+                        }
+                      }
                     }
                   }
                 },
@@ -62,6 +68,9 @@
                   "counts" : {
                     "rightToNull" : 1,
                     "leftToNull" : 1
+                  },
+                  "enums" : {
+                    
                   }
                 }
               }
@@ -75,14 +84,72 @@
           "value" : {
             "count" : 2,
             "histograms" : {
-              "length" : {
-                "values" : {
-                  "4" : 1
-                }
-              }
+              
             },
             "counts" : {
               "nNull" : 1
+            },
+            "enums" : {
+              "value" : {
+                "data" : {
+                  "bbbb" : 1
+                }
+              }
+            }
+          }
+        }
+      },
+      "byColumn" : {
+        "value" : {
+          "nEqual" : 2,
+          "nNotEqual" : 2,
+          "describe" : {
+            "left" : {
+              "count" : 4,
+              "histograms" : {
+                
+              },
+              "counts" : {
+                "nNull" : 2
+              },
+              "enums" : {
+                "value" : {
+                  "data" : {
+                    "aaaa" : 1,
+                    "bbbb" : 1
+                  }
+                }
+              }
+            },
+            "right" : {
+              "count" : 4,
+              "histograms" : {
+                
+              },
+              "counts" : {
+                "nNull" : 2
+              },
+              "enums" : {
+                "value" : {
+                  "data" : {
+                    "cccc" : 1,
+                    "bbbb" : 1
+                  }
+                }
+              }
+            }
+          },
+          "error" : {
+            "count" : 2,
+            "histograms" : {
+              
+            },
+            "counts" : {
+              "rightToNull" : 1,
+              "leftToNull" : 1
+            },
+            "enums" : {
+              
             }
           }
         }
@@ -102,14 +169,17 @@
             "value" : {
               "count" : 1,
               "histograms" : {
-                "length" : {
-                  "values" : {
-                    "4" : 1
-                  }
-                }
+                
               },
               "counts" : {
                 
+              },
+              "enums" : {
+                "value" : {
+                  "data" : {
+                    "eeee" : 1
+                  }
+                }
               }
             }
           }

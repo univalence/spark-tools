@@ -72,8 +72,12 @@ case class DescribeByRow(count: Long, byColumn: Map[String, Describe])
   *                       Normally because a column as a type you shouldn't have more than one Histogram per column
   * @param counts         Map of special counts depending of the row type for example, if the row accept nulls then
   *                       there is a count for them stored here with the key "nNull"
+  * @param enums
   */
-case class Describe(count: Long, histograms: Map[String, Histogram], counts: Map[String, Long])
+case class Describe(count: Long,
+                    histograms: Map[String, Histogram],
+                    counts: Map[String, Long],
+                    enums: Map[String, Enum])
 
 object Describe {
 
@@ -84,14 +88,17 @@ object Describe {
     oneValue.copy(histograms = Map(name -> Histogram.value(l)))
   final def histo(name: String, d: Double): Describe =
     oneValue.copy(histograms = Map(name -> Histogram.value(d)))
-  final def count(name: String, value: Long): Describe = oneValue.copy(counts = Map(name -> value))
+  final def count(name: String, value: Long): Describe =
+    oneValue.copy(counts = Map(name -> value))
+  final def enum(name: String, value: String): Describe =
+    oneValue.copy(enums = Map(name -> Enum(Map(value -> 1))))
 
   def apply(a: Any): Describe =
     a match {
       case null           => count("nNull", 1)
       case true           => count("nTrue", 1)
       case false          => count("nFalse", 1)
-      case s: String      => histo("length", s.length.toLong)
+      case s: String      => enum("value", s)
       case d: Double      => histo("value", d)
       case f: Float       => histo("value", f)
       case l: Long        => histo("value", l)
@@ -122,7 +129,6 @@ object Delta {
     def tf: Long
     def tt: Long
     def ff: Long
-
   }
 
   def levenshtein_generified[T](a1: Array[T], a2: Array[T]): Int = {
@@ -166,4 +172,8 @@ object Delta {
   def apply(x: Any, y: Any): Delta =
     if (x == y) Delta(1, 0, Both(Describe(x), Describe(y)), Describe.empty)
     else Delta(0, 1, Both(Describe(x), Describe(y)), error(x, y))
+}
+
+case class Enum(data: Map[String, Long]) {
+  def estimate(key: String): Long = data(key)
 }

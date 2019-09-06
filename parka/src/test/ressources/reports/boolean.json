@@ -35,6 +35,9 @@
                     "counts" : {
                       "nFalse" : 1,
                       "nTrue" : 1
+                    },
+                    "enums" : {
+                      
                     }
                   },
                   "right" : {
@@ -45,6 +48,9 @@
                     "counts" : {
                       "nTrue" : 1,
                       "nFalse" : 1
+                    },
+                    "enums" : {
+                      
                     }
                   }
                 },
@@ -56,6 +62,9 @@
                   "counts" : {
                     "ft" : 1,
                     "tf" : 1
+                  },
+                  "enums" : {
+                    
                   }
                 }
               }
@@ -74,6 +83,56 @@
             "counts" : {
               "nFalse" : 1,
               "nTrue" : 1
+            },
+            "enums" : {
+              
+            }
+          }
+        }
+      },
+      "byColumn" : {
+        "value" : {
+          "nEqual" : 2,
+          "nNotEqual" : 2,
+          "describe" : {
+            "left" : {
+              "count" : 4,
+              "histograms" : {
+                
+              },
+              "counts" : {
+                "nFalse" : 2,
+                "nTrue" : 2
+              },
+              "enums" : {
+                
+              }
+            },
+            "right" : {
+              "count" : 4,
+              "histograms" : {
+                
+              },
+              "counts" : {
+                "nTrue" : 2,
+                "nFalse" : 2
+              },
+              "enums" : {
+                
+              }
+            }
+          },
+          "error" : {
+            "count" : 2,
+            "histograms" : {
+              
+            },
+            "counts" : {
+              "ft" : 1,
+              "tf" : 1
+            },
+            "enums" : {
+              
             }
           }
         }
@@ -97,6 +156,9 @@
               },
               "counts" : {
                 "nTrue" : 1
+              },
+              "enums" : {
+                
               }
             }
           }
