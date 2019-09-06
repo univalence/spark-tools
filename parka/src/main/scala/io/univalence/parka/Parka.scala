@@ -1,6 +1,9 @@
 package io.univalence.parka
 
+import java.io.{ BufferedWriter, File, FileWriter }
+
 import cats.kernel.Monoid
+import io.circe.Json
 import io.univalence.parka.MonoidGen._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema

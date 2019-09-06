@@ -99,13 +99,14 @@ object Describe {
       case true           => count("nTrue", 1)
       case false          => count("nFalse", 1)
       case s: String      => enum("value", s)
-      case d: Double      => histo("value", d)
       case f: Float       => histo("value", f)
-      case l: Long        => histo("value", l)
+      case d: Double      => histo("value", d)
       case i: Int         => histo("value", i)
+      case l: Long        => histo("value", l)
       case ts: Timestamp  => histo("timestamp", ts.getTime)
       case d: Date        => histo("date", d.getTime)
       case b: Array[Byte] => histo("length", b.length.toLong)
+      case _              => ???
     }
 }
 
@@ -152,19 +153,19 @@ object Delta {
 
   def error(x: Any, y: Any): Describe =
     (x, y) match {
-      case (null, _)                => Describe.count("rightToNull", 1)
-      case (_, null)                => Describe.count("leftToNull", 1)
-      case (l1: Long, l2: Long)     => Describe(l1 - l2)
-      case (i1: Int, i2: Int)       => Describe(i1 - i2)
-      case (d1: Double, d2: Double) => Describe(d1 - d2)
-      case (f1: Float, f2: Float)   => Describe(f1 - f2)
-      case (s1: String, s2: String) =>
-        Describe.histo("levenshtein", levenshtein_generified(s1.toCharArray, s2.toCharArray).toLong)
+      case (null, _) => Describe.count("rightToNull", 1)
+      case (_, null) => Describe.count("leftToNull", 1)
       case (b1: Boolean, b2: Boolean) =>
         val key: String = (if (b1) "t" else "f") + (if (b2) "t" else "f")
         Describe.count(key, 1)
-      case (d1: Date, d2: Date)               => Describe(d1.getTime - d2.getTime)
+      case (s1: String, s2: String) =>
+        Describe.histo("levenshtein", levenshtein_generified(s1.toCharArray, s2.toCharArray).toLong)
+      case (f1: Float, f2: Float)             => Describe(f1 - f2)
+      case (d1: Double, d2: Double)           => Describe(d1 - d2)
+      case (i1: Int, i2: Int)                 => Describe(i1 - i2)
+      case (l1: Long, l2: Long)               => Describe(l1 - l2)
       case (t1: Timestamp, t2: Timestamp)     => Describe(t1.getTime - t2.getTime)
+      case (d1: Date, d2: Date)               => Describe(d1.getTime - d2.getTime)
       case (b1: Array[Byte], b2: Array[Byte]) => Describe.histo("levenstein", levenshtein_generified(b1, b2).toLong)
       case _                                  => ???
     }
