@@ -17,7 +17,8 @@ object MonoidGen {
     override def combine(x: StringEnum, y: StringEnum): StringEnum =
       (x, y) match {
         case (x: SmallStringEnum, y: SmallStringEnum) =>
-          SmallStringEnum(mapMonoid[String, Long].combine(x.data, y.data))
+          val res = SmallStringEnum(mapMonoid[String, Long].combine(x.data, y.data))
+          if (res.data.size > Enum.Sketch.HEAVY_HITTERS_COUNT) res.toLargeStringEnum else res
         case _ => LargeStringEnum(Enum.Sketch.MONOID.combine(x.toLargeStringEnum.sketch, y.toLargeStringEnum.sketch))
       }
 
