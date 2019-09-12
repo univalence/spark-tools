@@ -11,15 +11,15 @@ object MonoidGen {
     override def empty: T               = _empty
   }
 
-  implicit val enumMonoid: Monoid[StringEnum] = new Typeclass[StringEnum] {
-    override def empty: StringEnum = SmallStringEnum(Map.empty)
+  implicit val enumMonoid: Monoid[Enum] = new Typeclass[Enum] {
+    override def empty: Enum = SmallEnum(Map.empty)
 
-    override def combine(x: StringEnum, y: StringEnum): StringEnum =
+    override def combine(x: Enum, y: Enum): Enum =
       (x, y) match {
-        case (x: SmallStringEnum, y: SmallStringEnum) =>
-          val res = SmallStringEnum(mapMonoid[String, Long].combine(x.data, y.data))
+        case (x: SmallEnum, y: SmallEnum) =>
+          val res = SmallEnum(mapMonoid[EnumKey, Long].combine(x.data, y.data))
           if (res.data.size > Enum.Sketch.HEAVY_HITTERS_COUNT) res.toLargeStringEnum else res
-        case _ => LargeStringEnum(Enum.Sketch.MONOID.combine(x.toLargeStringEnum.sketch, y.toLargeStringEnum.sketch))
+        case _ => LargeEnum(Enum.Sketch.MONOID.combine(x.toLargeStringEnum.sketch, y.toLargeStringEnum.sketch))
       }
 
   }

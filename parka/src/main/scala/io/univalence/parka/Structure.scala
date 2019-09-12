@@ -78,7 +78,7 @@ case class DescribeByRow(count: Long, byColumn: Map[String, Describe])
 case class Describe(count: Long,
                     histograms: Map[String, Histogram],
                     counts: Map[String, Long],
-                    enums: Map[String, StringEnum])
+                    enums: Map[String, Enum])
 
 object Describe {
 
@@ -92,7 +92,10 @@ object Describe {
   final def count(name: String, value: Long): Describe =
     oneValue.copy(counts = Map(name -> value))
   final def enum(name: String, value: String): Describe =
-    oneValue.copy(enums = Map(name -> StringEnum.create(value)))
+    oneValue.copy(enums = Map(name -> Enum.unit(value)))
+
+  final def enum2(name: String, left: String, right: String): Describe =
+    oneValue.copy(enums = Map(name -> Enum.unit(left, right)))
 
   def apply(a: Any): Describe =
     a match {
@@ -160,14 +163,15 @@ object Delta {
         val key: String = (if (b1) "t" else "f") + (if (b2) "t" else "f")
         Describe.count(key, 1)
       case (s1: String, s2: String) =>
-        Describe.histo("levenshtein", levenshtein_generified(s1.toCharArray, s2.toCharArray).toLong)
+        //Describe.histo("levenshtein", levenshtein_generified(s1.toCharArray, s2.toCharArray).toLong)
+        Describe.enum2("from_to", s1, s2)
       case (f1: Float, f2: Float)             => Describe(f1 - f2)
       case (d1: Double, d2: Double)           => Describe(d1 - d2)
       case (i1: Int, i2: Int)                 => Describe(i1 - i2)
       case (l1: Long, l2: Long)               => Describe(l1 - l2)
       case (t1: Timestamp, t2: Timestamp)     => Describe(t1.getTime - t2.getTime)
       case (d1: Date, d2: Date)               => Describe(d1.getTime - d2.getTime)
-      case (b1: Array[Byte], b2: Array[Byte]) => Describe.histo("levenstein", levenshtein_generified(b1, b2).toLong)
+      case (b1: Array[Byte], b2: Array[Byte]) => Describe.histo("levenshtein", levenshtein_generified(b1, b2).toLong)
       case _                                  => ???
     }
 
@@ -176,54 +180,62 @@ object Delta {
     else Delta(0, 1, Both(Describe(x), Describe(y)), error(x, y))
 }
 
-sealed trait StringEnum {
-  def estimate(key: String): Long
+sealed trait EnumKey
 
-  def heavyHitters: Map[String, Long]
+case class StringEnumKey(str: String) extends EnumKey
+case class BothStringEnumKey(both: Both[String]) extends EnumKey
+
+object BothStringEnumKey {
+  def apply(left: String, right: String): BothStringEnumKey = new BothStringEnumKey(Both(left, right))
+}
+
+sealed trait Enum {
+  def estimate(key: EnumKey): Long
+  def estimate(key: String): Long = estimate(StringEnumKey(key))
+
+  def heavyHitters: Map[EnumKey, Long]
 
   def total: Long
 
-  def add(str: String): StringEnum
+  def add(str: EnumKey): Enum
 
-  def toLargeStringEnum: LargeStringEnum
+  def toLargeStringEnum: LargeEnum
 
 }
 
-case class SmallStringEnum(data: Map[String, Long]) extends StringEnum {
-  def estimate(key: String): Long = data(key)
+case class SmallEnum(data: Map[EnumKey, Long]) extends Enum {
+  def estimate(key: EnumKey): Long = data(key)
 
-  override def heavyHitters: Map[String, Long] = data
+  override def heavyHitters: Map[EnumKey, Long] = data
 
   override def total: Long = data.values.sum
 
-  override def add(str: String): StringEnum = {
-    val res = SmallStringEnum(data.updated(str, data.getOrElse(str, 0L) + 1))
+  override def add(str: EnumKey): Enum = {
+    val res = SmallEnum(data.updated(str, data.getOrElse(str, 0L) + 1))
     if (res.data.size > Enum.Sketch.HEAVY_HITTERS_COUNT) res.toLargeStringEnum else res
   }
 
-  def toLargeStringEnum: LargeStringEnum = LargeStringEnum(Enum.Sketch.MONOID.create(data.toSeq))
+  def toLargeStringEnum: LargeEnum = LargeEnum(Enum.Sketch.MONOID.create(data.toSeq))
 }
 
-case class LargeStringEnum(sketch: SketchMap[String, Long]) extends StringEnum {
+case class LargeEnum(sketch: SketchMap[EnumKey, Long]) extends Enum {
 
-  override def estimate(key: String): Long = Enum.Sketch.MONOID.frequency(sketch, key)
+  override def estimate(key: EnumKey): Long = Enum.Sketch.MONOID.frequency(sketch, key)
 
-  override def heavyHitters: Map[String, Long] =
+  override def heavyHitters: Map[EnumKey, Long] =
     sketch.heavyHitterKeys.map(s => (s, estimate(s))).toMap
 
   override def total: Long = sketch.totalValue
 
-  override def add(str: String): StringEnum =
-    LargeStringEnum(Enum.Sketch.MONOID.combine(sketch, Enum.Sketch.MONOID.create((str, 1L))))
+  override def add(str: EnumKey): Enum =
+    LargeEnum(Enum.Sketch.MONOID.combine(sketch, Enum.Sketch.MONOID.create((str, 1L))))
 
-  override def toLargeStringEnum: LargeStringEnum = this
-}
-
-object StringEnum {
-  def create(string: String, n: Int = 1): StringEnum = SmallStringEnum(Map(string -> n))
+  override def toLargeStringEnum: LargeEnum = this
 }
 
 object Enum {
+  def unit(string: String): Enum              = SmallEnum(Map(StringEnumKey(string)          -> 1))
+  def unit(left: String, right: String): Enum = SmallEnum(Map(BothStringEnumKey(left, right) -> 1))
 
   object Sketch {
 
@@ -238,10 +250,14 @@ object Enum {
 
     val HEAVY_HITTERS_COUNT = 256
 
-    val PARAMS: SketchMapParams[String] = SketchMapParams[String](SEED, EPS, DELTA, HEAVY_HITTERS_COUNT)(_.getBytes)
+    val PARAMS: SketchMapParams[EnumKey] = SketchMapParams[EnumKey](SEED, EPS, DELTA, HEAVY_HITTERS_COUNT)({
+
+      case StringEnumKey(s)     => s.getBytes
+      case BothStringEnumKey(b) => b.map(_.getBytes).fold(_ ++ "$".getBytes ++ _)
+    })
     // PARAMS: com.twitter.algebird.SketchMapParams[String] = SketchMapParams(1,2719,19,10)
 
-    val MONOID: SketchMapMonoid[String, Long] = SketchMap.monoid[String, Long](PARAMS)
+    val MONOID: SketchMapMonoid[EnumKey, Long] = SketchMap.monoid[EnumKey, Long](PARAMS)
 
   }
 }

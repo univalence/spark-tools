@@ -55,16 +55,36 @@ trait ParkaEncodersAndDecoders {
       Decoder.decodeNone.map(_ => Histogram.empty)
   }
 
-  implicit val encoderStringEnum: Encoder[StringEnum] = {
+  implicit val encoderEnumKey: Encoder[EnumKey] = {
     Encoder.instance {
-      case x: SmallStringEnum => x.asJson
-      case x: LargeStringEnum => SmallStringEnum(x.heavyHitters).asJson
+      case StringEnumKey(str)   => str.asJson
+      case BothStringEnumKey(b) => b.asJson
     }
   }
 
-  implicit val decodeStringEnum: Decoder[StringEnum] = {
+  implicit val decoderEnumKey: Decoder[EnumKey] = {
+    Decoder[String].map(StringEnumKey.apply) or
+      Decoder[Both[String]].map(BothStringEnumKey.apply)
+  }
+
+  implicit val encoderEnumMap: Encoder[Map[EnumKey, Long]] = {
+    Encoder.instance(_.toSeq.asJson)
+  }
+
+  implicit val decoderEnumMap: Decoder[Map[EnumKey, Long]] = {
+    Decoder[Seq[(EnumKey, Long)]].map(_.toMap)
+  }
+
+  implicit val encoderStringEnum: Encoder[Enum] = {
+    Encoder.instance {
+      case x: SmallEnum => x.asJson
+      case x: LargeEnum => SmallEnum(x.heavyHitters).asJson
+    }
+  }
+
+  implicit val decodeStringEnum: Decoder[Enum] = {
     import cats.syntax.functor._
-    Decoder[SmallStringEnum].widen
+    Decoder[SmallEnum].widen
   }
 
   implicit val encoderDescribe: Encoder[Describe] = Encoder.instance({
