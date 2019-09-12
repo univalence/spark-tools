@@ -55,6 +55,18 @@ trait ParkaEncodersAndDecoders {
       Decoder.decodeNone.map(_ => Histogram.empty)
   }
 
+  implicit val encoderStringEnum: Encoder[StringEnum] = {
+    Encoder.instance {
+      case x: SmallStringEnum => x.asJson
+      case x: LargeStringEnum => SmallStringEnum(x.heavyHitters).asJson
+    }
+  }
+
+  implicit val decodeStringEnum: Decoder[StringEnum] = {
+    import cats.syntax.functor._
+    Decoder[SmallStringEnum].widen
+  }
+
   implicit val encoderDescribe: Encoder[Describe] = Encoder.instance({
     case x if x.count == 0 => Json.Null
     case x                 => deriveEncoder[Describe].apply(x)

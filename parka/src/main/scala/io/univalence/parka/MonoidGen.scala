@@ -11,6 +11,18 @@ object MonoidGen {
     override def empty: T               = _empty
   }
 
+  implicit val enumMonoid: Monoid[StringEnum] = new Typeclass[StringEnum] {
+    override def empty: StringEnum = SmallStringEnum(Map.empty)
+
+    override def combine(x: StringEnum, y: StringEnum): StringEnum =
+      (x, y) match {
+        case (x: SmallStringEnum, y: SmallStringEnum) =>
+          SmallStringEnum(mapMonoid[String, Long].combine(x.data, y.data))
+        case _ => LargeStringEnum(Enum.Sketch.MONOID.combine(x.toLargeStringEnum.sketch, y.toLargeStringEnum.sketch))
+      }
+
+  }
+
   implicit val histogramMonoid: Monoid[Histogram] = new Monoid[Histogram] {
     override def empty: Histogram = Histogram.empty
 

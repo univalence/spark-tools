@@ -4,6 +4,7 @@ import cats.kernel.Monoid
 import io.univalence.parka.MonoidGen._
 import java.sql.{ Date, Timestamp }
 
+import com.twitter.algebird.{ SketchMap, SketchMapMonoid, SketchMapParams }
 import io.univalence.parka.Delta.DeltaBoolean
 
 case class Both[+T](left: T, right: T) {
@@ -77,7 +78,7 @@ case class DescribeByRow(count: Long, byColumn: Map[String, Describe])
 case class Describe(count: Long,
                     histograms: Map[String, Histogram],
                     counts: Map[String, Long],
-                    enums: Map[String, Enum])
+                    enums: Map[String, StringEnum])
 
 object Describe {
 
@@ -91,7 +92,7 @@ object Describe {
   final def count(name: String, value: Long): Describe =
     oneValue.copy(counts = Map(name -> value))
   final def enum(name: String, value: String): Describe =
-    oneValue.copy(enums = Map(name -> Enum(Map(value -> 1))))
+    oneValue.copy(enums = Map(name -> StringEnum.create(value)))
 
   def apply(a: Any): Describe =
     a match {
@@ -175,6 +176,72 @@ object Delta {
     else Delta(0, 1, Both(Describe(x), Describe(y)), error(x, y))
 }
 
-case class Enum(data: Map[String, Long]) {
+sealed trait StringEnum {
+  def estimate(key: String): Long
+
+  def heavyHitters: Map[String, Long]
+
+  def total: Long
+
+  def add(str: String): StringEnum
+
+  def toLargeStringEnum: LargeStringEnum
+
+}
+
+case class SmallStringEnum(data: Map[String, Long]) extends StringEnum {
   def estimate(key: String): Long = data(key)
+
+  override def heavyHitters: Map[String, Long] = data
+
+  override def total: Long = data.values.sum
+
+  override def add(str: String): StringEnum = {
+    val res = SmallStringEnum(data.updated(str, data.getOrElse(str, 0L) + 1))
+    if (res.data.size > Enum.Sketch.HEAVY_HITTERS_COUNT) res.toLargeStringEnum else res
+  }
+
+  def toLargeStringEnum: LargeStringEnum = LargeStringEnum(Enum.Sketch.MONOID.create(data.toSeq))
+}
+
+case class LargeStringEnum(sketch: SketchMap[String, Long]) extends StringEnum {
+
+  override def estimate(key: String): Long = Enum.Sketch.MONOID.frequency(sketch, key)
+
+  override def heavyHitters: Map[String, Long] =
+    sketch.heavyHitterKeys.map(s => (s, estimate(s))).toMap
+
+  override def total: Long = sketch.totalValue
+
+  override def add(str: String): StringEnum =
+    LargeStringEnum(Enum.Sketch.MONOID.combine(sketch, Enum.Sketch.MONOID.create((str, 1L))))
+
+  override def toLargeStringEnum: LargeStringEnum = this
+}
+
+object StringEnum {
+  def create(string: String, n: Int = 1): StringEnum = SmallStringEnum(Map(string -> n))
+}
+
+object Enum {
+
+  object Sketch {
+
+    val DELTA = 1E-8
+    // DELTA: Double = 1.0E-8
+
+    val EPS = 0.001
+    // EPS: Double = 0.001
+
+    val SEED = 1
+    // SEED: Int = 1
+
+    val HEAVY_HITTERS_COUNT = 256
+
+    val PARAMS: SketchMapParams[String] = SketchMapParams[String](SEED, EPS, DELTA, HEAVY_HITTERS_COUNT)(_.getBytes)
+    // PARAMS: com.twitter.algebird.SketchMapParams[String] = SketchMapParams(1,2719,19,10)
+
+    val MONOID: SketchMapMonoid[String, Long] = SketchMap.monoid[String, Long](PARAMS)
+
+  }
 }
