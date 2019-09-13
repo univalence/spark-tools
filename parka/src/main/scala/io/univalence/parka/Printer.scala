@@ -54,6 +54,10 @@ object Printer {
   def information(field: String, information: String, jump: Boolean = false): Part =
     if (jump) Section(field, Value(information)) else Key(field, Value(information))
 
+  def enum(data: Map[EnumKey, Long]): Part = {
+    Col(data.map({case (k, v) =>  information(k.toString, v.toString)}).toSeq: _*)
+  }
+
   def printParkaResult(parkaResult: ParkaResult): Part =
     Section("Parka Result", Part.Col(printInner(parkaResult.inner), printOuter(parkaResult.outer)))
 
@@ -122,7 +126,7 @@ object Printer {
   def printDeltaSpecific(delta: Delta): Part = {
     val error = delta.error
 
-    val histograms: immutable.Iterable[Part] = error.histograms.map({
+    val strHistogram: immutable.Iterable[Part] = error.histograms.map({
       case (k, v) => printHistogram(v, "Delta")
     })
 
@@ -134,11 +138,15 @@ object Printer {
       case _             => "# " + key
     }
 
-    val counts: immutable.Iterable[Part] = error.counts.map({
+    val strCounts: immutable.Iterable[Part] = error.counts.map({
       case (k, v) => information(countName(k), v.toString)
     })
 
-    list((counts ++ histograms).toSeq: _*)
+    val strEnums: immutable.Iterable[Part] = error.enums.map({
+      case (k, v) => Section(k, enum(v.heavyHitters))
+    })
+
+    list((strCounts ++ strHistogram ++ strEnums).toSeq: _*)
   }
 
   def printHistogram(histogram: Histogram, name: String = "Histogram"): Part = {
@@ -182,7 +190,11 @@ object Printer {
       })
       .toSeq
 
-    list(strCounts ++ strHistogram: _*)
+    val strEnums: immutable.Iterable[Part] = enums.map({
+      case (k, v) => Section(k, enum(v.heavyHitters))
+    })
+
+    list(strCounts ++ strHistogram ++ strEnums: _*)
   }
 
 }

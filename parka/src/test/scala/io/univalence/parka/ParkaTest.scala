@@ -111,7 +111,7 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
                           "{id:5, col1:false}")
 
     val result = Parka(left, right)("id").result
-    println(Printer.printParkaResult(result))
+    //println(Printer.printParkaResult(result))
 
     val deltaBoolean = result.inner.byColumn("col1")
     val counts       = deltaBoolean.error.counts
@@ -169,68 +169,6 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     assert(deltaDate.nNotEqual == 2)
   }
 
-  ignore("Prettify test") {
-    val left: Dataset[Element] = dataset(
-      Element("0", 100),
-      Element("1", 100),
-      Element("2", 100),
-      Element("3", 100),
-      Element("4", 100),
-      Element("5", 100),
-      Element("6", 100),
-      Element("7", 100),
-      Element("8", 100),
-      Element("9", 100)
-    )
-    val right: Dataset[Element] = dataset(
-      Element("0", 0),
-      Element("1", 10),
-      Element("2", 20),
-      Element("3", 30),
-      Element("4", 40),
-      Element("5", 50),
-      Element("6", 60),
-      Element("7", 70),
-      Element("8", 80),
-      Element("9", 90),
-      Element("10", 100)
-    )
-    val result = Parka(left, right)("key").result
-    val part   = Printer.printParkaResult(result)
-    println(Part.toString(part))
-  }
-
-  ignore("Prettify test 2 column") {
-    val left: Dataset[Element2] = dataset(
-      Element2("0", 0, 0),
-      Element2("1", 10, 0),
-      Element2("2", 20, 0),
-      Element2("3", 30, 10),
-      Element2("4", 40, 0),
-      Element2("5", 50, 20),
-      Element2("6", 60, 0),
-      Element2("7", 70, 30),
-      Element2("8", 80, 0),
-      Element2("9", 80, 30)
-    )
-    val right: Dataset[Element2] = dataset(
-      Element2("0", 0, 0),
-      Element2("1", 10, 0),
-      Element2("2", 20, 10),
-      Element2("3", 30, 10),
-      Element2("4", 40, 20),
-      Element2("5", 50, 20),
-      Element2("6", 60, 30),
-      Element2("7", 70, 30),
-      Element2("8", 80, 40),
-      Element2("9", 90, 40),
-      Element2("10", 100, 50)
-    )
-    val result = Parka(left, right)("key").result
-    val part   = Printer.printParkaResult(result)
-    println(Part.toString(part))
-  }
-
   test("Json Serde") {
     val left: DataFrame           = dataframe("{id:1, n:1}", "{id:2, n:2}")
     val right: DataFrame          = dataframe("{id:1, n:1}", "{id:2, n:3}")
@@ -240,35 +178,13 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     assert(pa == paFromJson)
   }
 
-  ignore("test null") {
-    val left = Seq(
-      (1, "aaaa"),
-      (2, "bbbb"),
-      (3, null),
-      (4, null)
-    ).toDF("id", "str")
-
-    val right = Seq(
-      (1, null),
-      (2, "bbbb"),
-      (3, "cccc"),
-      (4, null),
-      (5, "eeee")
-    ).toDF("id", "str")
-
-    val result = Parka(left, right)("id").result
-    val part   = Printer.printParkaResult(result)
-    println(Part.toString(part))
-  }
-
   test("Csv test") {
     implicit val spark: SparkSession = ss
 
     val left  = "parka/src/test/ressources/leftTest.csv"
     val right = "parka/src/test/ressources/rightTest.csv"
 
-    val result = Parka.fromCSV(left, right)("key").result
-    Printer.printParkaResult(result)
+    Parka.fromCSV(left, right)("key").result
   }
 
 }

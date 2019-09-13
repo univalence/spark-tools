@@ -182,8 +182,13 @@ object Delta {
 
 sealed trait EnumKey
 
-case class StringEnumKey(str: String) extends EnumKey
-case class BothStringEnumKey(both: Both[String]) extends EnumKey
+case class StringEnumKey(str: String) extends EnumKey{
+  override def toString() = str
+}
+
+case class BothStringEnumKey(both: Both[String]) extends EnumKey{
+  override def toString() = s"${both.left} -> ${both.right}"
+}
 
 object BothStringEnumKey {
   def apply(left: String, right: String): BothStringEnumKey = new BothStringEnumKey(Both(left, right))
@@ -200,7 +205,6 @@ sealed trait Enum {
   def add(str: EnumKey): Enum
 
   def toLargeStringEnum: LargeEnum
-
 }
 
 case class SmallEnum(data: Map[EnumKey, Long]) extends Enum {
