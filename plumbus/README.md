@@ -1,6 +1,8 @@
 Spark Plumbus
 ======================
 
+[ ![Download](https://api.bintray.com/packages/univalence/univalence-jvm/plumbus/images/download.svg) ](https://bintray.com/univalence/univalence-jvm/plumbus/_latestVersion)
+
 Spark Plumbus is a collection of tools for Scala Spark, that aims to
 improve the day to day life of data engineers.
 

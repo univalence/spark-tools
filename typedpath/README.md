@@ -1,6 +1,8 @@
 Utils
 ======================
 
+[ ![Download](https://api.bintray.com/packages/univalence/univalence-jvm/typedpath/images/download.svg) ](https://bintray.com/univalence/univalence-jvm/typedpath/_latestVersion)
+
 Utils contains mini librairies, it's like a mini monorepository inside our monorepository.
 
 ## Installation

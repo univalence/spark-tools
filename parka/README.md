@@ -1,6 +1,8 @@
 Parka
 ======================
 
+[ ![Download](https://api.bintray.com/packages/univalence/univalence-jvm/parka/images/download.svg) ](https://bintray.com/univalence/univalence-jvm/parka/_latestVersion)
+
 Parka is a library about data quality of a Datasets in Scala.
 
 It implements DeltaQA for Datasets, comparing two Datasets to each other and notifying differences into Parka Analysis which is an object that contains the comparison’s data..

@@ -1,6 +1,8 @@
 Spark-Test
 ======================
 
+[ ![Download](https://api.bintray.com/packages/univalence/univalence-jvm/spark-test/images/download.svg) ](https://bintray.com/univalence/univalence-jvm/spark-test/_latestVersion)
+
 Spark-Test is a library to help developers test their Spark applications.
 
 Our goal is to provide you with tools that can help you test your code fast and in an easy way, precisely pointing out why something bad occurred with your Spark collections.

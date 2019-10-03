@@ -1,4 +1,7 @@
 # centrifuge
+
+[ ![Download](https://api.bintray.com/packages/univalence/univalence-jvm/centrifuge/images/download.svg) ](https://bintray.com/univalence/univalence-jvm/centrifuge/_latestVersion)
+
 Data quality tools for Big Data
 
 * Scala 2.11.7

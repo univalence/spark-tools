@@ -1,6 +1,8 @@
 Fenek
 ======================
 
+[ ![Download](https://api.bintray.com/packages/univalence/univalence-jvm/fenek/images/download.svg) ](https://bintray.com/univalence/univalence-jvm/fenek/_latestVersion)
+
 ## Installation
 
 ### Stable version
