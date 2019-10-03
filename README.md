@@ -1,5 +1,7 @@
 ![Spark-tools Logo](./logo.png)
 
+[![CircleCI](https://circleci.com/gh/univalence/spark-tools.svg?style=svg)](https://circleci.com/gh/univalence/spark-tools)
+
 Spark-tools is a set of tools dedicated to Spark and aims to
 make the life of data engineers easier.
 
