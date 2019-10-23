@@ -110,7 +110,7 @@ object Describe {
       case ts: Timestamp  => histo("timestamp", ts.getTime)
       case d: Date        => histo("date", d.getTime)
       case b: Array[Byte] => histo("length", b.length.toLong)
-      case _              => throw new Exception(s"unsupported value of type ${a.getClass.getCanonicalName} for describe with value :\n $a")
+      case _              => count("nUnsupported", 1)
     }
 }
 
@@ -172,7 +172,7 @@ object Delta {
       case (t1: Timestamp, t2: Timestamp)     => Describe(t1.getTime - t2.getTime)
       case (d1: Date, d2: Date)               => Describe(d1.getTime - d2.getTime)
       case (b1: Array[Byte], b2: Array[Byte]) => Describe.histo("levenshtein", levenshtein_generified(b1, b2).toLong)
-      case _                                  => ???
+      case _                                  => Describe.count("nUnsupported", 1)
     }
 
   def apply(x: Any, y: Any): Delta =
