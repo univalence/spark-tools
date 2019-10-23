@@ -110,7 +110,7 @@ object Describe {
       case ts: Timestamp  => histo("timestamp", ts.getTime)
       case d: Date        => histo("date", d.getTime)
       case b: Array[Byte] => histo("length", b.length.toLong)
-      case _              => ???
+      case _              => throw new Exception(s"unsupported value of type ${a.getClass.getCanonicalName} for describe with value :\n $a")
     }
 }
 
