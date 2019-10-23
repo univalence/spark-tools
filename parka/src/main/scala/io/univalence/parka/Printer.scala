@@ -54,9 +54,8 @@ object Printer {
   def information(field: String, information: String, jump: Boolean = false): Part =
     if (jump) Section(field, Value(information)) else Key(field, Value(information))
 
-  def enum(data: Map[EnumKey, Long]): Part = {
-    Col(data.map({case (k, v) =>  information(k.toString, v.toString)}).toSeq: _*)
-  }
+  def enum(data: Map[EnumKey, Long]): Part =
+    Col(data.map({ case (k, v) => information(k.toString, v.toString) }).toSeq: _*)
 
   def printParkaResult(parkaResult: ParkaResult): Part =
     Section("Parka Result", Part.Col(printInner(parkaResult.inner), printOuter(parkaResult.outer)))

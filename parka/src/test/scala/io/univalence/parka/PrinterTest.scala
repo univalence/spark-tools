@@ -118,7 +118,6 @@ class PrinterTest extends FunSuite with SparkTest with HistogramTest {
     ).toDF("id", "str")
 
     val right = Seq(
-
       (1, "FR"),
       (2, "DE"),
       (3, "FR"),
