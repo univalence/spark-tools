@@ -44,6 +44,10 @@ To get a Parka Analysis, first import parka and then generate the analysis from 
 import io.univalence.parka.Parka
 
 val pa: ParkaAnalysis = Parka(df1, d2f)("key")
+//or
+
+val pa: ParkaAnalysis = Parka.withConfig(nPartition = 500)(df1, df2)("key1", "key2")
+
 ``` 
 
 First give the two Datasets to compare to and then column(s) that are keys. then print the result in the console or export it in JSON. 

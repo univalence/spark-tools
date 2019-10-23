@@ -9,7 +9,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.{ Dataset, Row, SparkSession }
 import io.univalence.schema.SchemaComparator
-import org.apache.spark.sql
+import org.apache.spark.{ sql, HashPartitioner, Partitioner }
 
 /**
   * Parka is a library that perform deltaQA in Spark.
@@ -27,6 +27,7 @@ object Parka {
 
   /**
     * Generate a [Describe] for each column of a particular row
+    *
     * @param row            Row that need to be describe
     * @param keys           Primary key(s)
     * @return               Map of [Describe] with each column that are not primary key(s) as a the key
@@ -124,24 +125,48 @@ object Parka {
     * @param keyNames       Column's names of both Datasets that are considered as keys
     * @return               Delta QA analysis between leftDs and rightDS
     */
-  def apply(leftDs: Dataset[_], rightDs: Dataset[_])(keyNames: String*): ParkaAnalysis = {
-    assert(keyNames.nonEmpty, "you must have at least one key")
-    SchemaComparator.assert(leftDs.schema, rightDs.schema)
+  def apply(leftDs: Dataset[_], rightDs: Dataset[_])(keyNames: String*): ParkaAnalysis =
+    new ParkaRunner().run(leftDs, rightDs)(keyNames: _*)
 
-    val keyValue: Row => String = r => keyNames.map(r.getAs[Any]).mkString(keyValueSeparator)
+  def withConfig(nPartition: Int = -1)(leftDs: Dataset[_], rightDs: Dataset[_])(keyNames: String*): ParkaAnalysis =
+    new ParkaRunner(configuration = ParkaRunnerConfiguration(forcedPartioner = Some(new HashPartitioner(nPartition))))
+      .run(leftDs, rightDs)(keyNames: _*)
 
-    val keys = keyNames.toSet
+  /*
+    val df1 = ???
+    val df2= ???
+    Parka.withConfig(nPartition = 500)(df1, df2)("key1", "key2")
+   */
 
-    val leftAndRight: RDD[(String, (Iterable[Row], Iterable[Row]))] =
-      leftDs.toDF.rdd.keyBy(keyValue).cogroup(rightDs.toDF.rdd.keyBy(keyValue))
+  case class ParkaRunnerConfiguration(forcedPartioner: Option[Partitioner])
 
-    val res: ParkaResult = leftAndRight
-      .map({
-        case (k, (left, right)) => result(left, right)(keys)
-      })
-      .reduce(combine)
+  class ParkaRunner(configuration: ParkaRunnerConfiguration = ParkaRunnerConfiguration(None)) {
+    def run(leftDs: Dataset[_], rightDs: Dataset[_])(keyNames: String*): ParkaAnalysis = {
 
-    ParkaAnalysis(datasetInfo = Both(leftDs, rightDs).map(datasetInfo), result = compress(res))
+      assert(keyNames.nonEmpty, "you must have at least one key")
+      SchemaComparator.assert(leftDs.schema, rightDs.schema)
+
+      val keyValue: Row => String = r => keyNames.map(r.getAs[Any]).mkString(keyValueSeparator)
+
+      val keys = keyNames.toSet
+
+      val leftAndRight: RDD[(String, (Iterable[Row], Iterable[Row]))] = {
+
+        val leftRDD  = leftDs.toDF.rdd.keyBy(keyValue)
+        val rightRDD = rightDs.toDF.rdd.keyBy(keyValue)
+
+        configuration.forcedPartioner.fold(leftRDD.cogroup(rightRDD))(p => leftRDD.cogroup(rightRDD, p))
+      }
+
+      val res: ParkaResult = leftAndRight
+        .map({
+          case (k, (left, right)) => result(left, right)(keys)
+        })
+        .reduce(combine)
+
+      ParkaAnalysis(datasetInfo = Both(leftDs, rightDs).map(datasetInfo), result = compress(res))
+    }
+
   }
 
   /**
