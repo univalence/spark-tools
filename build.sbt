@@ -91,7 +91,7 @@ lazy val sparkZio = (project in file("spark-zio"))
     useSpark(sparkVersion = "2.1.1")(modules = "sql"),
     addTestLibs,
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-zio" % libVersion.zio
+      "dev.zio" %% "zio" % libVersion.zio
     ),
     scalacOptions += "-Yrangepos",
     scalacOptions += "-Ywarn-unused",
@@ -230,7 +230,7 @@ val libVersion =
     val json4s        = "3.2.11"
     val magnolia      = "0.10.0"
     val monix         = "2.3.3"
-    val zio           = "1.0-RC5"
+    val zio           = "1.0.0-RC15"
     val scala2_12     = "2.12.8"
     val scala2_11     = "2.11.12"
     val scalacheck    = "1.13.5"
