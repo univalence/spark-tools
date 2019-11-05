@@ -91,7 +91,8 @@ lazy val sparkZio = (project in file("spark-zio"))
     useSpark(sparkVersion = "2.1.1")(modules = "sql"),
     addTestLibs,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % libVersion.zio
+      "dev.zio" %% "zio"         % libVersion.zio,
+      "dev.zio" %% "zio-streams" % libVersion.zio
     ),
     scalacOptions += "-Yrangepos",
     scalacOptions += "-Ywarn-unused",
