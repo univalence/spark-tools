@@ -187,6 +187,13 @@ class ParkaTest extends FunSuite with SparkTest with HistogramTest {
     Parka.fromCSV(left, right)("key").result
   }
 
+  test("ToString should return the Json version of a ParkaResult") {
+    val left: DataFrame           = dataframe("{id:1, n:1}", "{id:2, n:2}")
+    val right: DataFrame          = dataframe("{id:1, n:1}", "{id:2, n:3}")
+    val pa: ParkaAnalysis         = Parka(left, right)("id")
+    val paJson: Json              = Serde.toJson(pa)
+    assert(paJson.toString() == pa.toString())
+  }
 }
 
 case class Element(key: String, col1: Long)
