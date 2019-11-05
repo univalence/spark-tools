@@ -13,11 +13,12 @@ case class Both[+T](left: T, right: T) {
   def map[U](f: T => U): Both[U] = Both(f(left), f(right))
 }
 
-case class ParkaAnalysis(datasetInfo: Both[DatasetInfo], result: ParkaResult){
+case class ParkaAnalysis(datasetInfo: Both[DatasetInfo], result: ParkaResult) {
+
   /**
-   * Force the parke analysis to return his own json version which is better for debugging and interpretation
-   * @return Json version of a ParkaResult
-   */
+    * Force the parke analysis to return his own json version which is better for debugging and interpretation
+    * @return Json version of a ParkaResult
+    */
   override def toString: String = Serde.toJson(this).toString();
 }
 
