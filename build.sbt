@@ -56,7 +56,7 @@ lazy val projectDescription =
   )
 
 lazy val sparkTools = (project in file("."))
-  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio, site, sparkTest, parka)
+  .aggregate(centrifuge, fenek, typedpath, plumbus, sparkZio, site, sparkTest, parka, bench)
   .settings(projectDescription, defaultConfiguration)
   .settings(
     name        := "spark-tools",
@@ -136,6 +136,12 @@ lazy val fenek = project
     useSpark(libVersion.sparkScala211)("sql"),
     addTestLibs
   )
+
+lazy val bench =
+  (project in file("bench"))
+    .settings(projectDescription, defaultConfiguration)
+    .enablePlugins(JmhPlugin)
+    .dependsOn(parka)
 
 lazy val parka =
   project
@@ -325,6 +331,10 @@ def useSpark(sparkVersion: String)(modules: String*): SettingsDefinition =
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+
+addCommandAlias("slow-bench", "bench/jmh:run")
+
+addCommandAlias("bench", "bench/jmh:run -i 1 -wi 0 -f1 -t1")
 
 resolvers ++= Seq(
   Resolver.sonatypeRepo("releases"),
