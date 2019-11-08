@@ -1,7 +1,7 @@
 package io.univalence.sparktools.bench
 
 import cats.kernel.Monoid
-import io.univalence.parka.MonoidGen
+import io.univalence.parka.{ MonoidGen, RowBasedMap }
 import org.openjdk.jmh.annotations._
 
 import scala.collection.mutable
@@ -35,8 +35,8 @@ object MapMonoidBench {
   }
 
   object map2 extends Maps {
-    val m1: ColBasedMap[String, Int] = ColBasedMap.toColbaseMap(map1.m1)
-    val m2: ColBasedMap[String, Int] = ColBasedMap.toColbaseMap(map1.m2)
+    val m1: RowBasedMap[String, Int] = RowBasedMap.toColbaseMap(map1.m1)
+    val m2: RowBasedMap[String, Int] = RowBasedMap.toColbaseMap(map1.m2)
   }
 
   import com.twitter.algebird.Ring._
@@ -87,104 +87,20 @@ object MapMonoid {
     }
   }
 
-  def mapMonoid3[K, V: Monoid: ClassTag]: Monoid[Map[K, V]] = new Monoid[Map[K, V]] {
+  def mapMonoid3[K, V: Monoid]: Monoid[Map[K, V]] = new Monoid[Map[K, V]] {
 
     val valueMonoid: Monoid[V] = Monoid[V]
 
     val proxiedMonoid: Monoid[Map[K, V]] = mapMonoid2[K, V]
 
-    override def empty: Map[K, V] = ColBasedMap.empty
+    override def empty: Map[K, V] = RowBasedMap.empty
 
     override def combine(x: Map[K, V], y: Map[K, V]): Map[K, V] =
       (x, y) match {
-        case (cx: ColBasedMap[K, V], cy: ColBasedMap[K, V]) => cx.combine(cy)
+        case (cx: RowBasedMap[K, V], cy: RowBasedMap[K, V]) => cx.combine(cy)
         case _                                              => proxiedMonoid.combine(x, y)
       }
   }
-}
-
-class ColBasedMap[K, V] private (val keys_ : Array[Any], val values_ : Array[Any]) extends Map[K, V] {
-
-  override def +[B1 >: V](kv: (K, B1)): Map[K, B1] =
-    keys_.indexOf(kv._1) match {
-      case -1 => new ColBasedMap(keys_ :+ kv._1, values_ :+ kv._2)
-      case i  => new ColBasedMap(keys_, values_.updated(i, kv._2))
-    }
-
-  override def get(key: K): Option[V] =
-    keys_.indexOf(key) match {
-      case -1 => None
-      case i  => Some(values_(i).asInstanceOf[V])
-    }
-
-  override def iterator: Iterator[(K, V)] = keys_.zip(values_).toIterator.asInstanceOf[Iterator[(K, V)]]
-
-  override def -(key: K): ColBasedMap[K, V] =
-    keys_.indexOf(key) match {
-      case -1 => this
-      case i =>
-        import ColBasedMap._
-        new ColBasedMap(removeIndex(keys_, i), removeIndex(values_, i))
-    }
-
-  def combine(right: ColBasedMap[K, V])(implicit monoid: Monoid[V]): ColBasedMap[K, V] =
-    if (keys_ sameElements right.keys_) {
-      val arr: Array[Any] = new Array(values_.length)
-      for (i <- arr.indices) {
-        arr(i) = monoid.combine(values_(i).asInstanceOf[V], right.values_(i).asInstanceOf[V])
-      }
-      new ColBasedMap(keys_, arr)
-    } else {
-
-      if (right.values_.length > values_.length) {
-        right.combine(this)
-      } else {
-
-        val indexMap: Array[Int] = new Array(right.values_.length)
-        var extraValue: Int      = 0
-
-        for (i <- right.keys_.indices) {
-          keys_.indexOf(right.keys_(i)) match {
-            case -1 =>
-              extraValue += 1
-              indexMap(i) = values_.length + extraValue
-            case x =>
-              indexMap(i) = x
-          }
-        }
-
-        val resKeys: Array[Any]   = new Array(keys_.length + extraValue)
-        val resValues: Array[Any] = new Array(keys_.length + extraValue)
-
-        keys_.copyToArray(resKeys)
-        values_.copyToArray(resValues)
-
-        for (i <- indexMap.indices) {
-          val j = indexMap(i)
-          resKeys(j)   = right.keys_(i)
-          resValues(j) = monoid.combine(values_(j).asInstanceOf[V], right.values_(i).asInstanceOf[V])
-        }
-
-        new ColBasedMap(resKeys, resValues)
-      }
-
-    }
-}
-
-object ColBasedMap {
-
-  def empty[K, V]: ColBasedMap[K, V] = new ColBasedMap[K, V](Array.empty, Array.empty)
-
-  def toColbaseMap[K, V](map: Map[K, V]): ColBasedMap[K, V] = {
-    val kvs = map.toArray
-    new ColBasedMap(kvs.map(_._1).toArray, kvs.map(_._2).toArray)
-  }
-
-  def removeIndex[E: ClassTag](seq: Array[E], index: Int): Array[E] =
-    (seq.take(index) ++ seq.drop(index + 1)).toArray
-
-  def apply[K, V](keys_ : Seq[K], values_ : Seq[V]): ColBasedMap[K, V] =
-    new ColBasedMap(keys_.toArray, values_.toArray)
 }
 
 object App {

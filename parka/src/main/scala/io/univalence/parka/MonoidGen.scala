@@ -17,7 +17,7 @@ object MonoidGen {
     override def combine(x: Enum, y: Enum): Enum =
       (x, y) match {
         case (x: SmallEnum, y: SmallEnum) =>
-          val res = SmallEnum(mapMonoid[EnumKey, Long].combine(x.data, y.data))
+          val res = SmallEnum(mapMonoid3[EnumKey, Long].combine(x.data, y.data))
           if (res.data.size > Enum.Sketch.HEAVY_HITTERS_COUNT) res.toLargeStringEnum else res
         case _ => LargeEnum(Enum.Sketch.MONOID.combine(x.toLargeStringEnum.sketch, y.toLargeStringEnum.sketch))
       }
@@ -54,25 +54,29 @@ object MonoidGen {
       }
   }
 
-  implicit def mapMonoid[K, V: Monoid]: Monoid[Map[K, V]] =
-    MonoidGen(
-      Map.empty,
-      (m1, m2) => {
-        (m1.keySet ++ m2.keySet)
-          .map(
-            k =>
-              k -> (m1.get(k) match {
-                case None => m2.getOrElse(k, Monoid[V].empty)
-                case Some(x) =>
-                  m2.get(k) match {
-                    case Some(y) => Monoid[V].combine(x, y)
-                    case None    => x
-                  }
-              })
-          )
-          .toMap
+  implicit def rowBasedMapMonoid[K, V: Monoid]: Monoid[RowBasedMap[K, V]] = new Monoid[RowBasedMap[K, V]] {
+    override def empty: RowBasedMap[K, V] = RowBasedMap.empty
+
+    override def combine(x: RowBasedMap[K, V], y: RowBasedMap[K, V]): RowBasedMap[K, V] = x.combine(y)
+  }
+
+  implicit def mapMonoid3[K, V: Monoid]: Monoid[Map[K, V]] = new Monoid[Map[K, V]] {
+    val valueMonoid: Monoid[V]    = Monoid[V]
+    override def empty: Map[K, V] = RowBasedMap.empty
+
+    @inline
+    override def combine(x: Map[K, V], y: Map[K, V]): Map[K, V] =
+      (x, y) match {
+        case (cx: RowBasedMap[K, V], cy: RowBasedMap[K, V]) => cx.combine(cy)
+        case _ =>
+          val m1k = x.keySet
+          x.map({
+            case (k, v) =>
+              (k, y.get(k).fold(v)(v2 => Monoid[V].combine(v, v2)))
+          }) ++ y.filterKeys(k => !m1k(k))
+
       }
-    )
+  }
 
   implicit object longMonoid extends Monoid[Long] {
     @inline

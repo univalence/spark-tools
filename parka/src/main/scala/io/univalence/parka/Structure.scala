@@ -38,8 +38,8 @@ case class Inner(countRowEqual: Long,
                  countRowNotEqual: Long,
                  countDeltaByRow: Map[Set[String], DeltaByRow],
                  equalRows: DescribeByRow) {
-  @transient lazy val byColumn: Map[String, Delta] =
-    Monoid.combineAll(countDeltaByRow.map(_._2.byColumn).toSeq :+ equalRows.byColumn.mapValues(d => {
+  @transient lazy val byColumn: RowBasedMap[String, Delta] =
+    Monoid.combine(Monoid.combineAll(countDeltaByRow.map(_._2.byColumn)), equalRows.byColumn.mapValues(d => {
       Delta(d.count, 0, Both(d, d), Describe.empty)
     }))
 
@@ -61,7 +61,7 @@ case class Outer(both: Both[DescribeByRow])
   * @param count                  Number of occurence for a particular set of column
   * @param byColumn               For each keys, the Delta structure that represent the difference between left and right
   */
-case class DeltaByRow(count: Long, byColumn: Map[String, Delta])
+case class DeltaByRow(count: Long, byColumn: RowBasedMap[String, Delta])
 
 /**
   * Inner side - When there is no difference between the left and right Datasets
@@ -70,7 +70,7 @@ case class DeltaByRow(count: Long, byColumn: Map[String, Delta])
   * @param count                  The number of similar row (similar to countRowEqual for the inner part)
   * @param byColumn               Map with column name as a key and for each of them a Describe
   */
-case class DescribeByRow(count: Long, byColumn: Map[String, Describe])
+case class DescribeByRow(count: Long, byColumn: RowBasedMap[String, Describe])
 
 /**
   * Store a large amount of information to describe a particular value
@@ -190,11 +190,11 @@ object Delta {
 sealed trait EnumKey
 
 case class StringEnumKey(str: String) extends EnumKey {
-  override def toString() = str
+  override def toString = str
 }
 
 case class BothStringEnumKey(both: Both[String]) extends EnumKey {
-  override def toString() = s"${both.left} -> ${both.right}"
+  override def toString = s"${both.left} -> ${both.right}"
 }
 
 object BothStringEnumKey {

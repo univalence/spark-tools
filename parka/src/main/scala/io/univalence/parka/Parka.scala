@@ -31,13 +31,14 @@ object Parka {
     * @param keys           Primary key(s)
     * @return               Map of [Describe] with each column that are not primary key(s) as a the key
     */
-  def describe(row: Row)(keys: Set[String]): Map[String, Describe] = {
+  def describe(row: Row)(keys: Set[String]): RowBasedMap[String, Describe] = {
     val fields = row.asInstanceOf[GenericRowWithSchema].schema.fieldNames
 
-    fields
+    val res = fields
       .filterNot(keys)
       .map(name => name -> Describe(row.getAs[Any](name)))
-      .toMap
+
+    RowBasedMap.toColbaseMapFromSeq(res)
   }
 
   /**
@@ -70,17 +71,18 @@ object Parka {
 
     val schema = left.asInstanceOf[GenericRowWithSchema].schema
 
-    val byNames: Map[String, Delta] =
-      schema.fieldNames
-        .filterNot(keys)
-        .map(name => name -> Delta(left.getAs[Any](name), right.getAs[Any](name)))
-        .toMap
+    val byNames: RowBasedMap[String, Delta] =
+      RowBasedMap.toColbaseMapFromSeq(
+        schema.fieldNames
+          .filterNot(keys)
+          .map(name => name -> Delta(left.getAs[Any](name), right.getAs[Any](name)))
+      )
 
     val isEqual            = byNames.forall(_._2.nEqual == 1)
     val nDiff: Set[String] = if (isEqual) Set.empty else byNames.filter(_._2.nNotEqual > 0).keys.toSet
 
     if (nDiff.isEmpty) {
-      Inner(1, 0, Map.empty, DescribeByRow(1, byNames.mapValues(x => x.describe.left).map(x => x)))
+      Inner(1, 0, Map.empty, DescribeByRow(1, RowBasedMap.toColbaseMap(byNames.mapValues(x => x.describe.left))))
     } else {
       Inner(0, 1, Map(nDiff -> DeltaByRow(1, byNames)), emptyDescribeByRow)
     }

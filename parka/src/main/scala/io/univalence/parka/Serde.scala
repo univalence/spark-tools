@@ -87,6 +87,11 @@ trait ParkaEncodersAndDecoders {
     Decoder[SmallEnum].widen
   }
 
+  implicit def encoderRowBasedMap[K: KeyEncoder, V: Encoder]: Encoder[RowBasedMap[K, V]] =
+    Encoder.encodeMapLike
+  implicit def decoderRowBasedMap[K: KeyDecoder, V: Decoder]: Decoder[RowBasedMap[K, V]] =
+    Decoder.decodeMap[K, V].map(x => RowBasedMap.toColbaseMap(x))
+
   implicit val encoderDescribe: Encoder[Describe] = Encoder.instance({
     case x if x.count == 0 => Json.Null
     case x                 => deriveEncoder[Describe].apply(x)
