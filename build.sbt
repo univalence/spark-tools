@@ -86,6 +86,7 @@ lazy val sparkZio = (project in file("spark-zio"))
     startYear   := Some(2019),
     homepage    := Some(url("https://github.com/univalence/spark-tools/tree/master/spark-zio"))
   )
+  .dependsOn(sparkTest % "test -> compile")
   .settings(projectDescription, defaultConfiguration, deliveryConfiguration)
   .settings(
     useSpark(sparkVersion = "2.1.1")(modules = "sql"),

@@ -182,6 +182,7 @@ class SchemaComparatorTest extends FunSuite with PropertyChecks {
   def assertInvariant(s1: StructType, s2: StructType): Unit = {
     val diff = compareSchema(s1, s2)
 
+    //TODO remove var
     var s3 = s1
     diff.foreach(sm => {
       val t = modifySchema(s3, sm)

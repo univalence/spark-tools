@@ -19,7 +19,7 @@ case class ParkaAnalysis(datasetInfo: Both[DatasetInfo], result: ParkaResult) {
     * Force the parke analysis to return his own json version which is better for debugging and interpretation
     * @return Json version of a ParkaResult
     */
-  override def toString: String = Serde.toJson(this).toString();
+  override def toString: String = Serde.toJson(this).toString
 }
 
 case class DatasetInfo(source: Seq[String], nStage: Long)
@@ -103,6 +103,13 @@ object Describe {
 
   final def enum2(name: String, left: String, right: String): Describe =
     oneValue.copy(enums = Map(name -> Enum.unit(left, right)))
+
+
+  trait DescribeCombinator {
+
+    def describe:Describe
+    def addValue(a:Any):DescribeCombinator
+  }
 
   def apply(a: Any): Describe =
     a match {
