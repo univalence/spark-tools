@@ -104,11 +104,10 @@ object Describe {
   final def enum2(name: String, left: String, right: String): Describe =
     oneValue.copy(enums = Map(name -> Enum.unit(left, right)))
 
-
   trait DescribeCombinator {
 
-    def describe:Describe
-    def addValue(a:Any):DescribeCombinator
+    def describe: Describe
+    def addValue(a: Any): DescribeCombinator
   }
 
   def apply(a: Any): Describe =
