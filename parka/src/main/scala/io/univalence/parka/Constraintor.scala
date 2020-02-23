@@ -1,5 +1,14 @@
 package io.univalence.parka
 
+/**
+  * The Constraintor Object is a way to analyse a Parla Result
+  * This is convenient if you use Parka to verify that the new version of your project is working as expected
+  * For example if your new version should not change anything about the data process then the parka result
+  * should be empty. Instead of looking inside the parka result you can just set a constraint about your Parka Result
+  * using the Constraintor.
+  * Example:
+  * Constraintor.respectConstraints(analysis)(isSimilar) should return Pass in case of nothing has changed.
+  */
 object Constraintor {
   sealed trait Status
   case object Pass extends Status
@@ -39,5 +48,4 @@ object Constraintor {
       case false => Fail(verification.map(_._1): _*)
     }
   }
-
 }
