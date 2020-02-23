@@ -36,9 +36,19 @@ object Constraintor {
       pa.result.inner.byColumn.get(col).map(!_.error.equals(Describe.empty)).getOrElse(throw new Exception("Fail"))
   }
 
+  case class colsChange(col: String*) extends Constraint{
+    override def ok(pa: ParkaAnalysis): Boolean =
+      col.forall(colChange(_).ok(pa))
+  }
+
   case class colNotChange(col: String) extends Constraint{
     override def ok(pa: ParkaAnalysis): Boolean =
       !colChange(col).ok(pa)
+  }
+
+  case class colsNotChange(col: String*) extends Constraint{
+    override def ok(pa: ParkaAnalysis): Boolean =
+      col.forall(colNotChange(_).ok(pa))
   }
 
   def respectConstraints(pa: ParkaAnalysis)(constraints: Constraint*): Status = {
