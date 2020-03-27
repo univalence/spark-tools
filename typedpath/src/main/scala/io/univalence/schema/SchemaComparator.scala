@@ -35,6 +35,11 @@ object SchemaComparator {
       }
   }
 
+  case object NoCommonFieldError extends Exception {
+    override lazy val getMessage: String =
+      "No common field between the DataFrames."
+  }
+
   sealed trait FieldModification
 
   final case class AddField(dataType: DataType) extends FieldModification
