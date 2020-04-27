@@ -92,9 +92,12 @@ lazy val sparkZio = (project in file("spark-zio"))
     useSpark(sparkVersion = "2.1.1")(modules = "sql"),
     addTestLibs,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio"         % libVersion.zio,
-      "dev.zio" %% "zio-streams" % libVersion.zio
+      "dev.zio" %% "zio"          % libVersion.zio,
+      "dev.zio" %% "zio-streams"  % libVersion.zio,
+      "dev.zio" %% "zio-test"     % libVersion.zio % "test",
+      "dev.zio" %% "zio-test-sbt" % libVersion.zio % "test"
     ),
+    testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     scalacOptions += "-Yrangepos",
     scalacOptions += "-Ywarn-unused",
     //addCompilerPlugin(scalafixSemanticdb),

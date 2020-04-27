@@ -587,7 +587,7 @@ object SparkTest {
     val schema = df.schema
     val newSchema = StructType(schema.map {
       case StructField(f, t, n, m) if f.equals(field) && n != nullable => StructField(f, t, !n, m)
-      case y: StructField                                              => y
+      case y: StructField => y
     })
     df.sqlContext.createDataFrame(df.rdd, newSchema)
   }
