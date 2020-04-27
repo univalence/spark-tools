@@ -1,28 +1,14 @@
 package io.univalence.sparktest
 
 import io.univalence.schema.SchemaComparator
-import io.univalence.schema.SchemaComparator.{
-  AddField,
-  ChangeFieldType,
-  RemoveField,
-  SchemaError,
-  SchemaModification,
-  SetNonNullable,
-  SetNullable
-}
+import io.univalence.schema.SchemaComparator.{AddField, ChangeFieldType, NoCommonFieldError, RemoveField, SchemaError, SchemaModification, SetNonNullable, SetNullable}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 
 import scala.reflect.ClassTag
-import io.univalence.sparktest.ValueComparison.{
-  compareValue,
-  fromRow,
-  toStringModifications,
-  toStringRowsMods,
-  ObjectModification
-}
+import io.univalence.sparktest.ValueComparison.{ObjectModification, compareValue, fromRow, toStringModifications, toStringRowsMods}
 import io.univalence.sparktest.internal.DatasetUtils
-import org.apache.spark.sql.types.{ StructField, StructType }
+import org.apache.spark.sql.types.{StructField, StructType}
 
 import scala.util.Try
 
@@ -211,7 +197,7 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
       val modifications = SchemaComparator.compareSchema(thisDf.schema, otherDf.schema)
 
       Try(if (modifications.nonEmpty) {
-        modifications.foldLeft((thisDf, otherDf)) {
+        val (thisDfModified, otherDfModified) = modifications.foldLeft((thisDf, otherDf)) {
           case ((df1, df2), sm) =>
             sm match {
               case SchemaModification(p, RemoveField(_)) =>
@@ -236,6 +222,11 @@ trait SparkTest extends SparkTestSQLImplicits with SparkTest.ReadOps {
                 else throw SchemaError(modifications)
 
             }
+        }
+        if (thisDfModified.schema.isEmpty && otherDfModified.schema.isEmpty) {
+          throw NoCommonFieldError
+        } else {
+          (thisDfModified, otherDfModified)
         }
       } else {
         (thisDf, otherDf)
